@@ -1,18 +1,18 @@
 # stable-baselines
 
-[![Release](https://img.shields.io/github/release/markub3327/MountainCarContinuous)](https://github.com/markub3327/MountainCarContinuous/releases)
-![Tag](https://img.shields.io/github/v/tag/markub3327/MountainCarContinuous)
+[![Release](https://img.shields.io/github/release/markub3327/stable-baselines)](https://github.com/markub3327/stable-baselines/releases)
+![Tag](https://img.shields.io/github/v/tag/markub3327/stable-baselines)
 
-[![Issues](https://img.shields.io/github/issues/markub3327/MountainCarContinuous)](https://github.com/markub3327/MountainCarContinuous/issues)
-![Commits](https://img.shields.io/github/commit-activity/w/markub3327/MountainCarContinuous)
+[![Issues](https://img.shields.io/github/issues/markub3327/stable-baselines)](https://github.com/markub3327/stable-baselines/issues)
+![Commits](https://img.shields.io/github/commit-activity/w/markub3327/stable-baselines)
 
-![Languages](https://img.shields.io/github/languages/count/markub3327/MountainCarContinuous)
-![Size](https://img.shields.io/github/repo-size/markub3327/MountainCarContinuous)
+![Languages](https://img.shields.io/github/languages/count/markub3327/stable-baselines)
+![Size](https://img.shields.io/github/repo-size/markub3327/stable-baselines)
 
 ## Agents
 
   * **TD3**
-  * **SAC**
+  * **SAC** (comming soon)
 
 ## Topology
 
@@ -27,7 +27,8 @@
 </p>
 
 ## Tested environments
-
+  
+  * MountainCarContinuous-v0
   * BipedalWalker-v3
   * LunarLanderContinuous-v2
   * Walker2DBulletEnv-v0

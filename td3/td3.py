@@ -7,12 +7,12 @@ class TD3:
     def __init__(self, 
                  state_shape, 
                  action_shape,
-                 learning_rate: float,
-                 tau: float,
-                 gamma: float,
-                 target_noise: float,
-                 noise_clip: float,
-                 policy_delay: int):
+                 learning_rate, 
+                 tau,
+                 gamma,
+                 target_noise,
+                 noise_clip,
+                 policy_delay):
 
         self._gamma = gamma
         self._tau = tau
@@ -33,21 +33,21 @@ class TD3:
         self.critic_targ_2 = Critic(state_shape, action_shape, learning_rate)
 
         # first make a hard copy
-        self._target_update(self.actor, self.actor_targ, 1.0)
-        self._target_update(self.critic_1, self.critic_targ_1, 1.0)
-        self._target_update(self.critic_2, self.critic_targ_2, 1.0)
+        self._update_target(self.actor, self.actor_targ, tau=tf.constant(1.0))
+        self._update_target(self.critic_1, self.critic_targ_1, tau=tf.constant(1.0))
+        self._update_target(self.critic_2, self.critic_targ_2, tau=tf.constant(1.0))
 
     @tf.function
     def get_action(self, state):
         s = tf.expand_dims(state, axis=0)       # add batch_size=1 dim
-        a = self.actor.model(s)                 # predict
+        a = self.actor.model(s)
 
         return a[0]                             # remove batch_size dim
 
     @tf.function
-    def _target_update(self, net, net_targ, tau):
-        for p, p_targ in zip(net.model.trainable_weights, net_targ.model.trainable_weights):
-            p_targ.assign(tau * p + (1.0 - tau) * p_targ)       # soft update weights
+    def _update_target(self, net, net_targ, tau):
+        for source_weight, target_weight in zip(net.model.trainable_variables, net_targ.model.trainable_variables):
+            target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
     # ------------------------------------ update critic ----------------------------------- #
     @tf.function
@@ -72,16 +72,16 @@ class TD3:
             q_pred = self.critic_1.model([batch['obs'], batch['act']], training=True)
             loss_c1 = self.critic_1.loss(targets, q_pred)
 
-        critic_grads = tape1.gradient(loss_c1, self.critic_1.model.trainable_weights)
-        self.critic_1.optimizer.apply_gradients(zip(critic_grads, self.critic_1.model.trainable_weights))
+        critic_grads = tape1.gradient(loss_c1, self.critic_1.model.trainable_variables)
+        self.critic_1.optimizer.apply_gradients(zip(critic_grads, self.critic_1.model.trainable_variables))
 
         # update critic '2'
         with tf.GradientTape() as tape2:
             q_pred = self.critic_2.model([batch['obs'], batch['act']], training=True)
             loss_c2 = self.critic_2.loss(targets, q_pred)
 
-        critic_grads = tape2.gradient(loss_c2, self.critic_2.model.trainable_weights)
-        self.critic_2.optimizer.apply_gradients(zip(critic_grads, self.critic_2.model.trainable_weights))
+        critic_grads = tape2.gradient(loss_c2, self.critic_2.model.trainable_variables)
+        self.critic_2.optimizer.apply_gradients(zip(critic_grads, self.critic_2.model.trainable_variables))
 
         return (loss_c1 + loss_c2)
 
@@ -90,20 +90,15 @@ class TD3:
     def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
-            y_pred = self.actor.model(batch['obs'], training=True)
+            y_pred = self.actor.model(batch['obs'])
             # predict q value
-            q_pred = self.critic_1.model([batch['obs'], y_pred], training=False)
+            q_pred = self.critic_1.model([batch['obs'], y_pred])
         
             # compute per example loss
             loss_a = -tf.reduce_mean(q_pred)
 
-        actor_grads = tape.gradient(loss_a, self.actor.model.trainable_weights)
-        self.actor.optimizer.apply_gradients(zip(actor_grads, self.actor.model.trainable_weights))
-        
-        # ---------------------------- soft update target networks ---------------------------- #
-        self._target_update(self.actor, self.actor_targ, self._tau)
-        self._target_update(self.critic_1, self.critic_targ_1, self._tau)
-        self._target_update(self.critic_2, self.critic_targ_2, self._tau)
+        actor_grads = tape.gradient(loss_a, self.actor.model.trainable_variables)
+        self.actor.optimizer.apply_gradients(zip(actor_grads, self.actor.model.trainable_variables))
 
         return loss_a
 
@@ -114,7 +109,14 @@ class TD3:
         # Delayed policy update
         if (t % self._policy_delay == 0):
             loss_a = self._update_actor(batch)
+
+            # ---------------------------- soft update target networks ---------------------------- #
+            self._update_target(self.actor, self.actor_targ, tau=tf.constant(self._tau))
+            self._update_target(self.critic_1, self.critic_targ_1, tau=tf.constant(self._tau))
+            self._update_target(self.critic_2, self.critic_targ_2, tau=tf.constant(self._tau))
         else:
             loss_a = None
+
+        #print(t, loss_a, loss_c)
 
         return loss_a, loss_c

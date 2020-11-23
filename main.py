@@ -1,3 +1,4 @@
+# main libraries
 import gym
 import numpy as np
 import wandb
@@ -6,11 +7,11 @@ import argparse
 # policy
 from td3 import TD3
 
-# register PyBullet enviroments with open ai gym
+# register PyBullet enviroments with OpenAI Gym
 import pybulletgym
 
-from replaybuffer import ReplayBuffer
-from wandb.keras import WandbCallback
+# utilities
+from utils.replaybuffer import ReplayBuffer
 from utils.noise import OrnsteinUhlenbeckActionNoise, NormalActionNoise
 
 # Main function
@@ -27,6 +28,18 @@ def main(env_name: str,
          target_noise: float,
          noise_clip: float,
          policy_delay: int):
+
+    # Herne prostredie
+    env = gym.make(env_name)
+    env.render() # call this before env.reset, if you want a window showing the environment
+
+    # select noise generator
+    if (noise_type == 'normal'):
+        noise = NormalActionNoise(mean=0.0, sigma=action_noise, size=env.action_space.shape)
+    elif (noise_type == 'ornstein-uhlenbeck'):
+        noise = OrnsteinUhlenbeckActionNoise(mean=0.0, sigma=action_noise, size=env.action_space.shape)
+    else:
+        raise ValueError()
 
     # inicializuj prostredie Weights & Biases
     wandb.init(project="stable-baselines")
@@ -47,18 +60,6 @@ def main(env_name: str,
     wandb.config.policy_delay           =  policy_delay
 
     log_interval = 1000     # print interval
-
-    # Herne prostredie
-    env = gym.make(env_name)
-    env.render() # call this before env.reset, if you want a window showing the environment
-
-    # select noise generator
-    if (noise_type == 'normal'):
-        noise = NormalActionNoise(mean=0.0, sigma=action_noise, size=env.action_space.shape)
-    elif (noise_type == 'ornstein-uhlenbeck'):
-        noise = OrnsteinUhlenbeckActionNoise(mean=0.0, sigma=action_noise, size=env.action_space.shape)
-    else:
-        raise ValueError()
 
     # policy
     agent = TD3(env.observation_space.shape, 
@@ -88,7 +89,7 @@ def main(env_name: str,
         obs = env.reset()
 
         # collect rollout
-        while not done:            
+        while not done:
             # prekresli okno hry
             env.render()
 
@@ -121,8 +122,9 @@ def main(env_name: str,
         print(f'EpsReward: {episode_reward}')
         print(f'EpsSteps: {episode_timesteps}')
         print(f'TotalInteractions: {total_steps}\n')
-        wandb.log({"epoch": total_episodes, "reward": episode_reward, "steps": episode_timesteps})
+        wandb.log({"epoch": total_episodes, "score": episode_reward, "steps": episode_timesteps, "replayBuffer": len(rpm)})
 
+        # update models after episode
         if total_steps > learning_starts:
             for gradient_step in range(episode_timesteps):
                 batch = rpm.sample(batch_size)
@@ -147,11 +149,11 @@ if __name__ == "__main__":
     my_parser.add_argument('-t', '--max_steps', type=int, help='Maximum number of interactions doing in environment', default=int(1e6))
     my_parser.add_argument('--noise_type', type=str, help='Type of used noise generator', default='normal')
     my_parser.add_argument('--action_noise', type=float, help='Standard deviation of action noise', default=0.1)
-    my_parser.add_argument('--gamma', type=float, help='Discount factor', default=0.99)
-    my_parser.add_argument('--lr', type=float, help='Learning rate', default=1e-3)
+    my_parser.add_argument('--gamma', type=float, help='Discount factor', default=0.98)
+    my_parser.add_argument('-lr', '--learning_rate', type=float, help='Learning rate', default=1e-3)
     my_parser.add_argument('--tau', type=float, help='Soft update learning rate', default=0.005)
     my_parser.add_argument('--batch_size', type=int, help='Size of the batch', default=100)
-    my_parser.add_argument('--replay_size', type=int, help='Size of the replay buffer', default=int(1e6))
+    my_parser.add_argument('--replay_size', type=int, help='Size of the replay buffer', default=int(2e5))
     my_parser.add_argument('--learning_starts', type=int, help='Number of steps before training', default=10000)
     my_parser.add_argument('--target_noise', type=float, help='Standard deviation of target noise', default=0.2)
     my_parser.add_argument('--noise_clip', type=float, help='Limit for target noise', default=0.5)
@@ -160,10 +162,8 @@ if __name__ == "__main__":
     # get args
     args = my_parser.parse_args()
 
-    print(args)
-
     main(env_name=args.environment,
-         learning_rate=args.lr,
+         learning_rate=args.learning_rate,
          gamma=args.gamma, 
          batch_size=args.batch_size, 
          tau=args.tau,         
