@@ -1,4 +1,4 @@
-# stable-baselines
+# rl-baselines
 
 [![Release](https://img.shields.io/github/release/markub3327/stable-baselines)](https://github.com/markub3327/stable-baselines/releases)
 ![Tag](https://img.shields.io/github/v/tag/markub3327/stable-baselines)
