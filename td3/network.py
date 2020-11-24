@@ -2,7 +2,6 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Concatenate, Dense
 from tensorflow.keras.utils import plot_model
-from tensorflow.keras.losses import MeanSquaredError
 
 # Trieda hraca
 class Actor:
@@ -48,7 +47,6 @@ class Critic:
 
         # Skompiluj model
         self.optimizer = Adam(learning_rate=lr)
-        self.loss = MeanSquaredError()
 
         self.model.summary()
 

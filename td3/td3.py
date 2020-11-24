@@ -65,25 +65,27 @@ class TD3:
         next_q = tf.minimum(q_1, q_2) 
 
         # Use Bellman Equation! (recursive definition of q-values)
-        targets = batch['rew'] + (1 - batch['done']) * self._gamma * next_q
+        Q_targets = batch['rew'] + (1 - batch['done']) * self._gamma * next_q
 
         # update critic '1'
-        with tf.GradientTape() as tape1:
-            q_pred = self.critic_1.model([batch['obs'], batch['act']], training=True)
-            loss_c1 = self.critic_1.loss(targets, q_pred)
+        with tf.GradientTape() as tape:
+            q_values = self.critic_1.model([batch['obs'], batch['act']])
+            q_losses = 0.5 * (tf.losses.MSE(y_true=Q_targets, y_pred=q_values))
+            q1_loss = tf.nn.compute_average_loss(q_losses)
 
-        critic_grads = tape1.gradient(loss_c1, self.critic_1.model.trainable_variables)
-        self.critic_1.optimizer.apply_gradients(zip(critic_grads, self.critic_1.model.trainable_variables))
+        grads = tape.gradient(q1_loss, self.critic_1.model.trainable_variables)
+        self.critic_1.optimizer.apply_gradients(zip(grads, self.critic_1.model.trainable_variables))
 
         # update critic '2'
-        with tf.GradientTape() as tape2:
-            q_pred = self.critic_2.model([batch['obs'], batch['act']], training=True)
-            loss_c2 = self.critic_2.loss(targets, q_pred)
+        with tf.GradientTape() as tape:
+            q_values = self.critic_2.model([batch['obs'], batch['act']])
+            q_losses = 0.5 * (tf.losses.MSE(y_true=Q_targets, y_pred=q_values))
+            q2_loss = tf.nn.compute_average_loss(q_losses)
 
-        critic_grads = tape2.gradient(loss_c2, self.critic_2.model.trainable_variables)
-        self.critic_2.optimizer.apply_gradients(zip(critic_grads, self.critic_2.model.trainable_variables))
+        grads = tape.gradient(q2_loss, self.critic_2.model.trainable_variables)
+        self.critic_2.optimizer.apply_gradients(zip(grads, self.critic_2.model.trainable_variables))
 
-        return (loss_c1 + loss_c2)
+        return (q1_loss + q2_loss)
 
     # ------------------------------------ update actor ----------------------------------- #
     @tf.function
@@ -95,12 +97,12 @@ class TD3:
             q_pred = self.critic_1.model([batch['obs'], y_pred])
         
             # compute per example loss
-            loss_a = -tf.reduce_mean(q_pred)
+            a_loss = tf.nn.compute_average_loss(-q_pred)
 
-        actor_grads = tape.gradient(loss_a, self.actor.model.trainable_variables)
-        self.actor.optimizer.apply_gradients(zip(actor_grads, self.actor.model.trainable_variables))
+        grads = tape.gradient(a_loss, self.actor.model.trainable_variables)
+        self.actor.optimizer.apply_gradients(zip(grads, self.actor.model.trainable_variables))
 
-        return loss_a
+        return a_loss
 
     def train(self, batch, t):
         # Critic models update
