@@ -41,8 +41,7 @@ class TD3:
     def get_action(self, state):
         s = tf.expand_dims(state, axis=0)       # add batch_size=1 dim
         a = self.actor.model(s)
-
-        return a[0]                             # remove batch_size dim
+        return tf.squeeze(a)                    # remove batch_size dim
 
     @tf.function
     def _update_target(self, net, net_targ, tau):
@@ -62,15 +61,17 @@ class TD3:
         # target Q-values
         q_1 = self.critic_targ_1.model([batch['obs2'], next_action])
         q_2 = self.critic_targ_2.model([batch['obs2'], next_action])
-        next_q = tf.minimum(q_1, q_2) 
+        next_q = tf.minimum(q_1, q_2)
+        print(next_q)
 
         # Use Bellman Equation! (recursive definition of q-values)
         Q_targets = batch['rew'] + (1 - batch['done']) * self._gamma * next_q
+        print(Q_targets)
 
         # update critic '1'
         with tf.GradientTape() as tape:
             q_values = self.critic_1.model([batch['obs'], batch['act']])
-            q_losses = 0.5 * (tf.losses.MSE(y_true=Q_targets, y_pred=q_values))
+            q_losses = tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
             q1_loss = tf.nn.compute_average_loss(q_losses)
 
         grads = tape.gradient(q1_loss, self.critic_1.model.trainable_variables)
@@ -79,7 +80,7 @@ class TD3:
         # update critic '2'
         with tf.GradientTape() as tape:
             q_values = self.critic_2.model([batch['obs'], batch['act']])
-            q_losses = 0.5 * (tf.losses.MSE(y_true=Q_targets, y_pred=q_values))
+            q_losses = tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
             q2_loss = tf.nn.compute_average_loss(q_losses)
 
         grads = tape.gradient(q2_loss, self.critic_2.model.trainable_variables)

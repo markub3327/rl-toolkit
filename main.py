@@ -31,7 +31,7 @@ def main(env_name: str,
 
     # Herne prostredie
     env = gym.make(env_name)
-    env.render() # call this before env.reset, if you want a window showing the environment
+    #env.render() # call this before env.reset, if you want a window showing the environment
 
     # select noise generator
     if (noise_type == 'normal'):
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     my_parser.add_argument('-lr', '--learning_rate', type=float, help='Learning rate', default=1e-3)
     my_parser.add_argument('--tau', type=float, help='Soft update learning rate', default=0.005)
     my_parser.add_argument('--batch_size', type=int, help='Size of the batch', default=100)
-    my_parser.add_argument('--replay_size', type=int, help='Size of the replay buffer', default=int(2e5))
+    my_parser.add_argument('--replay_size', type=int, help='Size of the replay buffer', default=int(1e6))
     my_parser.add_argument('--learning_starts', type=int, help='Number of steps before training', default=10000)
     my_parser.add_argument('--target_noise', type=float, help='Standard deviation of target noise', default=0.2)
     my_parser.add_argument('--noise_clip', type=float, help='Limit for target noise', default=0.5)

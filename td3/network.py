@@ -34,7 +34,6 @@ class Critic:
         state_input = Input(shape=state_shape)
         action_input = Input(shape=action_shape)
 
-        # equivalent to added = keras.layers.add([x1, x2])
         merged = Concatenate()([state_input, action_input])
         l1 = Dense(400, activation='relu', use_bias=True, kernel_initializer='he_uniform')(merged)
         l2 = Dense(300, activation='relu', use_bias=True, kernel_initializer='he_uniform')(l1)
