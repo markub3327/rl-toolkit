@@ -12,8 +12,8 @@ class ReplayBuffer(object):
         self.obs_buf = np.zeros((size,) + obs_dim, dtype=np.float32)
         self.obs2_buf = np.zeros((size,) + obs_dim, dtype=np.float32)
         self.act_buf = np.zeros((size,) + act_dim, dtype=np.float32)
-        self.rew_buf = np.zeros(size, dtype=np.float32)
-        self.done_buf = np.zeros(size, dtype=np.float32)
+        self.rew_buf = np.zeros((size, 1), dtype=np.float32)
+        self.done_buf = np.zeros((size, 1), dtype=np.float32)
         self.ptr, self.size, self.max_size = 0, 0, size
 
     def store(self, obs, act, rew, next_obs, done):

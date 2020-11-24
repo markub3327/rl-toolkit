@@ -14,10 +14,10 @@ class TD3:
                  noise_clip,
                  policy_delay):
 
-        self._gamma = gamma
-        self._tau = tau
-        self._target_noise = target_noise
-        self._noise_clip = noise_clip
+        self._gamma = tf.constant(gamma)
+        self._tau = tf.constant(tau)
+        self._target_noise = tf.constant(target_noise)
+        self._noise_clip = tf.constant(noise_clip)
         self._policy_delay = policy_delay
 
         # Actor network & target network
@@ -114,9 +114,9 @@ class TD3:
             loss_a = self._update_actor(batch)
 
             # ---------------------------- soft update target networks ---------------------------- #
-            self._update_target(self.actor, self.actor_targ, tau=tf.constant(self._tau))
-            self._update_target(self.critic_1, self.critic_targ_1, tau=tf.constant(self._tau))
-            self._update_target(self.critic_2, self.critic_targ_2, tau=tf.constant(self._tau))
+            self._update_target(self.actor, self.actor_targ, tau=self._tau)
+            self._update_target(self.critic_1, self.critic_targ_1, tau=self._tau)
+            self._update_target(self.critic_2, self.critic_targ_2, tau=self._tau)
         else:
             loss_a = None
 
