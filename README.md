@@ -31,7 +31,7 @@
   * MountainCarContinuous-v0
   * BipedalWalker-v3
   * LunarLanderContinuous-v2
-  * Walker2DBulletEnv-v0
+  * Walker2DPyBulletEnv-v0
 
 <p align="center"><b>Summary</b></p>
 <p align="center">
