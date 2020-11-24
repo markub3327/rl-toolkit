@@ -28,7 +28,7 @@ class ReplayBuffer(object):
     def __len__(self):
         return self.size
 
-    def sample(self, batch_size=32):
+    def sample(self, batch_size):
         idxs = np.random.randint(0, self.size, size=batch_size)
         batch = dict(obs=self.obs_buf[idxs],
                      obs2=self.obs2_buf[idxs],

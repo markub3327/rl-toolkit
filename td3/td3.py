@@ -62,11 +62,9 @@ class TD3:
         q_1 = self.critic_targ_1.model([batch['obs2'], next_action])
         q_2 = self.critic_targ_2.model([batch['obs2'], next_action])
         next_q = tf.minimum(q_1, q_2)
-        print(next_q)
 
         # Use Bellman Equation! (recursive definition of q-values)
         Q_targets = batch['rew'] + (1 - batch['done']) * self._gamma * next_q
-        print(Q_targets)
 
         # update critic '1'
         with tf.GradientTape() as tape:
