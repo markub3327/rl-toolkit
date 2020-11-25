@@ -37,7 +37,7 @@
 <p align="center">
   <img src="img/results.png" alt="results">
 </p>
-<p align="center"><a href="https://app.wandb.ai/markub/stable-baselines">For more charts click here.</a></p>
+<p align="center"><a href="https://app.wandb.ai/markub/stable-baselines" target="_blank">For more charts click here.</a></p>
 
 **Framework:** Tensorflow 2.4.0
 </br>
