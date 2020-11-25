@@ -31,7 +31,6 @@ def main(env_name: str,
 
     # Herne prostredie
     env = gym.make(env_name)
-    #env.render() # call this before env.reset, if you want a window showing the environment
 
     # select noise generator
     if (noise_type == 'normal'):
@@ -90,9 +89,6 @@ def main(env_name: str,
 
         # collect rollout
         while not done:
-            # prekresli okno hry
-            env.render()
-
             # select action randomly or using policy network
             if total_steps < learning_starts:
                 # warmup
@@ -161,6 +157,7 @@ if __name__ == "__main__":
 
     # get args
     args = my_parser.parse_args()
+    print(args)
 
     main(env_name=args.environment,
          learning_rate=args.learning_rate,
