@@ -7,9 +7,6 @@ import argparse
 # policy
 from td3 import TD3
 
-# register PyBullet enviroments with OpenAI Gym
-import pybulletgym
-
 # utilities
 from utils.replaybuffer import ReplayBuffer
 from utils.noise import OrnsteinUhlenbeckActionNoise, NormalActionNoise
@@ -141,6 +138,7 @@ if __name__ == "__main__":
     my_parser = argparse.ArgumentParser(prog='python3 main.py', description='stable-baselines', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     # init args
+    my_parser.add_argument('-alg', '--algorithm', type=str, help='Only OpenAI Gym environments are available!', default='sac')
     my_parser.add_argument('-env', '--environment', type=str, help='Only OpenAI Gym environments are available!', default='MountainCarContinuous-v0')
     my_parser.add_argument('-t', '--max_steps', type=int, help='Maximum number of interactions doing in environment', default=int(3e5))
     my_parser.add_argument('--noise_type', type=str, help='Type of used noise generator', default='ornstein-uhlenbeck')

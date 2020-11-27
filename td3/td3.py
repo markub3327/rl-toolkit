@@ -3,6 +3,11 @@ from .network import Actor, Critic
 import tensorflow as tf
 
 class TD3:
+    """
+        Twin Delayed DDPG
+
+        https://arxiv.org/pdf/1802.09477.pdf
+    """
 
     def __init__(self, 
                  state_shape, 
