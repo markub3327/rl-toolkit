@@ -13,6 +13,7 @@ from utils.noise import OrnsteinUhlenbeckActionNoise, NormalActionNoise
 
 # Main function
 def main(env_name: str,
+         alg: str,
          learning_rate: float,
          gamma: float,
          batch_size: int,
@@ -24,7 +25,8 @@ def main(env_name: str,
          action_noise: float,
          target_noise: float,
          noise_clip: float,
-         policy_delay: int):
+         policy_delay: int,
+         logging_wandb: bool):
 
     # Herne prostredie
     env = gym.make(env_name)
@@ -35,38 +37,40 @@ def main(env_name: str,
     elif (noise_type == 'ornstein-uhlenbeck'):
         noise = OrnsteinUhlenbeckActionNoise(mean=0.0, sigma=action_noise, size=env.action_space.shape)
     else:
-        raise ValueError()
+        raise NameError(f"'{noise_type}' noise is not defined")
 
     # inicializuj prostredie Weights & Biases
-    wandb.init(project="stable-baselines")
+    if logging_wandb == True:
+        wandb.init(project="stable-baselines")
 
-    ###
-    ### Settings
-    ###
-    wandb.config.gamma                  =  gamma
-    wandb.config.batch_size             =  batch_size
-    wandb.config.tau                    =  tau
-    wandb.config.learning_rate          =  learning_rate
-    wandb.config.replay_size            =  replay_size
-    wandb.config.learning_starts        =  learning_starts
-    wandb.config.max_steps              =  max_steps
-    wandb.config.action_noise           =  action_noise
-    wandb.config.target_noise           =  target_noise
-    wandb.config.noise_clip             =  noise_clip
-    wandb.config.policy_delay           =  policy_delay
-
-    log_interval = 1000     # print interval
+        ###
+        ### Settings
+        ###
+        wandb.config.gamma                  =  gamma
+        wandb.config.batch_size             =  batch_size
+        wandb.config.tau                    =  tau
+        wandb.config.learning_rate          =  learning_rate
+        wandb.config.replay_size            =  replay_size
+        wandb.config.learning_starts        =  learning_starts
+        wandb.config.max_steps              =  max_steps
+        wandb.config.action_noise           =  action_noise
+        wandb.config.target_noise           =  target_noise
+        wandb.config.noise_clip             =  noise_clip
+        wandb.config.policy_delay           =  policy_delay
 
     # policy
-    agent = TD3(env.observation_space.shape, 
-                 env.action_space.shape, 
-                 learning_rate=learning_rate,
-                 tau=tau, 
-                 gamma=gamma,
-                 target_noise=target_noise,
-                 noise_clip=noise_clip,
-                 policy_delay=policy_delay)
-
+    if (alg == 'td3'): 
+        agent = TD3(env.observation_space.shape, 
+                    env.action_space.shape, 
+                    learning_rate=learning_rate,
+                    tau=tau, 
+                    gamma=gamma,
+                    target_noise=target_noise,
+                    noise_clip=noise_clip,
+                    policy_delay=policy_delay)
+    else:
+        raise NameError(f"algorithm '{alg}' is not defined")
+ 
     # plot model to png
     #agent.actor.save()
     #agent.critic_1.save()
@@ -115,14 +119,15 @@ def main(env_name: str,
         print(f'EpsReward: {episode_reward}')
         print(f'EpsSteps: {episode_timesteps}')
         print(f'TotalInteractions: {total_steps}\n')
-        wandb.log({"epoch": total_episodes, "score": episode_reward, "steps": episode_timesteps, "replayBuffer": len(rpm)})
+        if logging_wandb == True:
+            wandb.log({"epoch": total_episodes, "score": episode_reward, "steps": episode_timesteps, "replayBuffer": len(rpm)})
 
         # update models after episode
         if total_steps > learning_starts:
             for gradient_step in range(episode_timesteps):
                 batch = rpm.sample(batch_size)
                 loss_a, loss_c = agent.train(batch, t=gradient_step)
-                if (loss_a is not None):
+                if (logging_wandb == True and loss_a is not None):
                     wandb.log({"loss_a": loss_a, "loss_c": loss_c})
 
     # Save model to local drive
@@ -138,7 +143,7 @@ if __name__ == "__main__":
     my_parser = argparse.ArgumentParser(prog='python3 main.py', description='stable-baselines', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     # init args
-    my_parser.add_argument('-alg', '--algorithm', type=str, help='Only OpenAI Gym environments are available!', default='sac')
+    my_parser.add_argument('-alg', '--algorithm', type=str, help='Only OpenAI Gym environments are available!', default='td3')
     my_parser.add_argument('-env', '--environment', type=str, help='Only OpenAI Gym environments are available!', default='MountainCarContinuous-v0')
     my_parser.add_argument('-t', '--max_steps', type=int, help='Maximum number of interactions doing in environment', default=int(3e5))
     my_parser.add_argument('--noise_type', type=str, help='Type of used noise generator', default='ornstein-uhlenbeck')
@@ -152,12 +157,14 @@ if __name__ == "__main__":
     my_parser.add_argument('--target_noise', type=float, help='Standard deviation of target noise', default=0.2)
     my_parser.add_argument('--noise_clip', type=float, help='Limit for target noise', default=0.5)
     my_parser.add_argument('--policy_delay', type=int, help='Delay between critic and policy update', default=2)
+    my_parser.add_argument('--wandb', action='store_true', help='Logging to wanDB')
 
     # get args
     args = my_parser.parse_args()
     print(args)
 
     main(env_name=args.environment,
+         alg=args.algorithm,
          learning_rate=args.learning_rate,
          gamma=args.gamma, 
          batch_size=args.batch_size, 
@@ -169,4 +176,5 @@ if __name__ == "__main__":
          action_noise=args.action_noise,
          target_noise=args.target_noise,
          noise_clip=args.noise_clip,
-         policy_delay=args.policy_delay)
+         policy_delay=args.policy_delay,
+         logging_wandb=args.wandb)

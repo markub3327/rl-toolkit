@@ -4,12 +4,13 @@ from typing import Optional
 class OrnsteinUhlenbeckActionNoise(object):
     """
     An Ornstein Uhlenbeck action noise, this is designed to approximate Brownian motion with friction.
-    Based on http://math.stackexchange.com/questions/1287634/implementing-ornstein-uhlenbeck-in-matlab
     :param mean: the mean of the noise
     :param sigma: the scale of the noise
     :param theta: the rate of mean reversion
     :param dt: the timestep for the noise
     :param initial_noise: the initial value for the noise output, (if None: 0)
+    
+    Based on http://math.stackexchange.com/questions/1287634/implementing-ornstein-uhlenbeck-in-matlab
     """
 
     def __init__(
