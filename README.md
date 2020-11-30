@@ -12,7 +12,7 @@
 ## Agents
 
   * **TD3**
-  * **SAC** (comming soon)
+  * >**SAC** (comming soon)
 
 ## Topology
 
