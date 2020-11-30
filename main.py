@@ -6,10 +6,13 @@ import argparse
 
 # policy
 from td3 import TD3
+from sac import SAC
 
 # utilities
 from utils.replaybuffer import ReplayBuffer
 from utils.noise import OrnsteinUhlenbeckActionNoise, NormalActionNoise
+
+import pybulletgym
 
 # Main function
 def main(env_name: str,
@@ -68,6 +71,12 @@ def main(env_name: str,
                     target_noise=target_noise,
                     noise_clip=noise_clip,
                     policy_delay=policy_delay)
+    elif (alg == 'sac'): 
+        agent = SAC(env.observation_space.shape, 
+                    env.action_space.shape, 
+                    learning_rate=learning_rate,
+                    tau=tau,
+                    gamma=gamma)
     else:
         raise NameError(f"algorithm '{alg}' is not defined")
  
@@ -96,7 +105,8 @@ def main(env_name: str,
                 action = env.action_space.sample()
             else:
                 action = agent.get_action(obs)
-                action = np.clip(action + noise(), env.action_space.low, env.action_space.high)
+                if (alg == 'td3'):
+                    action = np.clip(action + noise(), env.action_space.low, env.action_space.high)
 
             # perform action
             new_obs, reward, done, _ = env.step(action)
@@ -113,7 +123,9 @@ def main(env_name: str,
 
         # after each episode
         total_episodes += 1
-        noise.reset()
+
+        if (alg == 'td3'):
+            noise.reset()
 
         print(f'Epoch: {total_episodes}')
         print(f'EpsReward: {episode_reward}')
@@ -126,7 +138,10 @@ def main(env_name: str,
         if total_steps > learning_starts:
             for gradient_step in range(episode_timesteps):
                 batch = rpm.sample(batch_size)
-                loss_a, loss_c = agent.train(batch, t=gradient_step)
+                if (alg == 'td3'):
+                    loss_a, loss_c = agent.train(batch, t=gradient_step)
+                else:
+                    loss_a, loss_c = agent.train(batch)
                 if (logging_wandb == True and loss_a is not None):
                     wandb.log({"loss_a": loss_a, "loss_c": loss_c})
 
