@@ -140,10 +140,12 @@ def main(env_name: str,
                 batch = rpm.sample(batch_size)
                 if (alg == 'td3'):
                     loss_a, loss_c = agent.train(batch, t=gradient_step)
+                    if (logging_wandb == True and loss_a is not None):
+                        wandb.log({"loss_a": loss_a, "loss_c": loss_c})
                 else:
-                    loss_a, loss_c = agent.train(batch)
-                if (logging_wandb == True and loss_a is not None):
-                    wandb.log({"loss_a": loss_a, "loss_c": loss_c})
+                    loss_a, loss_c, loss_alpha, alpha = agent.train(batch)
+                    if (logging_wandb == True):
+                        wandb.log({"loss_a": loss_a, "loss_c": loss_c, "loss_alpha": loss_alpha, "alpha": alpha})
 
     # Save model to local drive
     agent.actor.model.save("save/model_A.h5")

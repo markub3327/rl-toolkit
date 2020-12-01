@@ -1,6 +1,7 @@
 from .network import Actor, Critic
 
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 
 class SAC:
@@ -19,7 +20,14 @@ class SAC:
 
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
-        self.alpha = tf.constant(0.2)
+
+        # init param 'alpha' - Lagrangian
+        self._log_alpha = tf.Variable(0.0)
+        self._alpha = tfp.util.DeferredTensor(self._log_alpha, tf.exp)
+        self._alpha_optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, name='alpha_optimizer')
+        self._target_entropy = tf.cast(-tf.reduce_prod(action_shape), dtype=tf.float32)
+        print(self._target_entropy)
+        print(self._alpha)
 
         # Actor network & target network
         self.actor = Actor(state_shape, action_shape, learning_rate)
@@ -47,18 +55,18 @@ class SAC:
         for source_weight, target_weight in zip(net.model.trainable_variables, net_targ.model.trainable_variables):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
+    # ------------------------------------ update critic ----------------------------------- #
     @tf.function
-    def train(self, batch):
-        # ------------------------------------ update critic ----------------------------------- #
-        next_action, log_a2 = self.actor.predict(batch['obs2'])
+    def _update_critic(self, batch):
+        next_action, next_log_prob = self.actor.predict(batch['obs2'])
 
         # target Q-values
-        q_1 = self.critic_targ_1.model([batch['obs2'], next_action])
-        q_2 = self.critic_targ_2.model([batch['obs2'], next_action])
-        next_q = tf.minimum(q_1, q_2)
+        next_q_1 = self.critic_targ_1.model([batch['obs2'], next_action])
+        next_q_2 = self.critic_targ_2.model([batch['obs2'], next_action])
+        next_q = tf.minimum(next_q_1, next_q_2)
 
         # Use Bellman Equation! (recursive definition of q-values)
-        Q_targets = batch['rew'] + (1 - batch['done']) * self._gamma * (next_q - self.alpha * log_a2)
+        Q_targets = batch['rew'] + (1 - batch['done']) * self._gamma * (next_q - self._alpha * next_log_prob)
 
         # update critic '1'
         with tf.GradientTape() as tape:
@@ -78,23 +86,58 @@ class SAC:
         grads = tape.gradient(q2_loss, self.critic_2.model.trainable_variables)
         self.critic_2.optimizer.apply_gradients(zip(grads, self.critic_2.model.trainable_variables))
 
-        # ------------------------------------ update actor ----------------------------------- #
+        return (q1_loss + q2_loss)
+
+    # ------------------------------------ update actor ----------------------------------- #
+    @tf.function
+    def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
-            y_pred, log_a = self.actor.predict(batch['obs'])
+            y_pred, log_prob = self.actor.predict(batch['obs'])
             # predict q value
-            q1_pred = self.critic_1.model([batch['obs'], y_pred])
-            q2_pred = self.critic_2.model([batch['obs'], y_pred])
-            q_pred = tf.minimum(q1_pred, q2_pred)
+            q_1 = self.critic_1.model([batch['obs'], y_pred])
+            q_2 = self.critic_2.model([batch['obs'], y_pred])
+            q = tf.minimum(q_1, q_2)
 
             # compute per example loss
-            a_loss = tf.nn.compute_average_loss(self.alpha * log_a - q_pred)
+            a_loss = tf.nn.compute_average_loss(self._alpha * log_prob - q)
 
         grads = tape.gradient(a_loss, self.actor.model.trainable_variables)
         self.actor.optimizer.apply_gradients(zip(grads, self.actor.model.trainable_variables))
+
+        return a_loss
+
+    # ------------------------------------ update alpha ----------------------------------- #
+    @tf.function
+    def _update_alpha(self, batch):
+        y_pred, log_prob = self.actor.predict(batch['obs'])
+        
+        #tf.print(self._alpha)
+        
+        with tf.GradientTape() as tape:
+            alpha_losses = -1.0 * (self._alpha * tf.stop_gradient(log_prob + self._target_entropy))
+            # NOTE(hartikainen): It's important that we take the average here,
+            # otherwise we end up effectively having `batch_size` times too
+            # large learning rate.
+            alpha_loss = tf.nn.compute_average_loss(alpha_losses)
+
+        grads = tape.gradient(alpha_loss, [self._log_alpha])
+        self._alpha_optimizer.apply_gradients(zip(grads, [self._log_alpha]))
+
+        #tf.print(log_prob)
+        #tf.print(self._alpha)
+        #tf.print()
+
+        return alpha_loss
+
+    @tf.function
+    def train(self, batch):
+        q_loss = self._update_critic(batch)
+        p_loss = self._update_actor(batch)
+        alpha_loss = self._update_alpha(batch)
 
         # ---------------------------- soft update target networks ---------------------------- #
         self._update_target(self.critic_1, self.critic_targ_1, tau=self._tau)
         self._update_target(self.critic_2, self.critic_targ_2, tau=self._tau)
         
-        return a_loss, (q1_loss + q2_loss)
+        return p_loss, q_loss, alpha_loss, self._alpha
