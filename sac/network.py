@@ -42,12 +42,9 @@ class Actor:
 
         if with_logprob:
             logp_pi = pi_distribution.log_prob(pi_action)
+            logp_pi = tf.reduce_sum(logp_pi, axis=-1, keepdims=True)
         else:
             logp_pi = None
-
-        #tf.print(pi_distribution)
-        #tf.print(pi_action)
-        #tf.print(logp_pi)      # entropy
 
         return pi_action, logp_pi
 
