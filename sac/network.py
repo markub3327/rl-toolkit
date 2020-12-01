@@ -12,8 +12,8 @@ class Actor:
 
     def __init__(self, state_shape, action_shape, lr):
         state_input = Input(shape=state_shape, name='state_input')
-        l1 = Dense(256, activation='swish', name='h1')(state_input)
-        l2 = Dense(256, activation='swish', name='h2')(l1)
+        l1 = Dense(400, activation='relu', name='h1')(state_input)
+        l2 = Dense(300, activation='relu', name='h2')(l1)
         
         # vystupna vrstva   -- 'mu' musi byt v intervale (-∞, ∞), 'sigma' musi byt v intervale (0, ∞)
         mu_l = Dense(action_shape[0], activation='linear', name='mu')(l2)
@@ -42,7 +42,7 @@ class Actor:
 
         if with_logprob:
             logp_pi = pi_distribution.log_prob(pi_action)
-            logp_pi = tf.reduce_sum(logp_pi, axis=-1, keepdims=True)
+            logp_pi = tf.reduce_sum(logp_pi, axis=1, keepdims=True)
         else:
             logp_pi = None
 
@@ -61,8 +61,8 @@ class Critic:
         action_input = Input(shape=action_shape, name='action_input')
 
         merged = Concatenate()([state_input, action_input])
-        l1 = Dense(256, activation='swish', name='h1')(merged)
-        l2 = Dense(256, activation='swish', name='h2')(l1)
+        l1 = Dense(400, activation='relu', name='h1')(merged)
+        l2 = Dense(300, activation='relu', name='h2')(l1)
 
         # vystupna vrstva   -- Q hodnoty su v intervale (-∞, ∞)!!!
         output = Dense(1, activation='linear', name='q_val')(l2)

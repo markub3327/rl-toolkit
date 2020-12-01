@@ -94,6 +94,7 @@ def main(env_name: str,
     while total_steps < max_steps:
         done = False
         episode_reward, episode_timesteps = 0.0, 0
+        log_entropy = []
 
         obs = env.reset()
 
@@ -104,9 +105,11 @@ def main(env_name: str,
                 # warmup
                 action = env.action_space.sample()
             else:
-                action = agent.get_action(obs)
+                action, logp = agent.get_action(obs)
                 if (alg == 'td3'):
                     action = np.clip(action + noise(), env.action_space.low, env.action_space.high)
+
+                log_entropy.append(logp)
 
             # perform action
             new_obs, reward, done, _ = env.step(action)
@@ -131,8 +134,9 @@ def main(env_name: str,
         print(f'EpsReward: {episode_reward}')
         print(f'EpsSteps: {episode_timesteps}')
         print(f'TotalInteractions: {total_steps}\n')
+        print(f'Entropy: {np.mean(log_entropy)}')
         if logging_wandb == True:
-            wandb.log({"epoch": total_episodes, "score": episode_reward, "steps": episode_timesteps, "replayBuffer": len(rpm)})
+            wandb.log({"epoch": total_episodes, "score": episode_reward, "steps": episode_timesteps, "replayBuffer": len(rpm), "entropy": np.mean(log_entropy)})
 
         # update models after episode
         if total_steps > learning_starts:

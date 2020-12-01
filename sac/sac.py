@@ -47,8 +47,8 @@ class SAC:
     @tf.function
     def get_action(self, state):
         s = tf.expand_dims(state, axis=0)       # add batch_size=1 dim
-        a, _ = self.actor.predict(s, with_logprob=False)
-        return tf.squeeze(a, axis=0)            # remove batch_size dim
+        a, logp = self.actor.predict(s, with_logprob=True)
+        return tf.squeeze(a, axis=0), logp            # remove batch_size dim
 
     @tf.function
     def _update_target(self, net, net_targ, tau):
@@ -120,7 +120,7 @@ class SAC:
         #tf.print(f'log_prob: {log_prob.shape}')
         
         with tf.GradientTape() as tape:
-            alpha_losses = -1.0 * (self._alpha * tf.stop_gradient(log_prob + self._target_entropy))
+            alpha_losses = -1.0 * (self._log_alpha * tf.stop_gradient(log_prob + self._target_entropy))
             alpha_loss = tf.nn.compute_average_loss(alpha_losses)
         #    tf.print(f'alpha_losses: {alpha_losses.shape}')
 
