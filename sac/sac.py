@@ -22,7 +22,7 @@ class SAC:
         self._tau = tf.constant(tau)
 
         # init param 'alpha' - Lagrangian
-        self._log_alpha = tf.Variable(0.0)
+        self._log_alpha = tf.Variable(0.0, trainable=True)
         self._alpha = tfp.util.DeferredTensor(self._log_alpha, tf.exp)
         self._alpha_optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, name='alpha_optimizer')
         self._target_entropy = tf.cast(-tf.reduce_prod(action_shape), dtype=tf.float32)
