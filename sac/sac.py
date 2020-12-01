@@ -71,7 +71,7 @@ class SAC:
         # update critic '1'
         with tf.GradientTape() as tape:
             q_values = self.critic_1.model([batch['obs'], batch['act']])
-            q_losses = tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
+            q_losses = 0.5 * tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
             q1_loss = tf.nn.compute_average_loss(q_losses)
 
         grads = tape.gradient(q1_loss, self.critic_1.model.trainable_variables)
@@ -80,7 +80,7 @@ class SAC:
         # update critic '2'
         with tf.GradientTape() as tape:
             q_values = self.critic_2.model([batch['obs'], batch['act']])
-            q_losses = tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
+            q_losses = 0.5 * tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
             q2_loss = tf.nn.compute_average_loss(q_losses)
 
         grads = tape.gradient(q2_loss, self.critic_2.model.trainable_variables)
@@ -115,10 +115,7 @@ class SAC:
         #tf.print(self._alpha)
         
         with tf.GradientTape() as tape:
-            alpha_losses = -1.0 * (self._alpha * tf.stop_gradient(log_prob + self._target_entropy))
-            # NOTE(hartikainen): It's important that we take the average here,
-            # otherwise we end up effectively having `batch_size` times too
-            # large learning rate.
+            alpha_losses = -1.0 * (self._alpha * (log_prob + self._target_entropy))
             alpha_loss = tf.nn.compute_average_loss(alpha_losses)
 
         grads = tape.gradient(alpha_loss, [self._log_alpha])
