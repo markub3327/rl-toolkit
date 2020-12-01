@@ -168,7 +168,7 @@ if __name__ == "__main__":
     my_parser.add_argument('--gamma', type=float, help='Discount factor', default=0.99)
     my_parser.add_argument('-lr', '--learning_rate', type=float, help='Learning rate', default=3e-4)
     my_parser.add_argument('--tau', type=float, help='Soft update learning rate', default=0.005)
-    my_parser.add_argument('--batch_size', type=int, help='Size of the batch', default=128)
+    my_parser.add_argument('--batch_size', type=int, help='Size of the batch', default=256)
     my_parser.add_argument('--replay_size', type=int, help='Size of the replay buffer', default=int(1e6))
     my_parser.add_argument('--learning_starts', type=int, help='Number of steps before training', default=100)
     my_parser.add_argument('--target_noise', type=float, help='Standard deviation of target noise (only for TD3)', default=0.2)

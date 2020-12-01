@@ -17,10 +17,10 @@ class Actor:
         
         # vystupna vrstva   -- 'mu' musi byt v intervale (-∞, ∞), 'sigma' musi byt v intervale (0, ∞)
         mu_l = Dense(action_shape[0], activation='linear', name='mu')(l2)
-        log_std_l = Dense(action_shape[0], activation='softplus', name='sigma')(l2)
+        std_l = Dense(action_shape[0], activation='softplus', name='sigma')(l2)
 
         # Vytvor model
-        self.model = Model(inputs=state_input, outputs=[mu_l, log_std_l])
+        self.model = Model(inputs=state_input, outputs=[mu_l, std_l])
 
         # Skompiluj model
         self.optimizer = Adam(learning_rate=lr)
