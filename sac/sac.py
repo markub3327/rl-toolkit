@@ -64,15 +64,18 @@ class SAC:
         next_q_1 = self.critic_targ_1.model([batch['obs2'], next_action])
         next_q_2 = self.critic_targ_2.model([batch['obs2'], next_action])
         next_q = tf.minimum(next_q_1, next_q_2)
+        #tf.print(f'nextQ: {next_q.shape}')
 
         # Use Bellman Equation! (recursive definition of q-values)
-        Q_targets = batch['rew'] + (1 - batch['done']) * self._gamma * (next_q - self._alpha * next_log_prob)
+        Q_targets = tf.stop_gradient(batch['rew'] + (1 - batch['done']) * self._gamma * (next_q - self._alpha * next_log_prob))
+        #tf.print(f'qTarget: {Q_targets.shape}')
 
         # update critic '1'
         with tf.GradientTape() as tape:
             q_values = self.critic_1.model([batch['obs'], batch['act']])
             q_losses = 0.5 * tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
             q1_loss = tf.nn.compute_average_loss(q_losses)
+        #    tf.print(f'q_val: {q_values.shape}')
 
         grads = tape.gradient(q1_loss, self.critic_1.model.trainable_variables)
         self.critic_1.optimizer.apply_gradients(zip(grads, self.critic_1.model.trainable_variables))
@@ -98,9 +101,11 @@ class SAC:
             q_1 = self.critic_1.model([batch['obs'], y_pred])
             q_2 = self.critic_2.model([batch['obs'], y_pred])
             q = tf.minimum(q_1, q_2)
+        #    tf.print(f'q: {q.shape}')
 
-            # compute per example loss
-            a_loss = tf.nn.compute_average_loss(self._alpha * log_prob - q)
+            a_losses = self._alpha * log_prob - q
+            a_loss = tf.nn.compute_average_loss(a_losses)
+        #    tf.print(f'a_losses: {a_losses}')
 
         grads = tape.gradient(a_loss, self.actor.model.trainable_variables)
         self.actor.optimizer.apply_gradients(zip(grads, self.actor.model.trainable_variables))
@@ -111,19 +116,16 @@ class SAC:
     @tf.function
     def _update_alpha(self, batch):
         y_pred, log_prob = self.actor.predict(batch['obs'])
-        
-        #tf.print(self._alpha)
+        #tf.print(f'y_pred: {y_pred.shape}')
+        #tf.print(f'log_prob: {log_prob.shape}')
         
         with tf.GradientTape() as tape:
-            alpha_losses = -1.0 * (self._alpha * (log_prob + self._target_entropy))
+            alpha_losses = -1.0 * (self._alpha * tf.stop_gradient(log_prob + self._target_entropy))
             alpha_loss = tf.nn.compute_average_loss(alpha_losses)
+        #    tf.print(f'alpha_losses: {alpha_losses.shape}')
 
         grads = tape.gradient(alpha_loss, [self._log_alpha])
         self._alpha_optimizer.apply_gradients(zip(grads, [self._log_alpha]))
-
-        #tf.print(log_prob)
-        #tf.print(self._alpha)
-        #tf.print()
 
         return alpha_loss
 
