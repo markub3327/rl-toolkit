@@ -11,8 +11,8 @@
 
 ## Agents
 
-  * **TD3**
-  * >**SAC** (comming soon)
+  * **Soft Actor-Critic** (https://arxiv.org/pdf/1812.05905.pdf)
+  * **Twin Delayed DDPG** (https://arxiv.org/pdf/1802.09477.pdf)
 
 ## Topology
 
