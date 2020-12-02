@@ -133,10 +133,10 @@ def main(env_name: str,
         print(f'Epoch: {total_episodes}')
         print(f'EpsReward: {episode_reward}')
         print(f'EpsSteps: {episode_timesteps}')
-        print(f'TotalInteractions: {total_steps}\n')
-        print(f'Entropy: {np.mean(log_entropy)}')
+        print(f'TotalInteractions: {total_steps}')
+        print(f'Entropy: {-np.mean(log_entropy)}\n')
         if logging_wandb == True:
-            wandb.log({"epoch": total_episodes, "score": episode_reward, "steps": episode_timesteps, "replayBuffer": len(rpm), "entropy": np.mean(log_entropy)})
+            wandb.log({"epoch": total_episodes, "score": episode_reward, "steps": episode_timesteps, "replayBuffer": len(rpm), "entropy": -np.mean(log_entropy)})
 
         # update models after episode
         if total_steps > learning_starts:

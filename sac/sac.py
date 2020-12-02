@@ -120,7 +120,7 @@ class SAC:
         #tf.print(f'log_prob: {log_prob.shape}')
         
         with tf.GradientTape() as tape:
-            alpha_losses = -1.0 * (self._log_alpha * tf.stop_gradient(log_prob + self._target_entropy))
+            alpha_losses = -1.0 * (self._alpha * tf.stop_gradient(log_prob + self._target_entropy))
             alpha_loss = tf.nn.compute_average_loss(alpha_losses)
         #    tf.print(f'alpha_losses: {alpha_losses.shape}')
 
