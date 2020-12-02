@@ -16,10 +16,12 @@ class SAC:
                  action_shape,
                  learning_rate, 
                  tau,
-                 gamma):
+                 gamma,
+                 policy_delay):
 
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
+        self._policy_delay = policy_delay
 
         # init param 'alpha' - Lagrangian
         self._log_alpha = tf.Variable(0.0, trainable=True)
@@ -73,7 +75,7 @@ class SAC:
         # update critic '1'
         with tf.GradientTape() as tape:
             q_values = self.critic_1.model([batch['obs'], batch['act']])
-            q_losses = 0.5 * tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
+            q_losses = tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
             q1_loss = tf.nn.compute_average_loss(q_losses)
         #    tf.print(f'q_val: {q_values.shape}')
 
@@ -83,7 +85,7 @@ class SAC:
         # update critic '2'
         with tf.GradientTape() as tape:
             q_values = self.critic_2.model([batch['obs'], batch['act']])
-            q_losses = 0.5 * tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
+            q_losses = tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
             q2_loss = tf.nn.compute_average_loss(q_losses)
 
         grads = tape.gradient(q2_loss, self.critic_2.model.trainable_variables)
@@ -129,14 +131,22 @@ class SAC:
 
         return alpha_loss
 
-    @tf.function
-    def train(self, batch):
-        q_loss = self._update_critic(batch)
-        p_loss = self._update_actor(batch)
-        alpha_loss = self._update_alpha(batch)
+    def train(self, batch, t):
+        # Critic models update
+        loss_c = self._update_critic(batch)
 
-        # ---------------------------- soft update target networks ---------------------------- #
-        self._update_target(self.critic_1, self.critic_targ_1, tau=self._tau)
-        self._update_target(self.critic_2, self.critic_targ_2, tau=self._tau)
-        
-        return p_loss, q_loss, alpha_loss, self._alpha
+        # Delayed policy update
+        if (t % self._policy_delay == 0):
+            loss_a = self._update_actor(batch)
+            alpha_loss = self._update_alpha(batch)
+
+            # ---------------------------- soft update target networks ---------------------------- #
+            self._update_target(self.critic_1, self.critic_targ_1, tau=self._tau)
+            self._update_target(self.critic_2, self.critic_targ_2, tau=self._tau)
+        else:
+            loss_a = None
+            alpha_loss = None
+
+        #print(t, loss_a, loss_c, alpha_loss, self._alpha.numpy())
+
+        return loss_a, loss_c, alpha_loss, self._alpha.numpy()

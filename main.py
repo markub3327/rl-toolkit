@@ -76,7 +76,8 @@ def main(env_name: str,
                     env.action_space.shape, 
                     learning_rate=learning_rate,
                     tau=tau,
-                    gamma=gamma)
+                    gamma=gamma,
+                    policy_delay=policy_delay)
     else:
         raise NameError(f"algorithm '{alg}' is not defined")
  
@@ -147,8 +148,8 @@ def main(env_name: str,
                     if (logging_wandb == True and loss_a is not None):
                         wandb.log({"loss_a": loss_a, "loss_c": loss_c})
                 else:
-                    loss_a, loss_c, loss_alpha, alpha = agent.train(batch)
-                    if (logging_wandb == True):
+                    loss_a, loss_c, loss_alpha, alpha = agent.train(batch, t=gradient_step)
+                    if (logging_wandb == True and loss_a is not None):
                         wandb.log({"loss_a": loss_a, "loss_c": loss_c, "loss_alpha": loss_alpha, "alpha": alpha})
 
     # Save model to local drive
@@ -177,7 +178,7 @@ if __name__ == "__main__":
     my_parser.add_argument('--learning_starts', type=int, help='Number of steps before training', default=100)
     my_parser.add_argument('--target_noise', type=float, help='Standard deviation of target noise (only for TD3)', default=0.2)
     my_parser.add_argument('--noise_clip', type=float, help='Limit for target noise (only for TD3)', default=0.5)
-    my_parser.add_argument('--policy_delay', type=int, help='Delay between critic and policy update (only for TD3)', default=2)
+    my_parser.add_argument('--policy_delay', type=int, help='Delay between critic and policy update', default=2)
     my_parser.add_argument('--wandb', action='store_true', help='Logging to wanDB')
 
     # get args
