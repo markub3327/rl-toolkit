@@ -14,10 +14,15 @@ class SAC:
     def __init__(self, 
                  state_shape, 
                  action_shape,
-                 learning_rate, 
+                 actor_learning_rate, 
+                 critic_learning_rate, 
+                 alpha_learning_rate, 
                  tau,
                  gamma,
-                 policy_delay):
+                 policy_delay,
+                 model_a_path,
+                 model_c1_path,
+                 model_c2_path):
 
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
@@ -26,21 +31,22 @@ class SAC:
         # init param 'alpha' - Lagrangian
         self._log_alpha = tf.Variable(0.0, trainable=True)
         self._alpha = tfp.util.DeferredTensor(self._log_alpha, tf.exp)
-        self._alpha_optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, name='alpha_optimizer')
+        self._alpha_optimizer = tf.keras.optimizers.Adam(learning_rate=alpha_learning_rate, name='alpha_optimizer')
         self._target_entropy = tf.cast(-tf.reduce_prod(action_shape), dtype=tf.float32)
+
         print(self._target_entropy)
         print(self._alpha)
-
+        
         # Actor network & target network
-        self.actor = Actor(state_shape, action_shape, learning_rate)
+        self.actor = Actor(state_shape, action_shape, actor_learning_rate, model_path=model_a_path)
 
         # Critic network & target network
-        self.critic_1 = Critic(state_shape, action_shape, learning_rate)
-        self.critic_targ_1 = Critic(state_shape, action_shape, learning_rate)
+        self.critic_1 = Critic(state_shape, action_shape, critic_learning_rate, model_path=model_c1_path)
+        self.critic_targ_1 = Critic(state_shape, action_shape, critic_learning_rate, model_path=model_c1_path)
 
         # Critic network & target network
-        self.critic_2 = Critic(state_shape, action_shape, learning_rate)
-        self.critic_targ_2 = Critic(state_shape, action_shape, learning_rate)
+        self.critic_2 = Critic(state_shape, action_shape, critic_learning_rate, model_path=model_c2_path)
+        self.critic_targ_2 = Critic(state_shape, action_shape, critic_learning_rate, model_path=model_c2_path)
 
         # first make a hard copy
         self._update_target(self.critic_1, self.critic_targ_1, tau=tf.constant(1.0))
@@ -69,7 +75,7 @@ class SAC:
         #tf.print(f'nextQ: {next_q.shape}')
 
         # Use Bellman Equation! (recursive definition of q-values)
-        Q_targets = tf.stop_gradient(batch['rew'] + (1 - batch['done']) * self._gamma * (next_q - self._alpha * next_log_prob))
+        Q_targets = tf.stop_gradient(batch['rew'] + ((1 - batch['done']) * self._gamma * (next_q - self._alpha * next_log_prob)))
         #tf.print(f'qTarget: {Q_targets.shape}')
 
         # update critic '1'
