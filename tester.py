@@ -10,12 +10,12 @@ import pybulletgym
 from tensorflow import keras
 
 # Herne prostredie
-env = gym.make('Walker2DPyBulletEnv-v0')
+env = gym.make('LunarLanderContinuous-v2')
 env.render()
 
 # load actor model
 model = keras.models.load_model("save/model_A.h5")
-
+model.summary()
 
 # main loop
 for t in range(5):
@@ -25,11 +25,11 @@ for t in range(5):
     obs = env.reset()
 
     while not done:
-        #env.render()
+        env.render()
 
         mu, sigma = model(np.expand_dims(obs, axis=0))
-        print(f'mu: {mu}')
-        print(f'sigma: {sigma}\n')
+        #print(f'mu: {mu}')
+        #print(f'sigma: {sigma}\n')
 
         new_obs, reward, done, _ = env.step(mu[0])
 
