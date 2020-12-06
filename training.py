@@ -75,12 +75,15 @@ def main(env_name: str,
                     gamma=gamma,
                     target_noise=target_noise,
                     noise_clip=noise_clip,
-                    policy_delay=policy_delay)
+                    policy_delay=policy_delay,
+                    model_a_path=model_a_path,
+                    model_c1_path=model_c1_path,
+                    model_c2_path=model_c2_path)
     elif (alg == 'sac'): 
         agent = SAC(env.observation_space.shape, 
-                    env.action_space.shape, 
-                    actor_learning_rate=learning_rate, 
-                    critic_learning_rate=learning_rate, 
+                    env.action_space.shape,
+                    actor_learning_rate=learning_rate,
+                    critic_learning_rate=learning_rate,
                     alpha_learning_rate=learning_rate,
                     tau=tau,
                     gamma=gamma,
@@ -111,18 +114,17 @@ def main(env_name: str,
 
         # collect rollout
         while not done:
-            env.render()
-
             # select action randomly or using policy network
             if total_steps < learning_starts:
                 # warmup
                 action = env.action_space.sample()
             else:
-                action, logp = agent.get_action(obs)
                 if (alg == 'td3'):
+                    action = agent.get_action(obs)
                     action = np.clip(action + noise(), env.action_space.low, env.action_space.high)
-
-                log_entropy.append(logp)
+                else:
+                    action, logp = agent.get_action(obs)
+                    log_entropy.append(logp)
 
             # perform action
             new_obs, reward, done, _ = env.step(action)

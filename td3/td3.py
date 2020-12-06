@@ -17,7 +17,10 @@ class TD3:
                  gamma,
                  target_noise,
                  noise_clip,
-                 policy_delay):
+                 policy_delay,
+                 model_a_path,
+                 model_c1_path,
+                 model_c2_path):
 
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
@@ -26,16 +29,16 @@ class TD3:
         self._policy_delay = policy_delay
 
         # Actor network & target network
-        self.actor = Actor(state_shape, action_shape, learning_rate)
-        self.actor_targ = Actor(state_shape, action_shape, learning_rate)
+        self.actor = Actor(state_shape, action_shape, learning_rate, model_path=model_a_path)
+        self.actor_targ = Actor(state_shape, action_shape, learning_rate, model_path=model_a_path)
 
         # Critic network & target network
-        self.critic_1 = Critic(state_shape, action_shape, learning_rate)
-        self.critic_targ_1 = Critic(state_shape, action_shape, learning_rate)
+        self.critic_1 = Critic(state_shape, action_shape, learning_rate, model_path=model_c1_path)
+        self.critic_targ_1 = Critic(state_shape, action_shape, learning_rate, model_path=model_c1_path)
 
         # Critic network & target network
-        self.critic_2 = Critic(state_shape, action_shape, learning_rate)
-        self.critic_targ_2 = Critic(state_shape, action_shape, learning_rate)
+        self.critic_2 = Critic(state_shape, action_shape, learning_rate, model_path=model_c2_path)
+        self.critic_targ_2 = Critic(state_shape, action_shape, learning_rate, model_path=model_c2_path)
 
         # first make a hard copy
         self._update_target(self.actor, self.actor_targ, tau=tf.constant(1.0))
@@ -74,7 +77,7 @@ class TD3:
         # update critic '1'
         with tf.GradientTape() as tape:
             q_values = self.critic_1.model([batch['obs'], batch['act']])
-            q_losses = tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
+            q_losses = tf.keras.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
             q1_loss = tf.nn.compute_average_loss(q_losses)
 
         grads = tape.gradient(q1_loss, self.critic_1.model.trainable_variables)
@@ -83,7 +86,7 @@ class TD3:
         # update critic '2'
         with tf.GradientTape() as tape:
             q_values = self.critic_2.model([batch['obs'], batch['act']])
-            q_losses = tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
+            q_losses = tf.keras.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
             q2_loss = tf.nn.compute_average_loss(q_losses)
 
         grads = tape.gradient(q2_loss, self.critic_2.model.trainable_variables)

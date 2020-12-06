@@ -81,7 +81,7 @@ class SAC:
         # update critic '1'
         with tf.GradientTape() as tape:
             q_values = self.critic_1.model([batch['obs'], batch['act']])
-            q_losses = tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
+            q_losses = tf.keras.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
             q1_loss = tf.nn.compute_average_loss(q_losses)
         #    tf.print(f'q_val: {q_values.shape}')
 
@@ -91,7 +91,7 @@ class SAC:
         # update critic '2'
         with tf.GradientTape() as tape:
             q_values = self.critic_2.model([batch['obs'], batch['act']])
-            q_losses = tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
+            q_losses = tf.keras.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
             q2_loss = tf.nn.compute_average_loss(q_losses)
 
         grads = tape.gradient(q2_loss, self.critic_2.model.trainable_variables)
