@@ -37,7 +37,7 @@ class Actor:
         mu, sigma = self.model(x)
 
         # Squashed Normal distribution
-        pi_distribution = tfp.distributions.Normal(mu, sigma)
+        pi_distribution = tfp.distributions.MultivariateNormalDiag(mu, sigma)
         pi_distribution = tfp.bijectors.Tanh()(pi_distribution)
         #if deterministic:
             # Only used for evaluating policy at test time.
@@ -60,7 +60,7 @@ class Actor:
 # Trieda kritika
 class Critic:
 
-    def __init__(self, state_shape, action_shape, lr, model_path=None):
+    def __init__(self, state_shape=None, action_shape=None, lr=None, model_path=None):
         if model_path == None:
             # vstupna vsrtva
             state_input = Input(shape=state_shape, name='state_input')

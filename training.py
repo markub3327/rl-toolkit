@@ -149,10 +149,13 @@ def main(env_name: str,
         print(f'EpsReward: {episode_reward}')
         print(f'EpsSteps: {episode_timesteps}')
         print(f'TotalInteractions: {total_steps}')
-        print(f'Entropy: {-np.mean(log_entropy)}\n')
-        if logging_wandb == True:
-            wandb.log({"epoch": total_episodes, "score": episode_reward, "steps": episode_timesteps, "replayBuffer": len(rpm), "entropy": -np.mean(log_entropy)})
-
+        if (alg == 'td3' and logging_wandb == True):
+            wandb.log({"epoch": total_episodes, "score": episode_reward, "steps": episode_timesteps, "replayBuffer": len(rpm)})
+        elif (alg == 'sac'):
+            print(f'Entropy: {-np.mean(log_entropy)}\n')
+            if logging_wandb == True:
+                wandb.log({"epoch": total_episodes, "score": episode_reward, "steps": episode_timesteps, "replayBuffer": len(rpm), "entropy": -np.mean(log_entropy)})
+            
         # update models after episode
         if total_steps > update_after and len(rpm) > batch_size:
             for gradient_step in range(episode_timesteps):

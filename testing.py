@@ -4,7 +4,8 @@ import pybulletgym
 
 import tensorflow as tf
 
-from sac import Actor
+from sac import Actor as ActorSAC
+from td3 import Actor as ActorTD3
 
 # Main testing function
 def main(env_name: str,
@@ -22,7 +23,10 @@ def main(env_name: str,
         wandb.init(project="stable-baselines")
 
     # load actor model
-    actor = Actor(model_path=model_a_path)
+    if (alg == 'sac'):
+        actor = ActorSAC(model_path=model_a_path)
+    else:
+        actor = ActorTD3(model_path=model_a_path)
 
     # hlavny cyklus hry
     total_steps, total_episodes = 0, 0
@@ -38,8 +42,8 @@ def main(env_name: str,
             
             if (alg == 'sac'):           
                 action, _ = actor.model(tf.expand_dims(obs, axis=0))
-            if (alg == 'td3'):
-                action = model(tf.expand_dims(obs, axis=0))
+            elif (alg == 'td3'):
+                action = actor.model(tf.expand_dims(obs, axis=0))
 
             # perform action
             new_obs, reward, done, _ = env.step(action[0])
