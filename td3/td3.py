@@ -1,5 +1,6 @@
 from .network import Actor, Critic
 
+import wandb
 import tensorflow as tf
 
 class TD3:
@@ -29,7 +30,9 @@ class TD3:
         self._policy_delay = policy_delay
 
         # logging metrics
-        #tf.keras.metrics.Mean()
+        self.loss_a = tf.keras.metrics.Mean()
+        self.loss_c1 = tf.keras.metrics.Mean()
+        self.loss_c2 = tf.keras.metrics.Mean()
 
         # Actor network & target network
         self.actor = Actor(state_shape, action_shape, learning_rate, model_path=model_a_path)
@@ -114,21 +117,31 @@ class TD3:
 
         return a_loss
 
-    def train(self, batch, t):
-        # Critic models update
-        loss_c1, loss_c2 = self._update_critic(batch)
+    def update(self, rpm, batch_size, gradient_steps, logging_wandb=True):
+        for gradient_step in range(1, gradient_steps+1):         # the first one must be critic network, the second one is actor network
+            batch = rpm.sample(batch_size)                
 
-        # Delayed policy update
-        if (t % self._policy_delay == 0):
-            loss_a = self._update_actor(batch)
+            # Critic models update
+            l_c1, l_c2 = self._update_critic(batch)
+            self.loss_c1.update_state(l_c1)
+            self.loss_c2.update_state(l_c2)
 
-            # ---------------------------- soft update target networks ---------------------------- #
-            self._update_target(self.actor, self.actor_targ, tau=self._tau)
-            self._update_target(self.critic_1, self.critic_targ_1, tau=self._tau)
-            self._update_target(self.critic_2, self.critic_targ_2, tau=self._tau)
-        else:
-            loss_a = None
+            # Delayed policy update
+            if (gradient_step % self._policy_delay == 0):
+                self.loss_a.update_state(self._update_actor(batch))
 
-        #print(t, loss_a, loss_c1, loss_c2)
+                # ---------------------------- soft update target networks ---------------------------- #
+                self._update_target(self.actor, self.actor_targ, tau=self._tau)
+                self._update_target(self.critic_1, self.critic_targ_1, tau=self._tau)
+                self._update_target(self.critic_2, self.critic_targ_2, tau=self._tau)
+        
+            #print(gradient_step, self.loss_a.result(), self.loss_c1.result(), self.loss_c2.result())
 
-        return loss_a, loss_c1, loss_c2
+        # logging of epoch's mean loss
+        if (logging_wandb):
+            wandb.log({"loss_a": self.loss_a.result(), "loss_c1": self.loss_c1.result(), "loss_c2": self.loss_c2.result()})
+
+        # reset logger
+        self.loss_a.reset_states()
+        self.loss_c1.reset_states()
+        self.loss_c2.reset_states()
