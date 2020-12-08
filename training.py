@@ -158,16 +158,27 @@ def main(env_name: str,
             
         # update models after episode
         if total_steps > update_after and len(rpm) > batch_size:
+            losses_a, losses_c1, losses_c2, losses_alpha, alphas = [], [], [], [], []
+
             for gradient_step in range(1, episode_timesteps+1):         # the first one must be critic network, the second one is actor network
-                batch = rpm.sample(batch_size)
+                batch = rpm.sample(batch_size)                
+                losses = agent.train(batch, t=gradient_step)
+
+                if (losses[0] is not None):
+                    if (alg == 'sac'):
+                        losses_alpha.append(losses[3])
+                        alphas.append(losses[4])
+
+                    losses_a.append(losses[0])
+                    losses_c1.append(losses[1])
+                    losses_c2.append(losses[2])
+
+            # logging of epoch's mean loss
+            if (logging_wandb == True):
                 if (alg == 'td3'):
-                    loss_a, loss_c1, loss_c2 = agent.train(batch, t=gradient_step)
-                    if (logging_wandb == True and loss_a is not None):
-                        wandb.log({"loss_a": loss_a, "loss_c1": loss_c1, "loss_c2": loss_c2})
+                    wandb.log({"loss_a": np.mean(losses_a), "loss_c1": np.mean(losses_c1), "loss_c2": np.mean(losses_c2)})
                 else:
-                    loss_a, loss_c1, loss_c2, loss_alpha, alpha = agent.train(batch, t=gradient_step)
-                    if (logging_wandb == True and loss_a is not None):
-                        wandb.log({"loss_a": loss_a, "loss_c1": loss_c1, "loss_c2": loss_c2, "loss_alpha": loss_alpha, "alpha": alpha})
+                    wandb.log({"loss_a": np.mean(losses_a), "loss_c1": np.mean(losses_c1), "loss_c2": np.mean(losses_c2), "loss_alpha": np.mean(losses_alpha), "alpha": np.mean(alphas)})
 
     # Save model to local drive
     if (type(save_path) == str):

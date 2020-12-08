@@ -28,6 +28,9 @@ class TD3:
         self._noise_clip = tf.constant(noise_clip)
         self._policy_delay = policy_delay
 
+        # logging metrics
+        #tf.keras.metrics.Mean()
+
         # Actor network & target network
         self.actor = Actor(state_shape, action_shape, learning_rate, model_path=model_a_path)
         self.actor_targ = Actor(state_shape, action_shape, learning_rate, model_path=model_a_path)
