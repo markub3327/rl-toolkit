@@ -97,7 +97,7 @@ class SAC:
         grads = tape.gradient(q2_loss, self.critic_2.model.trainable_variables)
         self.critic_2.optimizer.apply_gradients(zip(grads, self.critic_2.model.trainable_variables))
 
-        return (q1_loss + q2_loss)
+        return q1_loss, q2_loss
 
     # ------------------------------------ update actor ----------------------------------- #
     @tf.function
@@ -139,7 +139,7 @@ class SAC:
 
     def train(self, batch, t):
         # Critic models update
-        loss_c = self._update_critic(batch)
+        loss_c1, loss_c2 = self._update_critic(batch)
 
         # Delayed policy update
         if (t % self._policy_delay == 0):
@@ -153,6 +153,6 @@ class SAC:
             loss_a = None
             alpha_loss = None
 
-        #print(t, loss_a, loss_c, alpha_loss, self._alpha.numpy())
+        #print(t, loss_a, loss_c1, loss_c2, alpha_loss, self._alpha.numpy())
 
-        return loss_a, loss_c, alpha_loss, self._alpha.numpy()
+        return loss_a, loss_c1, loss_c2, alpha_loss, self._alpha.numpy()

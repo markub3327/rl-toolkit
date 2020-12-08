@@ -158,16 +158,16 @@ def main(env_name: str,
             
         # update models after episode
         if total_steps > update_after and len(rpm) > batch_size:
-            for gradient_step in range(episode_timesteps):
+            for gradient_step in range(1, episode_timesteps+1):         # the first one must be critic network, the second one is actor network
                 batch = rpm.sample(batch_size)
                 if (alg == 'td3'):
-                    loss_a, loss_c = agent.train(batch, t=gradient_step)
+                    loss_a, loss_c1, loss_c2 = agent.train(batch, t=gradient_step)
                     if (logging_wandb == True and loss_a is not None):
-                        wandb.log({"loss_a": loss_a, "loss_c": loss_c})
+                        wandb.log({"loss_a": loss_a, "loss_c1": loss_c1, "loss_c2": loss_c2})
                 else:
-                    loss_a, loss_c, loss_alpha, alpha = agent.train(batch, t=gradient_step)
+                    loss_a, loss_c1, loss_c2, loss_alpha, alpha = agent.train(batch, t=gradient_step)
                     if (logging_wandb == True and loss_a is not None):
-                        wandb.log({"loss_a": loss_a, "loss_c": loss_c, "loss_alpha": loss_alpha, "alpha": alpha})
+                        wandb.log({"loss_a": loss_a, "loss_c1": loss_c1, "loss_c2": loss_c2, "loss_alpha": loss_alpha, "alpha": alpha})
 
     # Save model to local drive
     if (type(save_path) == str):
