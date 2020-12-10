@@ -10,7 +10,6 @@ from sac import SAC
 
 # utilities
 from utils.replaybuffer import ReplayBuffer
-from utils.noise import OrnsteinUhlenbeckActionNoise, NormalActionNoise
 
 
 # Main training function
@@ -37,14 +36,6 @@ def main(env_name: str,
 
     # Herne prostredie
     env = gym.make(env_name)
-
-    # select noise generator
-    if (noise_type == 'normal'):
-        noise = NormalActionNoise(mean=0.0, sigma=action_noise, size=env.action_space.shape)
-    elif (noise_type == 'ornstein-uhlenbeck'):
-        noise = OrnsteinUhlenbeckActionNoise(mean=0.0, sigma=action_noise, size=env.action_space.shape)
-    else:
-        raise NameError(f"'{noise_type}' noise is not defined")
 
     # inicializuj prostredie Weights & Biases
     if logging_wandb == True:
@@ -73,6 +64,8 @@ def main(env_name: str,
                     learning_rate=learning_rate,
                     tau=tau, 
                     gamma=gamma,
+                    noise_type=noise_type,
+                    action_noise=action_noise,
                     target_noise=target_noise,
                     noise_clip=noise_clip,
                     policy_delay=policy_delay,
@@ -108,23 +101,18 @@ def main(env_name: str,
     while total_steps < max_steps:
         done = False
         episode_reward, episode_timesteps = 0.0, 0
-        log_entropy = []
 
         obs = env.reset()
 
         # collect rollout
         while not done:
+            env.render()
             # select action randomly or using policy network
             if total_steps < learning_starts:
                 # warmup
                 action = env.action_space.sample()
             else:
-                if (alg == 'td3'):
-                    action = agent.get_action(obs)
-                    action = np.clip(action + noise(), env.action_space.low, env.action_space.high)
-                else:
-                    action, logp = agent.get_action(obs)
-                    log_entropy.append(logp)
+                action = agent.get_action(obs)
 
             # perform action
             new_obs, reward, done, _ = env.step(action)
@@ -142,26 +130,22 @@ def main(env_name: str,
         # after each episode
         total_episodes += 1
 
+        # reset noise
         if (alg == 'td3'):
-            noise.reset()
-
+            agent.noise.reset()
         print(f'Epoch: {total_episodes}')
         print(f'EpsReward: {episode_reward}')
         print(f'EpsSteps: {episode_timesteps}')
         print(f'TotalInteractions: {total_steps}')
-        if (alg == 'td3' and logging_wandb == True):
+        if (logging_wandb == True):
             wandb.log({"epoch": total_episodes, "score": episode_reward, "steps": episode_timesteps, "replayBuffer": len(rpm)})
-        elif (alg == 'sac'):
-            print(f'Entropy: {-np.mean(log_entropy)}\n')
-            if logging_wandb == True:
-                wandb.log({"epoch": total_episodes, "score": episode_reward, "steps": episode_timesteps, "replayBuffer": len(rpm), "entropy": -np.mean(log_entropy)})
             
         # update models after episode
         if total_steps > update_after and len(rpm) > batch_size:
-            agent.update(rpm, batch_size, episode_timesteps, logging_wandb=True)
+            agent.update(rpm, batch_size, episode_timesteps, logging_wandb=logging_wandb)
 
     # Save model to local drive
-    if (type(save_path) == str):
+    if (save_path is not None):
         agent.actor.model.save(f"{save_path}model_A.h5")
         agent.critic_1.model.save(f"{save_path}model_C1.h5")
         agent.critic_2.model.save(f"{save_path}model_C2.h5")

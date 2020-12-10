@@ -23,10 +23,12 @@ def main(env_name: str,
         wandb.init(project="stable-baselines")
 
     # load actor model
-    if (alg == 'sac'):
+    if (alg == 'td3'):
+        actor = ActorTD3(model_path=model_a_path)
+    elif (alg == 'sac'):
         actor = ActorSAC(model_path=model_a_path)
     else:
-        actor = ActorTD3(model_path=model_a_path)
+        raise NameError(f"algorithm '{alg}' is not defined")
 
     # hlavny cyklus hry
     total_steps, total_episodes = 0, 0

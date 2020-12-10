@@ -17,7 +17,7 @@ if __name__ == "__main__":
     my_parser.add_argument('-alg', '--algorithm', type=str, help='Only OpenAI Gym environments are available!', default='sac')
     my_parser.add_argument('-env', '--environment', type=str, help='Only OpenAI Gym environments are available!', default='BipedalWalker-v3')
     my_parser.add_argument('-t', '--max_steps', type=int, help='Maximum number of interactions doing in environment', default=int(1e6))
-    my_parser.add_argument('--noise_type', type=str, help='Type of used noise generator (only for TD3)', default='ornstein-uhlenbeck')
+    my_parser.add_argument('--noise_type', type=str, help='Type of used noise generator [normal, ornstein-uhlenbeck] (only for TD3)', default='ornstein-uhlenbeck')
     my_parser.add_argument('--action_noise', type=float, help='Standard deviation of action noise (only for TD3)', default=0.5)
     my_parser.add_argument('--gamma', type=float, help='Discount factor', default=0.99)
     my_parser.add_argument('-lr', '--learning_rate', type=float, help='Learning rate', default=3e-4)
@@ -37,12 +37,14 @@ if __name__ == "__main__":
     args = my_parser.parse_args()
     print(args)
 
+    # run testing mode
     if (args.test and args.model_a != None):
         main_testing(env_name=args.environment,
                      alg=args.algorithm,
                      max_steps=args.max_steps,
                      logging_wandb=args.wandb,
                      model_a_path=args.model_a)
+    # run training mode
     elif (args.test == False):
         main_training(env_name=args.environment,
                       alg=args.algorithm,

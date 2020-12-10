@@ -61,9 +61,8 @@ class SAC:
 
     @tf.function
     def get_action(self, state):
-        s = tf.expand_dims(state, axis=0)       # add batch_size=1 dim
-        a, logp = self.actor.predict(s, with_logprob=True)
-        return tf.squeeze(a, axis=0), logp            # remove batch_size dim
+        a, _ = self.actor.predict(tf.expand_dims(state, axis=0), with_logprob=False)
+        return tf.squeeze(a, axis=0)            # remove batch_size dim
 
     @tf.function
     def _update_target(self, net, net_targ, tau):

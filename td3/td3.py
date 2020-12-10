@@ -1,4 +1,5 @@
 from .network import Actor, Critic
+from utils.noise import OrnsteinUhlenbeckActionNoise, NormalActionNoise
 
 import wandb
 import tensorflow as tf
@@ -16,6 +17,8 @@ class TD3:
                  learning_rate, 
                  tau,
                  gamma,
+                 noise_type,
+                 action_noise,
                  target_noise,
                  noise_clip,
                  policy_delay,
@@ -51,11 +54,20 @@ class TD3:
         self._update_target(self.critic_1, self.critic_targ_1, tau=tf.constant(1.0))
         self._update_target(self.critic_2, self.critic_targ_2, tau=tf.constant(1.0))
 
-    @tf.function
+        # select noise generator
+        if (noise_type == 'normal'):
+            self.noise = NormalActionNoise(mean=0.0, sigma=action_noise, size=action_shape)
+        elif (noise_type == 'ornstein-uhlenbeck'):
+            self.noise = OrnsteinUhlenbeckActionNoise(mean=0.0, sigma=action_noise, size=action_shape)
+        else:
+            raise NameError(f"'{noise_type}' noise is not defined")
+
+    #@tf.function
     def get_action(self, state):
-        s = tf.expand_dims(state, axis=0)       # add batch_size=1 dim
-        a = self.actor.model(s)
-        return tf.squeeze(a, axis=0)            # remove batch_size dim
+        a = self.actor.model(tf.expand_dims(state, axis=0))
+        a = tf.squeeze(a, axis=0)
+        a = tf.clip_by_value(a + self.noise.sample(), -1.0, 1.0)
+        return a            # remove batch_size dim
 
     @tf.function
     def _update_target(self, net, net_targ, tau):
