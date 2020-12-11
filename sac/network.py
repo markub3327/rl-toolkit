@@ -47,7 +47,7 @@ class Actor:
 
         if with_logprob:
             logp_pi = pi_distribution.log_prob(pi_action)
-            logp_pi = tf.reduce_sum(logp_pi, axis=1, keepdims=True)
+            logp_pi = tf.reduce_sum(logp_pi, axis=1, keepdims=True).  # Continuous actions are usually considered to be independent
         else:
             logp_pi = None
 
