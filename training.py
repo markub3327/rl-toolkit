@@ -106,7 +106,6 @@ def main(env_name: str,
 
         # collect rollout
         while not done:
-            env.render()
             # select action randomly or using policy network
             if total_steps < learning_starts:
                 # warmup
