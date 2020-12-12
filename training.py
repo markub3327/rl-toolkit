@@ -1,6 +1,5 @@
 import gym
 import wandb
-import pybulletgym
 
 import numpy as np
 

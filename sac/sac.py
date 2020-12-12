@@ -134,7 +134,7 @@ class SAC:
         #tf.print(f'log_prob: {log_prob.shape}')
         
         with tf.GradientTape() as tape:
-            alpha_losses = -1.0 * (self._alpha * tf.stop_gradient(log_prob + self._target_entropy))
+            alpha_losses = -1.0 * (self._log_alpha * tf.stop_gradient(log_prob + self._target_entropy))
             alpha_loss = tf.nn.compute_average_loss(alpha_losses)
         #    tf.print(f'alpha_losses: {alpha_losses.shape}')
 
@@ -161,7 +161,7 @@ class SAC:
                 self._update_target(self.critic_1, self.critic_targ_1, tau=self._tau)
                 self._update_target(self.critic_2, self.critic_targ_2, tau=self._tau)
         
-            #print(gradient_step, self.loss_a.result(), self.loss_c1.result(), self.loss_c2.result(), self.loss_alpha.result())
+            print(gradient_step, self.loss_a.result(), self.loss_c1.result(), self.loss_c2.result(), self.loss_alpha.result())
 
         # logging of epoch's mean loss
         if (logging_wandb):

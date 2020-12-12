@@ -17,11 +17,11 @@ class Actor:
             l2 = Dense(300, activation='swish', name='h2')(l1)
         
             # vystupna vrstva   -- 'mu' musi byt v intervale (-∞, ∞), 'sigma' musi byt v intervale (0, ∞)
-            mu_l = Dense(action_shape[0], activation='linear', name='mu')(l2)
-            std_l = Dense(action_shape[0], activation='softplus', name='sigma')(l2)
+            mean = Dense(action_shape[0], activation='linear', name='mu')(l2)
+            std = Dense(action_shape[0], activation='softplus', name='sigma')(l2)
 
             # Vytvor model
-            self.model = Model(inputs=state_input, outputs=[mu_l, std_l])
+            self.model = Model(inputs=state_input, outputs=[mean, std])
         else:
             # Nacitaj model
             self.model = tf.keras.models.load_model(model_path)
@@ -34,10 +34,13 @@ class Actor:
 
     @tf.function
     def predict(self, x, with_logprob=True):
-        mu, sigma = self.model(x)
+        mean, std = self.model(x)
 
         # Squashed Normal distribution
-        pi_distribution = tfp.distributions.MultivariateNormalDiag(mu, sigma)
+        pi_distribution = tfp.distributions.Normal(
+            loc=mean, 
+            scale=std
+        )
         pi_distribution = tfp.bijectors.Tanh()(pi_distribution)
         
         pi_action = pi_distribution.sample()
@@ -45,7 +48,7 @@ class Actor:
 
         if with_logprob:
             logp_pi = pi_distribution.log_prob(pi_action)
-            logp_pi = tf.expand_dims(logp_pi, axis=1)       # convert to [batch_size, 1]
+            logp_pi = tf.reduce_sum(logp_pi, axis=1, keepdims=True)       # pravdepodobnosti nezavislych akcii je mozne scitat
         #   tf.print(f'logp_pi: {logp_pi}, {logp_pi.shape}')
         else:
             logp_pi = None

@@ -1,6 +1,5 @@
 import gym
 import wandb
-import pybulletgym
 
 import tensorflow as tf
 
@@ -16,7 +15,6 @@ def main(env_name: str,
 
     # Herne prostredie
     env = gym.make(env_name)
-    env.render()    # init pybullet env
 
     # inicializuj prostredie Weights & Biases
     if logging_wandb == True:
