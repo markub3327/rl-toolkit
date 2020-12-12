@@ -39,15 +39,14 @@ class Actor:
         # Squashed Normal distribution
         pi_distribution = tfp.distributions.MultivariateNormalDiag(mu, sigma)
         pi_distribution = tfp.bijectors.Tanh()(pi_distribution)
-        #if deterministic:
-            # Only used for evaluating policy at test time.
-        #    pi_action = mu
-        #else:
+        
         pi_action = pi_distribution.sample()
+        #tf.print(f'action: {pi_action}, {pi_action.shape}')
 
         if with_logprob:
             logp_pi = pi_distribution.log_prob(pi_action)
-            logp_pi = tf.reduce_sum(logp_pi, axis=1, keepdims=True)
+            logp_pi = tf.expand_dims(logp_pi, axis=1)       # convert to [batch_size, 1]
+        #    tf.print(f'logp_pi: {logp_pi}, {logp_pi.shape}')
         else:
             logp_pi = None
 

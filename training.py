@@ -132,6 +132,7 @@ def main(env_name: str,
         # reset noise
         if (alg == 'td3'):
             agent.noise.reset()
+
         print(f'Epoch: {total_episodes}')
         print(f'EpsReward: {episode_reward}')
         print(f'EpsSteps: {episode_timesteps}')

@@ -165,7 +165,7 @@ class SAC:
 
         # logging of epoch's mean loss
         if (logging_wandb):
-            wandb.log({"loss_a": self.loss_a.result(), "loss_c1": self.loss_c1.result(), "loss_c2": self.loss_c2.result(), "loss_alpha": self.loss_alpha.result(), "alpha": self._alpha})
+            wandb.log({"loss_a": self.loss_a.result(), "loss_c1": self.loss_c1.result(), "loss_c2": self.loss_c2.result(), "loss_alpha": self.loss_alpha.result(), "alpha": self._alpha.numpy()})
 
         # reset logger
         self.loss_a.reset_states()
