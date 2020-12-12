@@ -16,9 +16,9 @@ class Actor:
             l1 = Dense(400, activation='swish', name='h1')(state_input)
             l2 = Dense(300, activation='swish', name='h2')(l1)
         
-            # vystupna vrstva   -- 'mu' musi byt v intervale (-∞, ∞), 'sigma' musi byt v intervale (0, ∞)
-            mean = Dense(action_shape[0], activation='linear', name='mu')(l2)
-            std = Dense(action_shape[0], activation='softplus', name='sigma')(l2)
+            # vystupna vrstva   -- 'mean' musi byt v intervale (-∞, ∞), 'std' musi byt v intervale (0, ∞)
+            mean = Dense(action_shape[0], activation='linear', name='mean')(l2)
+            std = Dense(action_shape[0], activation='softplus', name='std')(l2)
 
             # Vytvor model
             self.model = Model(inputs=state_input, outputs=[mean, std])
