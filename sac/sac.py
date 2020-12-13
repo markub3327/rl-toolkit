@@ -16,8 +16,8 @@ class SAC:
                  state_shape, 
                  action_shape,
                  actor_learning_rate, 
-                 critic_learning_rate, 
-                 alpha_learning_rate, 
+                 critic_learning_rate,
+                 alpha_learning_rate,
                  tau,
                  gamma,
                  policy_delay,
@@ -40,10 +40,9 @@ class SAC:
         self._alpha = tfp.util.DeferredTensor(self._log_alpha, tf.exp)
         self._alpha_optimizer = tf.keras.optimizers.Adam(learning_rate=alpha_learning_rate, name='alpha_optimizer')
         self._target_entropy = tf.cast(-tf.reduce_prod(action_shape), dtype=tf.float32)
-
         print(self._target_entropy)
         print(self._alpha)
-        
+
         # Actor network & target network
         self.actor = Actor(state_shape, action_shape, actor_learning_rate, model_path=model_a_path)
 
@@ -61,7 +60,8 @@ class SAC:
 
     @tf.function
     def get_action(self, state):
-        a, _ = self.actor.predict(tf.expand_dims(state, axis=0), with_logprob=False)
+        s = tf.expand_dims(state, axis=0)       # add batch_size=1 dim
+        a, _ = self.actor.predict(s, with_logprob=False)
         return tf.squeeze(a, axis=0)            # remove batch_size dim
 
     @tf.function
@@ -81,13 +81,13 @@ class SAC:
         #tf.print(f'nextQ: {next_q.shape}')
 
         # Use Bellman Equation! (recursive definition of q-values)
-        Q_targets = tf.stop_gradient(batch['rew'] + ((1 - batch['done']) * self._gamma * (next_q - self._alpha * next_log_pi)))
+        Q_targets = tf.stop_gradient(batch['rew'] + (1 - batch['done']) * self._gamma * (next_q - self._alpha * next_log_pi))
         #tf.print(f'qTarget: {Q_targets.shape}')
 
         # update critic '1'
         with tf.GradientTape() as tape:
             q_values = self.critic_1.model([batch['obs'], batch['act']])
-            q_losses = tf.keras.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
+            q_losses = tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
             q1_loss = tf.nn.compute_average_loss(q_losses)
         #    tf.print(f'q_val: {q_values.shape}')
 
@@ -97,7 +97,7 @@ class SAC:
         # update critic '2'
         with tf.GradientTape() as tape:
             q_values = self.critic_2.model([batch['obs'], batch['act']])
-            q_losses = tf.keras.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
+            q_losses = tf.losses.mean_squared_error(y_true=Q_targets, y_pred=q_values)
             q2_loss = tf.nn.compute_average_loss(q_losses)
 
         grads = tape.gradient(q2_loss, self.critic_2.model.trainable_variables)
@@ -134,7 +134,7 @@ class SAC:
         #tf.print(f'log_pi: {log_pi.shape}')
         
         with tf.GradientTape() as tape:
-            alpha_losses = (self._alpha * tf.stop_gradient(-log_pi - self._target_entropy))
+            alpha_losses = -1.0 * (self._alpha * tf.stop_gradient(log_pi + self._target_entropy))
             alpha_loss = tf.nn.compute_average_loss(alpha_losses)
         #    tf.print(f'alpha_losses: {alpha_losses.shape}')
 
@@ -144,8 +144,8 @@ class SAC:
         return alpha_loss
 
     def update(self, rpm, batch_size, gradient_steps, logging_wandb=True):
-        for gradient_step in range(1, gradient_steps+1):         # the first one must be critic network, the second one is actor network
-            batch = rpm.sample(batch_size)                
+        for gradient_step in range(1, gradient_steps+1):
+            batch = rpm.sample(batch_size)
 
             # Critic models update
             l_c1, l_c2 = self._update_critic(batch)
@@ -154,15 +154,17 @@ class SAC:
 
             # Delayed policy update
             if (gradient_step % self._policy_delay == 0):
-                self.loss_a.update_state(self._update_actor(batch))
-                self.loss_alpha.update_state(self._update_alpha(batch))
+                l_actor = self._update_actor(batch)
+                l_alpha = self._update_alpha(batch)
+                self.loss_a.update_state(l_actor)
+                self.loss_alpha.update_state(l_alpha)
 
                 # ---------------------------- soft update target networks ---------------------------- #
                 self._update_target(self.critic_1, self.critic_targ_1, tau=self._tau)
                 self._update_target(self.critic_2, self.critic_targ_2, tau=self._tau)
-        
-            #print(gradient_step, self.loss_a.result(), self.loss_c1.result(), self.loss_c2.result(), self.loss_alpha.result())
 
+            #print(gradient_step, self.loss_a.result(), self.loss_c1.result(), self.loss_c2.result(), self.loss_alpha.result())
+        
         # logging of epoch's mean loss
         if (logging_wandb):
             wandb.log({"loss_a": self.loss_a.result(), "loss_c1": self.loss_c1.result(), "loss_c2": self.loss_c2.result(), "loss_alpha": self.loss_alpha.result(), "alpha": self._alpha.numpy()})

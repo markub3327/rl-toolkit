@@ -25,7 +25,7 @@ class Actor:
         else:
             # Nacitaj model
             self.model = tf.keras.models.load_model(model_path)
-            print('Actor loaded from file succesful ...')
+            print('Actor loaded from file succesful ...')            
 
         # Optimalizator modelu
         self.optimizer = Adam(learning_rate=lr)
@@ -37,19 +37,17 @@ class Actor:
         mean, std = self.model(x)
 
         # Squashed Normal distribution
-        pi_distribution = tfp.distributions.Normal(
-            loc=mean, 
-            scale=std
-        )
+        pi_distribution = tfp.distributions.Normal(mean, std)
         pi_distribution = tfp.bijectors.Tanh()(pi_distribution)
-        
+        #if deterministic:
+            # Only used for evaluating policy at test time.
+        #    pi_action = mu
+        #else:
         pi_action = pi_distribution.sample()
-        #tf.print(f'action: {pi_action}, {pi_action.shape}')
 
         if with_logprob:
             logp_pi = pi_distribution.log_prob(pi_action)
-            logp_pi = tf.reduce_sum(logp_pi, axis=1, keepdims=True)       # pravdepodobnosti nezavislych akcii je mozne scitat
-        #   tf.print(f'logp_pi: {logp_pi}, {logp_pi.shape}')
+            logp_pi = tf.reduce_sum(logp_pi, axis=1, keepdims=True)
         else:
             logp_pi = None
 
@@ -81,7 +79,7 @@ class Critic:
             # Nacitaj model
             self.model = tf.keras.models.load_model(model_path)
             print('Critic loaded from file succesful ...')
-
+        
         # Optimalizator modelu
         self.optimizer = Adam(learning_rate=lr)
 
