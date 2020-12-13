@@ -72,7 +72,7 @@ class SAC:
     # ------------------------------------ update critic ----------------------------------- #
     @tf.function
     def _update_critic(self, batch):
-        next_action, next_log_prob = self.actor.predict(batch['obs2'])
+        next_action, next_log_pi = self.actor.predict(batch['obs2'])
 
         # target Q-values
         next_q_1 = self.critic_targ_1.model([batch['obs2'], next_action])
@@ -81,7 +81,7 @@ class SAC:
         #tf.print(f'nextQ: {next_q.shape}')
 
         # Use Bellman Equation! (recursive definition of q-values)
-        Q_targets = tf.stop_gradient(batch['rew'] + ((1 - batch['done']) * self._gamma * (next_q - self._alpha * next_log_prob)))
+        Q_targets = tf.stop_gradient(batch['rew'] + ((1 - batch['done']) * self._gamma * (next_q - self._alpha * next_log_pi)))
         #tf.print(f'qTarget: {Q_targets.shape}')
 
         # update critic '1'
@@ -110,14 +110,14 @@ class SAC:
     def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
-            y_pred, log_prob = self.actor.predict(batch['obs'])
+            y_pred, log_pi = self.actor.predict(batch['obs'])
             # predict q value
             q_1 = self.critic_1.model([batch['obs'], y_pred])
             q_2 = self.critic_2.model([batch['obs'], y_pred])
             q = tf.minimum(q_1, q_2)
         #    tf.print(f'q: {q.shape}')
 
-            a_losses = self._alpha * log_prob - q
+            a_losses = self._alpha * log_pi - q
             a_loss = tf.nn.compute_average_loss(a_losses)
         #    tf.print(f'a_losses: {a_losses}')
 
@@ -129,12 +129,12 @@ class SAC:
     # ------------------------------------ update alpha ----------------------------------- #
     @tf.function
     def _update_alpha(self, batch):
-        y_pred, log_prob = self.actor.predict(batch['obs'])
+        y_pred, log_pi = self.actor.predict(batch['obs'])
         #tf.print(f'y_pred: {y_pred.shape}')
-        #tf.print(f'log_prob: {log_prob.shape}')
+        #tf.print(f'log_pi: {log_pi.shape}')
         
         with tf.GradientTape() as tape:
-            alpha_losses = -1.0 * (self._log_alpha * tf.stop_gradient(log_prob + self._target_entropy))
+            alpha_losses = (self._alpha * tf.stop_gradient(-log_pi - self._target_entropy))
             alpha_loss = tf.nn.compute_average_loss(alpha_losses)
         #    tf.print(f'alpha_losses: {alpha_losses.shape}')
 
@@ -161,7 +161,7 @@ class SAC:
                 self._update_target(self.critic_1, self.critic_targ_1, tau=self._tau)
                 self._update_target(self.critic_2, self.critic_targ_2, tau=self._tau)
         
-            print(gradient_step, self.loss_a.result(), self.loss_c1.result(), self.loss_c2.result(), self.loss_alpha.result())
+            #print(gradient_step, self.loss_a.result(), self.loss_c1.result(), self.loss_c2.result(), self.loss_alpha.result())
 
         # logging of epoch's mean loss
         if (logging_wandb):
