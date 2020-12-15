@@ -1,6 +1,5 @@
 import gym
 import wandb
-
 import numpy as np
 
 # policy
@@ -71,7 +70,7 @@ def main(env_name: str,
                     model_a_path=model_a_path,
                     model_c1_path=model_c1_path,
                     model_c2_path=model_c2_path)
-    elif (alg == 'sac'): 
+    elif (alg == 'sac'):
         agent = SAC(env.observation_space.shape, 
                     env.action_space.shape,
                     actor_learning_rate=learning_rate,
