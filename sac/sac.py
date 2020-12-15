@@ -60,8 +60,7 @@ class SAC:
 
     @tf.function
     def get_action(self, state):
-        s = tf.expand_dims(state, axis=0)       # add batch_size=1 dim
-        a, _ = self.actor.predict(s, with_logprob=False)
+        a, _ = self.actor.predict(tf.expand_dims(state, axis=0), with_logprob=False)
         return tf.squeeze(a, axis=0)            # remove batch_size dim
 
     @tf.function
@@ -154,10 +153,8 @@ class SAC:
 
             # Delayed policy update
             if (gradient_step % self._policy_delay == 0):
-                l_actor = self._update_actor(batch)
-                l_alpha = self._update_alpha(batch)
-                self.loss_a.update_state(l_actor)
-                self.loss_alpha.update_state(l_alpha)
+                self.loss_a.update_state(self._update_actor(batch))
+                self.loss_alpha.update_state(self._update_alpha(batch))
 
                 # ---------------------------- soft update target networks ---------------------------- #
                 self._update_target(self.critic_1, self.critic_targ_1, tau=self._tau)
