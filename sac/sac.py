@@ -43,7 +43,7 @@ class SAC:
         print(self._target_entropy)
         print(self._alpha)
 
-        # Actor network & target network
+        # Actor network
         self.actor = Actor(state_shape, action_shape, actor_learning_rate, model_path=model_a_path)
 
         # Critic network & target network
