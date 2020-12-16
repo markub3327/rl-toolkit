@@ -2,19 +2,20 @@ FROM ubuntu:18.04 as base
 
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 
-RUN apt-get update && apt-get install -y curl
-
 RUN apt-get update && apt-get install -y \
+    curl \
     python3 \
     python3-pip \
     python3-numpy \
-    python3-dev
+    python3-dev \
+    git
 
 RUN python3 -m pip --no-cache-dir install --upgrade \
     "pip<20.3" \
     setuptools \
     wandb \
-    tensorflow_probability
+    tensorflow_probability \
+    pybullet
 
 # Some TF tools expect a "python" binary
 RUN ln -s $(which python3) /usr/local/bin/python
@@ -42,9 +43,6 @@ ARG TINI_VERSION=v0.9.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /bin/tini
 RUN chmod +x /bin/tini
 
-# set default screen to 1 (this is crucial for gym's rendering)
-ENV DISPLAY=:1
-
 ###########################################
 # OpenAI Gym
 # see: https://github.com/openai/gym
@@ -65,16 +63,7 @@ RUN apt-get -y update && apt-get install -y \
 RUN cd /usr/local/ \
     && git clone https://github.com/openai/gym.git \
     && cd /usr/local/gym/ \
-    && python3 -m pip install --no-cache-dir -e '.[all]'
-
-###########################################
-# PyBullet Gym
-# see: https://github.com/benelot/pybullet-gym
-###########################################
-RUN cd /usr/local/ \
-    && git clone https://github.com/benelot/pybullet-gym.git \
-    && cd /usr/local/pybullet-gym/ \
-    && python3 -m pip install --no-cache-dir -e .
+    && python3 -m pip install --no-cache-dir -e '.[box2d,classic_control]'
 
 ###########################################
 # Tensorflow
@@ -93,3 +82,9 @@ RUN python3 -m pip install --no-cache-dir ${TF_PACKAGE}${TF_PACKAGE_VERSION:+==$
 
 # vnc port
 EXPOSE 5900
+
+#COPY ./docker_image/docker_entrypoint.sh /root/
+#COPY ./docker_image/supervisord.conf /etc/supervisor/supervisord.conf
+WORKDIR /root
+# run all services
+#ENTRYPOINT [ "/root/docker_entrypoint.sh" ]

@@ -1,7 +1,7 @@
 import gym
 import wandb
 import numpy as np
-import pybulletgym
+import pybullet_envs
 
 # policy
 from td3 import TD3
