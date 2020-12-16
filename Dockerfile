@@ -10,7 +10,6 @@ RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     python3-numpy \
-    python3-dev \
     git \
     && rm -rf /var/lib/apt/lists/*
 
@@ -42,6 +41,10 @@ RUN python3 -m pip install --no-cache-dir -e '.[box2d,classic_control]'
 # Tensorflow
 # see: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/dockerfiles/dockerfiles/cpu.Dockerfile
 ###########################################
+RUN python3 -m pip --no-cache-dir install --upgrade \
+    "pip<20.3" \
+    setuptools
+
 # Options:
 #   tensorflow
 #   tensorflow-gpu
@@ -51,8 +54,10 @@ RUN python3 -m pip install --no-cache-dir -e '.[box2d,classic_control]'
 # Installs the latest version by default.
 ARG TF_PACKAGE=tensorflow
 ARG TF_PACKAGE_VERSION=
-RUN python3 -m pip install --no-cache-dir setuptools \
-        ${TF_PACKAGE}${TF_PACKAGE_VERSION:+==${TF_PACKAGE_VERSION}}
+RUN python3 -m pip install --no-cache-dir ${TF_PACKAGE}${TF_PACKAGE_VERSION:+==${TF_PACKAGE_VERSION}}
+
+COPY bashrc /etc/bash.bashrc
+RUN chmod a+rwx /etc/bash.bashrc
 
 ###########################################
 # Dependencies
@@ -61,3 +66,6 @@ RUN python3 -m pip --no-cache-dir install \
     wandb \
     tensorflow_probability \
     pybullet
+
+# nastav pracovny priecinok na /root
+WORKDIR /root
