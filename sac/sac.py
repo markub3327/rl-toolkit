@@ -151,6 +151,7 @@ class SAC:
             self.loss_c1.update_state(l_c1)
             self.loss_c2.update_state(l_c2)
 
+            # Actor & alpha update
             self.loss_a.update_state(self._update_actor(batch))
             self.loss_alpha.update_state(self._update_alpha(batch))
 

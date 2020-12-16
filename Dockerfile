@@ -14,7 +14,6 @@ RUN python3 -m pip --no-cache-dir install --upgrade \
     "pip<20.3" \
     setuptools \
     wandb \
-    pybulletgym \
     tensorflow_probability
 
 # Some TF tools expect a "python" binary
@@ -66,7 +65,16 @@ RUN apt-get -y update && apt-get install -y \
 RUN cd /usr/local/ \
     && git clone https://github.com/openai/gym.git \
     && cd /usr/local/gym/ \
-    && python3 -m pip install --no-cache-dir install -e '.[all]'
+    && python3 -m pip install --no-cache-dir -e '.[all]'
+
+###########################################
+# PyBullet Gym
+# see: https://github.com/benelot/pybullet-gym
+###########################################
+RUN cd /usr/local/ \
+    && git clone https://github.com/benelot/pybullet-gym.git \
+    && cd /usr/local/pybullet-gym/ \
+    && python3 -m pip install --no-cache-dir -e .
 
 ###########################################
 # Tensorflow
