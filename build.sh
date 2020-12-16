@@ -1,1 +1,1 @@
-docker build -t markub/rl-baselines:cpu ./docker_image
+docker build -t markub/rl-baselines:cpu .
