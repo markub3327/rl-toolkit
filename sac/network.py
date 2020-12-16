@@ -58,7 +58,7 @@ class Actor:
         return pi_action, logp_pi
 
     def save(self):
-        plot_model(self.model, to_file='model_A.png')
+        plot_model(self.model, to_file='img/model_A.png')
 
 
 # Trieda kritika
@@ -90,4 +90,4 @@ class Critic:
         self.model.summary()
 
     def save(self):
-        plot_model(self.model, to_file='model_C.png')
+        plot_model(self.model, to_file='img/model_C.png')

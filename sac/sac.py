@@ -151,14 +151,12 @@ class SAC:
             self.loss_c1.update_state(l_c1)
             self.loss_c2.update_state(l_c2)
 
-            # Delayed policy update
-            if (gradient_step % self._policy_delay == 0):
-                self.loss_a.update_state(self._update_actor(batch))
-                self.loss_alpha.update_state(self._update_alpha(batch))
+            self.loss_a.update_state(self._update_actor(batch))
+            self.loss_alpha.update_state(self._update_alpha(batch))
 
-                # ---------------------------- soft update target networks ---------------------------- #
-                self._update_target(self.critic_1, self.critic_targ_1, tau=self._tau)
-                self._update_target(self.critic_2, self.critic_targ_2, tau=self._tau)
+            # ---------------------------- soft update target networks ---------------------------- #
+            self._update_target(self.critic_1, self.critic_targ_1, tau=self._tau)
+            self._update_target(self.critic_2, self.critic_targ_2, tau=self._tau)
 
             #print(gradient_step, self.loss_a.result(), self.loss_c1.result(), self.loss_c2.result(), self.loss_alpha.result())
         
