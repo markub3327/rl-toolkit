@@ -1,8 +1,11 @@
-# nainstaluj Ubuntu 18.04 LTS
-FROM ubuntu:18.04
+# nainstaluj Ubuntu 20.04 LTS
+FROM ubuntu:20.04
 
 # nastav jazyk
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
+
+# nastav apt-get
+ARG DEBIAN_FRONTEND=noninteractive
 
 # nainstaluj python3 a vycisti balicky
 RUN apt-get update && apt-get install -y \
@@ -11,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-numpy \
     git \
+    graphviz \
     && rm -rf /var/lib/apt/lists/*
 
 # Some TF tools expect a "python" binary
@@ -42,8 +46,9 @@ RUN python3 -m pip install --no-cache-dir -e '.[box2d,classic_control]'
 # see: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/dockerfiles/dockerfiles/cpu.Dockerfile
 ###########################################
 RUN python3 -m pip --no-cache-dir install --upgrade \
-    "pip<20.3" \
-    setuptools
+    "pip" \
+    setuptools \
+    pydot
 
 # Options:
 #   tensorflow
@@ -53,7 +58,7 @@ RUN python3 -m pip --no-cache-dir install --upgrade \
 # Set --build-arg TF_PACKAGE_VERSION=1.11.0rc0 to install a specific version.
 # Installs the latest version by default.
 ARG TF_PACKAGE=tensorflow
-ARG TF_PACKAGE_VERSION=
+ARG TF_PACKAGE_VERSION=2.3.1
 RUN python3 -m pip install --no-cache-dir ${TF_PACKAGE}${TF_PACKAGE_VERSION:+==${TF_PACKAGE_VERSION}}
 
 ###########################################
