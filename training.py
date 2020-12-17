@@ -87,8 +87,8 @@ def main(env_name: str,
         raise NameError(f"algorithm '{alg}' is not defined")
  
     # plot model to png
-    agent.actor.save()
-    agent.critic_1.save()
+    #agent.actor.save()
+    #agent.critic_1.save()
 
     # replay buffer
     rpm = ReplayBuffer(env.observation_space.shape, env.action_space.shape, replay_size)

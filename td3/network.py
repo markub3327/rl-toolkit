@@ -30,7 +30,7 @@ class Actor:
         self.model.summary()
 
     def save(self):
-        plot_model(self.model, to_file='model_A.png')
+        plot_model(self.model, to_file='img/model_A_TD3.png')
 
 
 # Trieda kritika
@@ -62,4 +62,4 @@ class Critic:
         self.model.summary()
 
     def save(self):
-        plot_model(self.model, to_file='model_C.png')
+        plot_model(self.model, to_file='img/model_C_TD3.png')
