@@ -145,9 +145,9 @@ def main(env_name: str,
 
     # Save model to local drive
     if (save_path is not None):
-        agent.actor.model.save(f"{save_path}model_A.h5")
-        agent.critic_1.model.save(f"{save_path}model_C1.h5")
-        agent.critic_2.model.save(f"{save_path}model_C2.h5")
+        agent.actor.model.save(f"{save_path}model_A_{env_name}.h5")
+        agent.critic_1.model.save(f"{save_path}model_C1_{env_name}.h5")
+        agent.critic_2.model.save(f"{save_path}model_C2_{env_name}.h5")
 
     # zatvor prostredie
     env.close()
