@@ -15,6 +15,7 @@ def main(env_name: str,
 
     # Herne prostredie
     env = gym.make(env_name)
+    env.render()
 
     # inicializuj prostredie Weights & Biases
     if logging_wandb == True:
