@@ -16,14 +16,24 @@
 
 ## Topology
 
-<p align="center"><b>Actor</b></p>
+<p align="center"><b>Actor (Twin Delayed DDPG)</b></p>
 <p align="center">
-  <img src="img/model_A.png" alt="actor">
+  <img src="img/model_A_TD3.png" alt="actor">
 </p>
 
-<p align="center"><b>Critic</b></p>
+<p align="center"><b>Critic (Twin Delayed DDPG)</b></p>
 <p align="center">
-  <img src="img/model_C.png" alt="critic">
+  <img src="img/model_C_TD3.png" alt="critic">
+</p>
+
+<p align="center"><b>Actor (Soft Actor-Critic)</b></p>
+<p align="center">
+  <img src="img/model_A_SAC.png" alt="actor">
+</p>
+
+<p align="center"><b>Critic (Soft Actor-Critic)</b></p>
+<p align="center">
+  <img src="img/model_C_SAC.png" alt="critic">
 </p>
 
 ## Tested environments
