@@ -79,7 +79,7 @@ class SAC:
         next_q = tf.minimum(next_q_1, next_q_2)
         #tf.print(f'nextQ: {next_q.shape}')
 
-        # Use Bellman Equation! (recursive definition of q-values)
+        # Bellman Equation
         Q_targets = tf.stop_gradient(batch['rew'] + (1 - batch['done']) * self._gamma * (next_q - self._alpha * next_log_pi))
         #tf.print(f'qTarget: {Q_targets.shape}')
 
