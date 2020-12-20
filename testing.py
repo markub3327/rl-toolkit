@@ -41,7 +41,7 @@ def main(env_name: str,
         while not done:
             env.render()
             
-            if (alg == 'sac'):           
+            if (alg == 'sac'):
                 action, _ = actor.model(tf.expand_dims(obs, axis=0))
             elif (alg == 'td3'):
                 action = actor.model(tf.expand_dims(obs, axis=0))
