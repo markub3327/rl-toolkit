@@ -31,6 +31,7 @@ class OrnsteinUhlenbeckActionNoise:
         self.noise_prev.assign(noise)
         return noise
 
+    @tf.function
     def reset(self):
         """
         reset the Ornstein Uhlenbeck noise, to the initial position
@@ -54,6 +55,7 @@ class NormalActionNoise:
     def sample(self):
         return tf.random.normal(self._size, mean=self._mu, stddev=self._sigma)
 
+    @tf.function
     def reset(self):
         """
         Not using with normal distribution
