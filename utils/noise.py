@@ -55,7 +55,6 @@ class NormalActionNoise:
     def sample(self):
         return tf.random.normal(self._size, mean=self._mu, stddev=self._sigma)
 
-    @tf.function
     def reset(self):
         """
         Not using with normal distribution
