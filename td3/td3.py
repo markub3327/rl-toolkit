@@ -62,7 +62,7 @@ class TD3:
         else:
             raise NameError(f"'{noise_type}' noise is not defined")
 
-    #@tf.function
+    @tf.function
     def get_action(self, state):
         a = self.actor.model(tf.expand_dims(state, axis=0))
         a = tf.squeeze(a, axis=0)

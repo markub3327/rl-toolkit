@@ -1,6 +1,6 @@
 import numpy as np
 
-class ReplayBuffer(object):
+class ReplayBuffer:
     """
     A simple FIFO experience replay buffer for DDPG agents.
 
