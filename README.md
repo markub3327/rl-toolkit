@@ -9,10 +9,11 @@
 ![Languages](https://img.shields.io/github/languages/count/markub3327/stable-baselines)
 ![Size](https://img.shields.io/github/repo-size/markub3327/stable-baselines)
 
-## Agents
+## Papers
 
   * **Soft Actor-Critic** (https://arxiv.org/pdf/1812.05905.pdf)
   * **Twin Delayed DDPG** (https://arxiv.org/pdf/1802.09477.pdf)
+  * **Generalized State-Dependent Exploration** (https://arxiv.org/pdf/2005.05719.pdf)
 
 ## Topology
 
@@ -40,6 +41,7 @@
   
   * MountainCarContinuous-v0
   * BipedalWalker-v3
+  * BipedalWalkerHardcore-v3
   * LunarLanderContinuous-v2
   * Walker2DBulletEnv-v0
   * AntBulletEnv-v0
