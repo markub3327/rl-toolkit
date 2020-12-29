@@ -1,13 +1,13 @@
-# rl-baselines
+# RL training toolkit
 
-[![Release](https://img.shields.io/github/release/markub3327/stable-baselines)](https://github.com/markub3327/stable-baselines/releases)
-![Tag](https://img.shields.io/github/v/tag/markub3327/stable-baselines)
+[![Release](https://img.shields.io/github/release/markub3327/rl-baselines)](https://github.com/markub3327/rl-baselines/releases)
+![Tag](https://img.shields.io/github/v/tag/markub3327/rl-baselines)
 
-[![Issues](https://img.shields.io/github/issues/markub3327/stable-baselines)](https://github.com/markub3327/stable-baselines/issues)
-![Commits](https://img.shields.io/github/commit-activity/w/markub3327/stable-baselines)
+[![Issues](https://img.shields.io/github/issues/markub3327/rl-baselines)](https://github.com/markub3327/rl-baselines/issues)
+![Commits](https://img.shields.io/github/commit-activity/w/markub3327/rl-baselines)
 
-![Languages](https://img.shields.io/github/languages/count/markub3327/stable-baselines)
-![Size](https://img.shields.io/github/repo-size/markub3327/stable-baselines)
+![Languages](https://img.shields.io/github/languages/count/markub3327/rl-baselines)
+![Size](https://img.shields.io/github/repo-size/markub3327/rl-baselines)
 
 ## Papers
 
@@ -50,7 +50,7 @@
 <p align="center">
   <img src="img/results.png" alt="results">
 </p>
-<p align="center"><a href="https://app.wandb.ai/markub/stable-baselines" target="_blank">For more charts click here.</a></p>
+<p align="center"><a href="https://app.wandb.ai/markub/rl-baselines" target="_blank">For more charts click here.</a></p>
 
 **Framework:** Tensorflow 2.3.1
 </br>

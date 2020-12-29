@@ -8,12 +8,9 @@ from training import main as main_training
 
 if __name__ == "__main__":
 
-    my_parser = argparse.ArgumentParser(prog='python3 main.py', description='stable-baselines', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    my_parser = argparse.ArgumentParser(prog='python3 main.py', description='RL training toolkit', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     # init args
-    my_parser.add_argument('--model_a', type=str, help="Actor's model file")
-    my_parser.add_argument('--model_c1', type=str, help="Critic 1's model file")
-    my_parser.add_argument('--model_c2', type=str, help="Critic 2's model file")
     my_parser.add_argument('-alg', '--algorithm', type=str, help='Only OpenAI Gym environments are available!', default='sac')
     my_parser.add_argument('-env', '--environment', type=str, help='Only OpenAI Gym environments are available!', default='BipedalWalker-v3')
     my_parser.add_argument('-t', '--max_steps', type=int, help='Maximum number of interactions doing in environment', default=int(1e6))
@@ -32,6 +29,9 @@ if __name__ == "__main__":
     my_parser.add_argument('--wandb', action='store_true', help='Logging to wanDB')
     my_parser.add_argument('--test', action='store_true', help='Run test mode')
     my_parser.add_argument('-s', '--save', type=str, help='Path for saving model files')
+    my_parser.add_argument('--model_a', type=str, help="Actor's model file")
+    my_parser.add_argument('--model_c1', type=str, help="Critic 1's model file")
+    my_parser.add_argument('--model_c2', type=str, help="Critic 2's model file")
 
     # get args
     args = my_parser.parse_args()

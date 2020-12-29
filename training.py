@@ -38,7 +38,7 @@ def main(env_name: str,
 
     # inicializuj prostredie Weights & Biases
     if logging_wandb == True:
-        wandb.init(project="stable-baselines")
+        wandb.init(project="rl-baselines")
 
         ###
         ### Settings
