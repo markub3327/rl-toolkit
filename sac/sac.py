@@ -167,7 +167,7 @@ class SAC:
             self._update_target(self.critic_1, self.critic_targ_1, tau=self._tau)
             self._update_target(self.critic_2, self.critic_targ_2, tau=self._tau)
 
-            print(gradient_step, self.loss_a.result(), self.loss_c1.result(), self.loss_c2.result(), self.loss_alpha.result())
+            #print(gradient_step, self.loss_a.result(), self.loss_c1.result(), self.loss_c2.result(), self.loss_alpha.result())
         
         # logging of epoch's mean loss
         if (logging_wandb):
