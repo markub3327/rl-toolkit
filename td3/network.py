@@ -8,7 +8,14 @@ import tensorflow as tf
 # Trieda hraca
 class Actor:
 
-    def __init__(self, state_shape=None, action_shape=None, lr=None, model_path=None):
+    def __init__(
+        self, 
+        state_shape=None, 
+        action_shape=None, 
+        lr=None, 
+        model_path=None
+    ):
+
         if model_path == None:
             state_input = Input(shape=state_shape, name='state_input')
             l1 = Dense(400, activation='relu', name='h1')(state_input)
@@ -36,7 +43,14 @@ class Actor:
 # Trieda kritika
 class Critic:
 
-    def __init__(self, state_shape=None, action_shape=None, lr=None, model_path=None):
+    def __init__(
+        self, 
+        state_shape=None, 
+        action_shape=None, 
+        lr=None, 
+        model_path=None
+    ):
+
         if model_path == None:
             # vstupna vsrtva
             state_input = Input(shape=state_shape, name='state_input')

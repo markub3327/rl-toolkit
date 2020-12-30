@@ -2,7 +2,6 @@ from .network import Actor, Critic
 
 import wandb
 import tensorflow as tf
-import tensorflow_probability as tfp
 
 
 class SAC:
@@ -36,8 +35,8 @@ class SAC:
         self.loss_alpha = tf.keras.metrics.Mean()
 
         # init param 'alpha' - Lagrangian
-        self._log_alpha = tf.Variable(0.0, trainable=True)
-        self._alpha = tfp.util.DeferredTensor(self._log_alpha, tf.exp)
+        self._log_alpha = tf.Variable(0.0, trainable=True, name='log_alpha')
+        self._alpha = tf.Variable(0.0, trainable=False, name='alpha')
         self._alpha_optimizer = tf.keras.optimizers.Adam(learning_rate=alpha_learning_rate, name='alpha_optimizer')
         self._target_entropy = tf.cast(-tf.reduce_prod(action_shape), dtype=tf.float32)
         print(self._target_entropy)
@@ -110,18 +109,21 @@ class SAC:
         with tf.GradientTape() as tape:
             # predict action
             y_pred, log_pi = self.actor.predict(batch['obs'])
+            #tf.print(f'log_pi: {log_pi.shape}')
+
             # predict q value
             q_1 = self.critic_1.model([batch['obs'], y_pred])
             q_2 = self.critic_2.model([batch['obs'], y_pred])
             q = tf.minimum(q_1, q_2)
-        #    tf.print(f'q: {q.shape}')
+            #tf.print(f'q: {q.shape}')
 
             a_losses = self._alpha * log_pi - q
             a_loss = tf.nn.compute_average_loss(a_losses)
-        #    tf.print(f'a_losses: {a_losses}')
+            #tf.print(f'a_losses: {a_losses}')
 
-        grads = tape.gradient(a_loss, self.actor.model.trainable_variables)
-        self.actor.optimizer.apply_gradients(zip(grads, self.actor.model.trainable_variables))
+        w_params = self.actor.model.trainable_variables + [self.actor.log_std]
+        grads = tape.gradient(a_loss, w_params)
+        self.actor.optimizer.apply_gradients(zip(grads, w_params))
 
         return a_loss
 
@@ -132,8 +134,9 @@ class SAC:
         #tf.print(f'y_pred: {y_pred.shape}')
         #tf.print(f'log_pi: {log_pi.shape}')
         
+        self._alpha.assign(tf.exp(self._log_alpha))
         with tf.GradientTape() as tape:
-            alpha_losses = -1.0 * (self._alpha * tf.stop_gradient(log_pi + self._target_entropy))
+            alpha_losses = -1.0 * (self._log_alpha * tf.stop_gradient(log_pi + self._target_entropy))
             alpha_loss = tf.nn.compute_average_loss(alpha_losses)
         #    tf.print(f'alpha_losses: {alpha_losses.shape}')
 
@@ -146,24 +149,29 @@ class SAC:
         for gradient_step in range(1, gradient_steps+1):
             batch = rpm.sample(batch_size)
 
+            # re-new noise matrix
+            self.actor.sample_weights()
+
+            # Alpha param update
+            self.loss_alpha.update_state(self._update_alpha(batch))
+            
             # Critic models update
             l_c1, l_c2 = self._update_critic(batch)
             self.loss_c1.update_state(l_c1)
             self.loss_c2.update_state(l_c2)
 
-            # Actor & alpha update
+            # Actor model update
             self.loss_a.update_state(self._update_actor(batch))
-            self.loss_alpha.update_state(self._update_alpha(batch))
 
             # ---------------------------- soft update target networks ---------------------------- #
             self._update_target(self.critic_1, self.critic_targ_1, tau=self._tau)
             self._update_target(self.critic_2, self.critic_targ_2, tau=self._tau)
 
-            #print(gradient_step, self.loss_a.result(), self.loss_c1.result(), self.loss_c2.result(), self.loss_alpha.result())
+            print(gradient_step, self.loss_a.result(), self.loss_c1.result(), self.loss_c2.result(), self.loss_alpha.result())
         
         # logging of epoch's mean loss
         if (logging_wandb):
-            wandb.log({"loss_a": self.loss_a.result(), "loss_c1": self.loss_c1.result(), "loss_c2": self.loss_c2.result(), "loss_alpha": self.loss_alpha.result(), "alpha": self._alpha.numpy()})
+            wandb.log({"loss_a": self.loss_a.result(), "loss_c1": self.loss_c1.result(), "loss_c2": self.loss_c2.result(), "loss_alpha": self.loss_alpha.result(), "alpha": self._alpha})
 
         # reset logger
         self.loss_a.reset_states()

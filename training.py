@@ -21,6 +21,7 @@ def main(env_name: str,
          replay_size: int,
          learning_starts: int,
          update_after: int,
+         update_every: int,
          max_steps: int,
          noise_type: str,
          action_noise: float,
@@ -87,8 +88,8 @@ def main(env_name: str,
         raise NameError(f"algorithm '{alg}' is not defined")
  
     # plot model to png
-    #agent.actor.save()
-    #agent.critic_1.save()
+    agent.actor.save()
+    agent.critic_1.save()
 
     # replay buffer
     rpm = ReplayBuffer(env.observation_space.shape, env.action_space.shape, replay_size)
@@ -102,6 +103,13 @@ def main(env_name: str,
         episode_reward, episode_timesteps = 0.0, 0
 
         obs = env.reset()
+
+        # reset noise
+        if (alg == 'td3'):
+            agent.noise.reset()
+        # re-new noise matrix
+        elif (alg == 'sac'):
+            agent.actor.sample_weights()
 
         # collect rollout
         while not done:
@@ -125,12 +133,12 @@ def main(env_name: str,
             # super critical !!!
             obs = new_obs
 
+            # update models after episode
+            if total_steps > update_after and len(rpm) > batch_size and (total_steps % update_every) == 0:
+                agent.update(rpm, batch_size, update_every, logging_wandb=logging_wandb)
+
         # after each episode
         total_episodes += 1
-
-        # reset noise
-        if (alg == 'td3'):
-            agent.noise.reset()
 
         print(f'Epoch: {total_episodes}')
         print(f'EpsReward: {episode_reward}')
@@ -138,10 +146,6 @@ def main(env_name: str,
         print(f'TotalInteractions: {total_steps}')
         if (logging_wandb == True):
             wandb.log({"epoch": total_episodes, "score": episode_reward, "steps": episode_timesteps, "replayBuffer": len(rpm)})
-            
-        # update models after episode
-        if total_steps > update_after and len(rpm) > batch_size:
-            agent.update(rpm, batch_size, episode_timesteps, logging_wandb=logging_wandb)
 
     # Save model to local drive
     if (save_path is not None):

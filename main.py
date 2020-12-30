@@ -23,6 +23,7 @@ if __name__ == "__main__":
     my_parser.add_argument('--replay_size', type=int, help='Size of the replay buffer', default=int(1e6))
     my_parser.add_argument('--learning_starts', type=int, help='Number of steps before using policy network', default=10000)
     my_parser.add_argument('--update_after', type=int, help='Number of steps before training', default=10000)
+    my_parser.add_argument('--update_every', type=int, help='Train frequency', default=64)
     my_parser.add_argument('--target_noise', type=float, help='Standard deviation of target noise (only for TD3)', default=0.2)
     my_parser.add_argument('--noise_clip', type=float, help='Limit for target noise (only for TD3)', default=0.5)
     my_parser.add_argument('--policy_delay', type=int, help='Delay between critic and policy update', default=2)
@@ -55,6 +56,7 @@ if __name__ == "__main__":
                       replay_size=args.replay_size,
                       learning_starts=args.learning_starts,
                       update_after=args.update_after,
+                      update_every=args.update_every,
                       max_steps=args.max_steps,
                       noise_type=args.noise_type,
                       action_noise=args.action_noise,
