@@ -39,8 +39,8 @@ class SAC:
         self._alpha = tf.Variable(0.0, trainable=False, name='alpha')
         self._alpha_optimizer = tf.keras.optimizers.Adam(learning_rate=alpha_learning_rate, name='alpha_optimizer')
         self._target_entropy = tf.cast(-tf.reduce_prod(action_shape), dtype=tf.float32)
-        print(self._target_entropy)
-        print(self._alpha)
+        #print(self._target_entropy)
+        #print(self._alpha)
 
         # Actor network
         self.actor = Actor(state_shape, action_shape, actor_learning_rate, model_path=model_a_path)
