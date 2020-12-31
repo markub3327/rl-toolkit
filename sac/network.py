@@ -16,7 +16,8 @@ class Actor:
         action_shape = None,
         learning_rate = None,
         model_path = None,
-        log_std_init: float = -3.0
+        log_std_init: float = -3.0,
+        clip_mean: float = 2.0
     ):
 
         if model_path == None:
@@ -26,6 +27,7 @@ class Actor:
         
             # vystupna vrstva   -- 'mean' musi byt v intervale (-∞, ∞)
             mean = Dense(action_shape[0], activation='linear', name='mean')(l2)
+            mean = Lambda(lambda x: tf.clip_by_value(x, -clip_mean, clip_mean), name='clip_mean')(mean)
 
             # variance params
             self.log_std = tf.Variable(tf.ones([300, action_shape[0]]) * log_std_init, trainable=True, name='log_std')
@@ -51,7 +53,10 @@ class Actor:
 
     @tf.function
     def sample_weights(self):
-        w_dist = tfp.distributions.Normal(tf.zeros_like(self.log_std), tf.exp(self.log_std))
+        # get scale (0, ∞)
+        std = tf.exp(self.log_std)
+
+        w_dist = tfp.distributions.Normal(tf.zeros_like(std), std)
         self.exploration_mat.assign(w_dist.sample())
 
     @tf.function

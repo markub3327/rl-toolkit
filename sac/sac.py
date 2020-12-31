@@ -149,7 +149,7 @@ class SAC:
         for gradient_step in range(1, gradient_steps+1):
             batch = rpm.sample(batch_size)
 
-            # re-new noise matrix
+            # re-new noise matrix every update of 'log_std' params
             self.actor.sample_weights()
 
             # Alpha param update

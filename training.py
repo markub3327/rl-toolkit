@@ -51,6 +51,7 @@ def main(env_name: str,
         wandb.config.replay_size            =  replay_size
         wandb.config.learning_starts        =  learning_starts
         wandb.config.update_after           =  update_after
+        wandb.config.update_every           =  update_every
         wandb.config.max_steps              =  max_steps
         wandb.config.action_noise           =  action_noise
         wandb.config.target_noise           =  target_noise
