@@ -1,9 +1,5 @@
-# main libraries
 import argparse
 
-# windows
-from testing import main as main_testing
-from training import main as main_training
 
 
 if __name__ == "__main__":
@@ -38,33 +34,125 @@ if __name__ == "__main__":
     args = my_parser.parse_args()
     print(args)
 
-    # run testing mode
-    if (args.test and args.model_a != None):
-        main_testing(env_name=args.environment,
-                     alg=args.algorithm,
-                     max_steps=args.max_steps,
-                     logging_wandb=args.wandb,
-                     model_a_path=args.model_a)
-    # run training mode
-    elif (args.test == False):
-        main_training(env_name=args.environment,
-                      alg=args.algorithm,
-                      learning_rate=args.learning_rate,
-                      gamma=args.gamma,
-                      batch_size=args.batch_size,
-                      tau=args.tau,
-                      replay_size=args.replay_size,
-                      learning_starts=args.learning_starts,
-                      update_after=args.update_after,
-                      update_every=args.update_every,
-                      max_steps=args.max_steps,
-                      noise_type=args.noise_type,
-                      action_noise=args.action_noise,
-                      target_noise=args.target_noise,
-                      noise_clip=args.noise_clip,
-                      policy_delay=args.policy_delay,
-                      logging_wandb=args.wandb,
-                      save_path=args.save,
-                      model_a_path=args.model_a,
-                      model_c1_path=args.model_c1,
-                      model_c2_path=args.model_c2)
+    # Herne prostredie
+    env = gym.make(env_name)
+
+    # inicializuj prostredie Weights & Biases
+    if logging_wandb == True:
+        wandb.init(project="rl-baselines")
+
+        ###
+        ### Settings
+        ###
+        wandb.config.gamma                  =  gamma
+        wandb.config.batch_size             =  batch_size
+        wandb.config.tau                    =  tau
+        wandb.config.learning_rate          =  learning_rate
+        wandb.config.replay_size            =  replay_size
+        wandb.config.learning_starts        =  learning_starts
+        wandb.config.update_after           =  update_after
+        wandb.config.update_every           =  update_every
+        wandb.config.max_steps              =  max_steps
+        wandb.config.action_noise           =  action_noise
+        wandb.config.target_noise           =  target_noise
+        wandb.config.noise_clip             =  noise_clip
+        wandb.config.policy_delay           =  policy_delay
+
+    # policy
+    if (alg == 'td3'): 
+        agent = TD3(env.observation_space.shape, 
+                    env.action_space.shape, 
+                    learning_rate=learning_rate,
+                    tau=tau, 
+                    gamma=gamma,
+                    noise_type=noise_type,
+                    action_noise=action_noise,
+                    target_noise=target_noise,
+                    noise_clip=noise_clip,
+                    policy_delay=policy_delay,
+                    model_a_path=model_a_path,
+                    model_c1_path=model_c1_path,
+                    model_c2_path=model_c2_path)
+    elif (alg == 'sac'):
+        agent = SAC(env.observation_space.shape, 
+                    env.action_space.shape,
+                    actor_learning_rate=learning_rate,
+                    critic_learning_rate=learning_rate,
+                    alpha_learning_rate=learning_rate,
+                    tau=tau,
+                    gamma=gamma,
+                    policy_delay=policy_delay,
+                    model_a_path=model_a_path,
+                    model_c1_path=model_c1_path,
+                    model_c2_path=model_c2_path)
+    else:
+        raise NameError(f"algorithm '{alg}' is not defined")
+ 
+    # plot model to png
+    agent.actor.save()
+    agent.critic_1.save()
+
+    # replay buffer
+    rpm = ReplayBuffer(env.observation_space.shape, env.action_space.shape, replay_size)
+
+    print(env.action_space.low, env.action_space.high)
+
+    # hlavny cyklus hry
+    total_steps, total_episodes = 0, 0
+    while total_steps < max_steps:
+        done = False
+        episode_reward, episode_timesteps = 0.0, 0
+
+        obs = env.reset()
+
+        # reset noise
+        if (alg == 'td3'):
+            agent.noise.reset()
+        # re-new noise matrix
+        elif (alg == 'sac'):
+            agent.actor.sample_weights()
+
+        # collect rollout
+        while not done:
+            # select action randomly or using policy network
+            if total_steps < learning_starts:
+                # warmup
+                action = env.action_space.sample()
+            else:
+                action = agent.get_action(obs)
+
+            # perform action
+            new_obs, reward, done, _ = env.step(action)
+
+            episode_reward += reward
+            episode_timesteps += 1
+            total_steps += 1
+
+            # store interaction
+            rpm.store(obs, action, reward, new_obs, done)
+
+            # super critical !!!
+            obs = new_obs
+
+            # update models after episode
+            if total_steps > update_after and len(rpm) > batch_size and (total_steps % update_every) == 0:
+                agent.update(rpm, batch_size, update_every, logging_wandb=logging_wandb)
+
+        # after each episode
+        total_episodes += 1
+
+        print(f'Epoch: {total_episodes}')
+        print(f'EpsReward: {episode_reward}')
+        print(f'EpsSteps: {episode_timesteps}')
+        print(f'TotalInteractions: {total_steps}')
+        if (logging_wandb == True):
+            wandb.log({"epoch": total_episodes, "score": episode_reward, "steps": episode_timesteps, "replayBuffer": len(rpm)})
+
+    # Save model to local drive
+    if (save_path is not None):
+        agent.actor.model.save(f"{save_path}model_A_{env_name}.h5")
+        agent.critic_1.model.save(f"{save_path}model_C1_{env_name}.h5")
+        agent.critic_2.model.save(f"{save_path}model_C2_{env_name}.h5")
+
+    # zatvor prostredie
+    env.close()

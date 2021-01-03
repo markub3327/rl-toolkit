@@ -1,39 +1,66 @@
 import numpy as np
+import pymongo
 
 class ReplayBuffer:
     """
-    A simple FIFO experience replay buffer for DDPG agents.
+    An experiences buffer
+    ----------------------
 
+    Use database to store large amount of interactions from many games.
+    Every game environment has own collection of documents stored in database.
 
-    Based on https://github.com/openai/spinningup/blob/master/spinup/algos/pytorch/ddpg/ddpg.py.
+    In-memory buffer is synchronized with database after every episode.
+
+        *  MongoDB
+        *  In-memory buffer (<= 1000)
     """
 
-    def __init__(self, obs_dim, act_dim, size):
-        self.obs_buf = np.zeros((size,) + obs_dim, dtype=np.float32)
-        self.obs2_buf = np.zeros((size,) + obs_dim, dtype=np.float32)
-        self.act_buf = np.zeros((size,) + act_dim, dtype=np.float32)
-        self.rew_buf = np.zeros((size, 1), dtype=np.float32)
-        self.done_buf = np.zeros((size, 1), dtype=np.float32)
-        self.ptr, self.size, self.max_size = 0, 0, size
+    def __init__(
+        self, 
+        env_name: str,
+        server_name: str = "localhost",
+        server_port: int = 27017,
+        db_name: str = "rl-baselines"
+    ):
 
-    def store(self, obs, act, rew, next_obs, done):
-        self.obs_buf[self.ptr] = obs
-        self.obs2_buf[self.ptr] = next_obs
-        self.act_buf[self.ptr] = act
-        self.rew_buf[self.ptr] = rew
-        self.done_buf[self.ptr] = done
-        self.ptr = (self.ptr+1) % self.max_size
-        self.size = min(self.size+1, self.max_size)
+        # connect to server
+        self._client = pymongo.MongoClient(f"mongodb://{server_name}:{server_port}/")
+        print(self._client.server_info())
+
+        # select db
+        if db_name in self._client.list_database_names():
+            self._db = self._client[db_name]
+        else:
+            raise NameError(f"Database {db_name} was not found!")
+        
+        # select collection
+        if env_name in self._db.list_collection_names():
+            self._collection = self._db[env_name]
+        else:
+            raise NameError(f"Collection {env_name} was not found!")
+        
+        # drop all old data
+        self._collection.remove({ })
+
+        # in-memory experiences buffer
+        self._buffer = []
+
+    def store(self, state, action, reward, next_state, done):
+        # transition (State-Action-Reward-State-Done)
+        self._buffer.append(dict(
+            state=state.tobytes(),
+            action=action.tobytes(),
+            reward=reward,
+            next_state=next_state.tobytes(),
+            done=done
+        ))
 
     def __len__(self):
-        return self.size
+        return len(self._buffer)
 
-    def sample(self, batch_size):
-        idxs = np.random.randint(0, self.size, size=batch_size)
-        batch = dict(obs=self.obs_buf[idxs],
-                     obs2=self.obs2_buf[idxs],
-                     act=self.act_buf[idxs],
-                     rew=self.rew_buf[idxs],
-                     done=self.done_buf[idxs])
-        return {k: v for k,v in batch.items()}
+    def sync(self):
+        # store transitions into db
+        self._collection.insert_many(self._buffer)
 
+        # clear buffer
+        self._buffer.clear()
