@@ -3,7 +3,7 @@ import pymongo
 
 class ReplayBuffer:
     """
-    An experiences buffer
+    An experiences replay buffer
     ----------------------
 
     Use database to store large amount of interactions from many games.
@@ -11,8 +11,8 @@ class ReplayBuffer:
 
     In-memory buffer is synchronized with database after every episode.
 
-        *  MongoDB
-        *  In-memory buffer (<= 1000)
+      *  MongoDB
+      *  In-memory buffer (<= 1000)
     """
 
     def __init__(

@@ -1,2 +1,1 @@
-from .sac import SAC
-from .network import Actor, Critic
+from .network import Actor
