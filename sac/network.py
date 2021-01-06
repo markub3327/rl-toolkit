@@ -16,7 +16,9 @@ class Actor:
 
         # Nacitaj model
         self.model = load_model(model_path)
-        print('Actor loaded from file succesful ...')            
+        print('Actor loaded from file succesful ... 😊')            
+
+        self.model.summary()
 
         action_shape = self.model.layers[-1].output_shape
         print(action_shape)
@@ -27,11 +29,13 @@ class Actor:
         self.exploration_mat = tf.Variable(tf.zeros_like(self.log_std), trainable=False, name='exploration_mat')
         #print(self.log_std)
 
+        # load checkpoint
+        #checkpoint = tf.train.Checkpoint(self.log_std)
+        #checkpoint.restore(f'{model_path}_log_std')
+
         # sample new noise matrix
         self.sample_weights()
         #print(self.exploration_mat)
-
-        self.model.summary()
 
         # Prenosova funkcia vystupnej distribucie
         self.bijector = tfp.bijectors.Tanh()

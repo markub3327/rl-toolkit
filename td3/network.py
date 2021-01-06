@@ -17,7 +17,7 @@ class Actor:
 
         # Nacitaj model
         self.model = load_model(model_path)
-        print('Actor loaded from file succesful ...')
+        print('Actor loaded from file succesful ... 😊')
 
         self.model.summary()
 

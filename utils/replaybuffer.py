@@ -45,9 +45,10 @@ class ReplayBuffer:
         # in-memory experiences buffer
         self._buffer = []
 
-    def store(self, state, action, reward, next_state, done):
-        # transition (State-Action-Reward-State-Done)
+    def store(self, state, action, reward, next_state, done, timestep):
+        # transition (ID-State-Action-Reward-State-Done)
         self._buffer.append(dict(
+            _id=timestep,        # the unique ID of document in collection <==> timestep in game !!!
             state=state.tobytes(),
             action=action.tobytes(),
             reward=reward,

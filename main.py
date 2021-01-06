@@ -1,3 +1,5 @@
+import os
+import time
 import gym
 import pybullet_envs
 import wandb
@@ -43,6 +45,11 @@ if __name__ == "__main__":
         wandb.config.noise_type             =  args.noise_type
         wandb.config.action_noise           =  args.action_noise
         wandb.config.warm_up_steps          =  args.warm_up_steps
+
+    # waiting for the model file
+    print('Waiting for the model file ... 😯')
+    while os.path.exists(args.model) == False:
+        time.sleep(5)   # refresh time
 
     # policy
     if (args.algorithm == 'td3'):
@@ -99,7 +106,7 @@ if __name__ == "__main__":
             total_steps += 1
 
             # store interaction
-            rpm.store(obs, action, reward, new_obs, done)
+            rpm.store(obs, action, reward, new_obs, done, total_steps)
 
             # super critical !!!
             obs = new_obs
