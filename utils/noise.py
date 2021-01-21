@@ -8,7 +8,7 @@ class OrnsteinUhlenbeckActionNoise:
     :param sigma: the scale of the noise
     :param theta: the rate of mean reversion
     :param dt: the timestep for the noise
-    
+
     Based on http://math.stackexchange.com/questions/1287634/implementing-ornstein-uhlenbeck-in-matlab
     """
 
@@ -27,7 +27,8 @@ class OrnsteinUhlenbeckActionNoise:
         noise = (
             self.noise_prev
             + self._theta * (self._mu - self.noise_prev) * self._dt
-            + self._sigma * tf.math.sqrt(self._dt) * tf.random.normal(self._size))
+            + self._sigma * tf.math.sqrt(self._dt) * tf.random.normal(self._size)
+        )
         self.noise_prev.assign(noise)
         return noise
 
@@ -37,6 +38,7 @@ class OrnsteinUhlenbeckActionNoise:
         reset the Ornstein Uhlenbeck noise, to the initial position
         """
         self.noise_prev.assign(tf.zeros(self._size))
+
 
 class NormalActionNoise:
     """

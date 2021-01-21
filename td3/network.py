@@ -7,17 +7,11 @@ import tensorflow as tf
 
 # Trieda hraca
 class Actor:
-
-    def __init__(
-        self, 
-        model_path: str,
-        noise_type: str,
-        action_noise: float
-    ):
+    def __init__(self, model_path: str, noise_type: str, action_noise: float):
 
         # Nacitaj model
         self.model = load_model(model_path)
-        print('Actor loaded from file succesful ... 😊')
+        print("Actor loaded from file succesful ... 😊")
 
         self.model.summary()
 
@@ -26,10 +20,14 @@ class Actor:
         print(self.model.layers[-1].name)
 
         # select noise generator
-        if (noise_type == 'normal'):
-            self.noise = NormalActionNoise(mean=0.0, sigma=action_noise, size=action_shape)
-        elif (noise_type == 'ornstein-uhlenbeck'):
-            self.noise = OrnsteinUhlenbeckActionNoise(mean=0.0, sigma=action_noise, size=action_shape)
+        if noise_type == "normal":
+            self.noise = NormalActionNoise(
+                mean=0.0, sigma=action_noise, size=action_shape
+            )
+        elif noise_type == "ornstein-uhlenbeck":
+            self.noise = OrnsteinUhlenbeckActionNoise(
+                mean=0.0, sigma=action_noise, size=action_shape
+            )
         else:
             raise NameError(f"'{noise_type}' noise is not defined")
 
@@ -43,4 +41,7 @@ class Actor:
         return pi_action
 
     def save(self):
-        plot_model(self.model, to_file='img/model_A_TD3.png')
+        plot_model(self.model, to_file="img/model_A_TD3.png")
+
+    def sample_weights(self):
+        self.noise.reset()
