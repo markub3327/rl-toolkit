@@ -8,9 +8,10 @@ import tensorflow as tf
 # Trieda hraca
 class Actor:
     def __init__(self, model_path: str, noise_type: str, action_noise: float):
+        self.model_path = model_path
 
         # Nacitaj model
-        self.model = load_model(model_path)
+        self.model = load_model(self.model_path)
         print("Actor loaded from file succesful ... 😊")
 
         self.model.summary()
@@ -45,3 +46,8 @@ class Actor:
 
     def sample_weights(self):
         self.noise.reset()
+    
+    def reload(self):
+        # Nacitaj model
+        self.model = load_model(self.model_path)
+        print("Actor loaded from file succesful ... 😊")

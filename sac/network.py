@@ -8,9 +8,10 @@ import tensorflow_probability as tfp
 # Trieda hraca
 class Actor:
     def __init__(self, model_path: str):
+        self.model_path = model_path
 
         # Nacitaj model
-        self.model = load_model(model_path, custom_objects={"NoisyLayer": NoisyLayer})
+        self.model = load_model(self.model_path, custom_objects={"NoisyLayer": NoisyLayer})
         print("Actor loaded from file succesful ... 😊")
 
         print(self.model.trainable_variables)
