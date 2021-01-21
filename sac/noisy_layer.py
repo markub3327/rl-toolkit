@@ -59,7 +59,6 @@ class NoisyLayer(Layer):
             {
                 "units": self.units,
                 "log_std_init": self.log_std_init,
-                "log_std_initializer": initializers.serialize(self.log_std_initializer),
             }
         )
         return config
