@@ -55,7 +55,7 @@ class ReplayBuffer:
                 action=action.tobytes(),
                 reward=reward,
                 next_state=next_state.tobytes(),
-                done=done
+                done=done,
             )
         )
 

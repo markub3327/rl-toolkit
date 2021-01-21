@@ -1,16 +1,16 @@
 from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import plot_model
+from .noisy_layer import NoisyLayer
 
 import tensorflow as tf
 import tensorflow_probability as tfp
-
 
 # Trieda hraca
 class Actor:
     def __init__(self, model_path: str):
 
         # Nacitaj model
-        self.model = load_model(model_path)
+        self.model = load_model(model_path, custom_objects={"NoisyLayer": NoisyLayer})
         print("Actor loaded from file succesful ... 😊")
 
         print(self.model.trainable_variables)
@@ -18,7 +18,7 @@ class Actor:
         self.model.summary()
 
         # get log_std layer
-        self.noisy_l = self.model.get_layer(name='log_std')
+        self.noisy_l = self.model.get_layer(name="log_std")
 
         # Prenosova funkcia vystupnej distribucie
         self.bijector = tfp.bijectors.Tanh()
@@ -40,3 +40,8 @@ class Actor:
 
     def sample_weights(self):
         self.noisy_l.sample_weights()
+
+    def reload(self):
+        # Nacitaj model
+        self.model = load_model(self.model_path)
+        print("Actor loaded from file succesful ... 😊")

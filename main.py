@@ -34,7 +34,9 @@ if __name__ == "__main__":
         help="Only OpenAI Gym & PyBullet environments are available!",
         default="BipedalWalker-v3",
     )
-    my_parser.add_argument('-db', '--database', type=str, help='Database name', default='rl-agents')
+    my_parser.add_argument(
+        "-db", "--database", type=str, help="Database name", default="rl-agents"
+    )
     my_parser.add_argument(
         "-t",
         "--max_steps",
@@ -102,10 +104,12 @@ if __name__ == "__main__":
         raise NameError(f"Algorithm '{args.algorithm}' is not defined")
 
     # plot model to png
-    #agent.save()
+    # agent.save()
 
     # replay buffer
-    rpm = ReplayBuffer(env_name=args.environment, db_name=args.database, server_name="192.168.1.2")
+    rpm = ReplayBuffer(
+        env_name=args.environment, db_name=args.database, server_name="192.168.1.2"
+    )
 
     print(env.action_space.low, env.action_space.high)
 
