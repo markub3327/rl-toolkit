@@ -1,7 +1,10 @@
 from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import plot_model
 from .noisy_layer import NoisyLayer
+from os import path
 
+import time
+import os
 import tensorflow as tf
 import tensorflow_probability as tfp
 
@@ -11,8 +14,7 @@ class Actor:
         self.model_path = model_path
 
         # Nacitaj model
-        self.model = load_model(self.model_path, custom_objects={"NoisyLayer": NoisyLayer})
-        print("Actor loaded from file succesful ... 😊")
+        self.reload()
 
         print(self.model.trainable_variables)
 
@@ -25,8 +27,8 @@ class Actor:
         self.bijector = tfp.bijectors.Tanh()
 
     @tf.function
-    def predict(self, x, reset_noise=False, deterministic=False):
-        mean, noise, latent_sde = self.model(x, reset_noise=reset_noise)
+    def predict(self, x, deterministic=False):
+        mean, noise, latent_sde = self.model(x)
         print(mean)
 
         if deterministic:
@@ -43,6 +45,16 @@ class Actor:
         self.noisy_l.sample_weights()
 
     def reload(self):
-        # Nacitaj model
-        self.model = load_model(self.model_path)
-        print("Actor loaded from file succesful ... 😊")
+        while True:
+            if path.exists(f"{self.model_path}.lock") == False:
+                # create lock file
+                #f = open(f"{self.model_path}.lock", "w").close()
+                # Nacitaj model
+                self.model = load_model(self.model_path, custom_objects={"NoisyLayer": NoisyLayer})
+                #os.remove(f"{self.model_path}.lock")
+                print("Actor loaded from file succesful ... 😊")
+                break
+            else:
+                print("Warning: File is already open")
+                time.sleep(0.5)   # 5
+

@@ -24,6 +24,9 @@ class ReplayBuffer:
         server_port: int = 27017,
     ):
 
+        self.env_name = env_name
+        self.db_name = db_name
+
         # connect to server
         self._client = pymongo.MongoClient(f"mongodb://{server_name}:{server_port}/")
         print(self._client.server_info())

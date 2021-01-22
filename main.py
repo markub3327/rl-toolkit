@@ -166,10 +166,11 @@ if __name__ == "__main__":
             rpm.sync()
 
             # model sync
-            agent.reload()
+            if total_steps >= args.warm_up_steps:
+                agent.reload()
 
-            # re-new noise matrix
-            agent.sample_weights()
+                # re-new noise matrix
+                agent.sample_weights()
 
     except KeyboardInterrupt:
         print("Terminated by user! 👋")
