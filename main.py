@@ -1,25 +1,25 @@
-import os
-import time
 import gym
 import pybullet_envs
 import wandb
 import argparse
 import numpy as np
 
+# policy
 from sac import Actor as ActorSAC
 from td3 import Actor as ActorTD3
 
+# utilities
 from utils import ReplayBuffer
 
 if __name__ == "__main__":
-    # init argparse
+
     my_parser = argparse.ArgumentParser(
         prog="python3 main.py",
         description="RL training toolkit",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    # init arguments
+    # init args
     my_parser.add_argument(
         "-alg",
         "--algorithm",
@@ -63,35 +63,27 @@ if __name__ == "__main__":
         default=10000,
     )
     my_parser.add_argument("--wandb", action="store_true", help="Logging to wanDB")
-    my_parser.add_argument("--test", action="store_true", help="Run test mode")
-    my_parser.add_argument("-f", "--model", type=str, help="Actor's model file")
     my_parser.add_argument("-s", "--save", type=str, help="Path for saving model files")
+    my_parser.add_argument("-f", "--model", type=str, help="Actor's model file")
 
-    # get args
+    # Get args
     args = my_parser.parse_args()
     print(args)
 
     # Herne prostredie
     env = gym.make(args.environment)
 
-    # inicializuj prostredie Weights & Biases
-    if args.wandb == True:
+    # Init Weights & Biases
+    if args.wandb:
         wandb.init(project="rl-baselines")
 
-        ###
-        ### Settings
-        ###
+        # Settings
         wandb.config.max_steps = args.max_steps
         wandb.config.noise_type = args.noise_type
         wandb.config.action_noise = args.action_noise
         wandb.config.warm_up_steps = args.warm_up_steps
 
-    # waiting for the model file
-    print("Waiting for the model file ... 😯")
-    while os.path.exists(args.model) == False:
-        time.sleep(5)  # refresh time
-
-    # policy
+    # Policy
     if args.algorithm == "td3":
         agent = ActorTD3(
             model_path=args.model,
@@ -104,11 +96,16 @@ if __name__ == "__main__":
         raise NameError(f"Algorithm '{args.algorithm}' is not defined")
 
     # plot model to png
-    # agent.save()
+    #agent.actor.save()
+    #agent.critic_1.save()
 
     # replay buffer
     rpm = ReplayBuffer(
-        env_name=args.environment, db_name=args.database, server_name="192.168.1.2"
+        obs_dim=env.observation_space.shape,
+        act_dim=env.action_space.shape,
+        env_name=args.environment,
+        db_name=args.database,
+        server_name="192.168.1.2",
     )
 
     print(env.action_space.low, env.action_space.high)
@@ -122,6 +119,12 @@ if __name__ == "__main__":
 
             obs = env.reset()
 
+            # nacitaj model na zaciatku herneho kola
+            agent.load()
+
+            # reset noise
+            agent.sample_weights()
+
             # collect rollout
             while not done:
                 # select action randomly or using policy network
@@ -129,6 +132,7 @@ if __name__ == "__main__":
                     # warmup
                     action = env.action_space.sample()
                 else:
+                    # add batch dim, convert to numpy array
                     action = agent.predict(np.expand_dims(obs, axis=0))[0].numpy()
 
                 # perform action
@@ -139,13 +143,16 @@ if __name__ == "__main__":
                 total_steps += 1
 
                 # store interaction
-                rpm.store(obs, action, reward, new_obs, done, total_steps)
+                rpm.store(obs, action, reward, new_obs, done)
 
                 # super critical !!!
                 obs = new_obs
 
             # after each episode
             total_episodes += 1
+
+            # po kazdej epizode sync s DB
+            rpm.sync()
 
             print(f"Epoch: {total_episodes}")
             print(f"EpsReward: {episode_reward}")
@@ -161,23 +168,8 @@ if __name__ == "__main__":
                         "replayBuffer": len(rpm),
                     }
                 )
-
-            # sync with db
-            rpm.sync()
-
-            # model sync
-            if total_steps >= args.warm_up_steps:
-                agent.reload()
-
-                # re-new noise matrix
-                agent.sample_weights()
-
     except KeyboardInterrupt:
         print("Terminated by user! 👋")
     finally:
-        # Save model to local drive
-        # if (save_path is not None):
-        #    agent.model.save(f"{save_path}model_A_{env_name}.h5")
-
         # zatvor prostredie
         env.close()

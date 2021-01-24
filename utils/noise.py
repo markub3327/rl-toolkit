@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-class OrnsteinUhlenbeckActionNoise:
+class OrnsteinUhlenbeckNoise:
     """
     An Ornstein Uhlenbeck action noise, this is designed to approximate Brownian motion with friction.
     :param mean: the mean of the noise
@@ -40,7 +40,7 @@ class OrnsteinUhlenbeckActionNoise:
         self.noise_prev.assign(tf.zeros(self._size))
 
 
-class NormalActionNoise:
+class NormalNoise:
     """
     A Gaussian action noise
     :param mean: the mean value of the noise

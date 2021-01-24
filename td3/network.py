@@ -1,7 +1,6 @@
 from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import plot_model
-
-from utils.noise import OrnsteinUhlenbeckActionNoise, NormalActionNoise
+from utils import OrnsteinUhlenbeckNoise, NormalNoise
 
 import tensorflow as tf
 
@@ -22,11 +21,11 @@ class Actor:
 
         # select noise generator
         if noise_type == "normal":
-            self.noise = NormalActionNoise(
+            self.noise = NormalNoise(
                 mean=0.0, sigma=action_noise, size=action_shape
             )
         elif noise_type == "ornstein-uhlenbeck":
-            self.noise = OrnsteinUhlenbeckActionNoise(
+            self.noise = OrnsteinUhlenbeckNoise(
                 mean=0.0, sigma=action_noise, size=action_shape
             )
         else:
@@ -41,13 +40,14 @@ class Actor:
 
         return pi_action
 
-    def save(self):
+    def save_plot(self):
         plot_model(self.model, to_file="img/model_A_TD3.png")
 
     def sample_weights(self):
         self.noise.reset()
-    
-    def reload(self):
-        # Nacitaj model
+
+    def load(self):
         self.model = load_model(self.model_path)
         print("Actor loaded from file succesful ... 😊")
+
+        self.model.summary()

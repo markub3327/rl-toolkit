@@ -10,7 +10,6 @@ class NoisyLayer(Layer):
         super(NoisyLayer, self).__init__(**kwargs)
         self.units = units
         self.log_std_init = log_std_init
-        self.log_std_initializer = initializers.Constant(value=self.log_std_init)
 
         self.input_spec = InputSpec(min_ndim=2)
 
@@ -19,7 +18,7 @@ class NoisyLayer(Layer):
         dtype = tf.dtypes.as_dtype(self.dtype or K.floatx())
         if not (dtype.is_floating or dtype.is_complex):
             raise TypeError(
-                "Unable to build `Dense` layer with non-floating point "
+                "Unable to build `NoisyLayer` layer with non-floating point "
                 "dtype %s" % (dtype,)
             )
         input_shape = tf.TensorShape(input_shape)
@@ -28,11 +27,16 @@ class NoisyLayer(Layer):
         self.log_std = self.add_weight(
             "log_std",
             shape=[self.last_dim, self.units],
-            initializer=self.log_std_initializer,
-            regularizer=None,
-            constraint=None,
+            initializer=initializers.Constant(value=self.log_std_init),
             dtype=self.dtype,
-            trainable=True,
+            trainable=True
+        )
+        self.exploration_mat = self.add_weight(
+            "exploration_mat",
+            shape=[self.last_dim, self.units],
+            initializer=initializers.Zeros(),
+            dtype=self.dtype,
+            trainable=False
         )
 
         # sample new noise matrix
@@ -48,11 +52,10 @@ class NoisyLayer(Layer):
     def sample_weights(self):
         # get scale (0, ∞)
         std = tf.exp(self.log_std)
-        tf.print(self.log_std)
-        w_dist = tfp.distributions.Normal(tf.zeros_like(std), std)
-        self.exploration_mat = w_dist.sample()
 
-    # Implement get_config to enable serialization. This is optional.
+        w_dist = tfp.distributions.Normal(tf.zeros_like(std), std)
+        self.exploration_mat.assign(w_dist.sample())
+
     def get_config(self):
         config = super(NoisyLayer, self).get_config()
         config.update(
