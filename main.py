@@ -122,11 +122,12 @@ if __name__ == "__main__":
             # nacitaj model na zaciatku herneho kola
             agent.load()
 
-            # reset noise
-            agent.sample_weights()
-
             # collect rollout
             while not done:
+                # reset noise
+                if total_steps % 64 == 0:
+                    agent.sample_weights()
+
                 # select action randomly or using policy network
                 if total_steps < args.warm_up_steps:
                     # warmup
