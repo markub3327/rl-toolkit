@@ -158,8 +158,7 @@ if __name__ == "__main__":
             print(f"Epoch: {total_episodes}")
             print(f"EpsReward: {episode_reward}")
             print(f"EpsSteps: {episode_timesteps}")
-            print(f"TotalInteractions: {total_steps}")
-            print(f"ReplayBuffer: {len(rpm)}")
+            print(f"TotalInteractions: {total_steps}\n")
             if args.wandb == True:
                 wandb.log(
                     {

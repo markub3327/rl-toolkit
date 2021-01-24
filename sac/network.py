@@ -48,7 +48,7 @@ class Actor:
                 os.close(fd)
                 os.unlink(lockfile)
 
-                print("Loaded succesful ... 😊")
+                print("\nLoaded succesful ... 😊")
                 break       # ukonci proces zapisu
             except OSError as e:
                 if e.errno != errno.EEXIST:
