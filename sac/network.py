@@ -4,6 +4,8 @@ from .noisy_layer import NoisyLayer
 
 import os
 import sys
+import time
+import errno
 import tensorflow as tf
 import tensorflow_probability as tfp
 
@@ -33,20 +35,26 @@ class Actor:
 
     def load(self):
         # cakaj na zamok
+        lockfile = f"{self.model_path}.lock"
         while True:
-            # ak zamok neexistuje pristup k mediu
-            if os.path.exists(f"{self.model_path}.lock") == False:
-                # vytvor zamok
-                open(f"{self.model_path}.lock", "w").close()
+            try:
+                fd = os.open(lockfile, os.O_CREAT|os.O_EXCL|os.O_RDWR)
 
+                # nacitaj model
                 self.model = load_model(self.model_path, custom_objects={"NoisyLayer": NoisyLayer}, compile=False)
                 #self.model.summary()
 
                 # uvolni zamok
-                os.remove(f"{self.model_path}.lock")
+                os.close(fd)
+                os.unlink(lockfile)
 
                 print("Loaded succesful ... 😊")
                 break       # ukonci proces zapisu
-            else:
+            except OSError as e:
+                if e.errno != errno.EEXIST:
+                    raise
+
                 sys.stdout.write('\rWarning: File is already open by another user...')   
                 sys.stdout.flush()
+
+                time.sleep(0.05)
