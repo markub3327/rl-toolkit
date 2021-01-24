@@ -122,6 +122,9 @@ if __name__ == "__main__":
             # nacitaj model na zaciatku herneho kola
             agent.load()
 
+            # reset noise
+            agent.sample_weights()
+
             # collect rollout
             while not done:
                 # reset noise
