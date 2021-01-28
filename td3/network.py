@@ -29,10 +29,6 @@ class Actor:
 
         self.model.summary()
 
-    def save_plot(self):
-        plot_model(self.model, to_file="img/model_A_TD3.png")
-
-
 # Trieda kritika
 class Critic:
     def __init__(self, state_shape=None, action_shape=None, lr=None, model_path=None):
@@ -60,6 +56,3 @@ class Critic:
         self.optimizer = Adam(learning_rate=lr)
 
         self.model.summary()
-
-    def save_plot(self):
-        plot_model(self.model, to_file="img/model_C_TD3.png")

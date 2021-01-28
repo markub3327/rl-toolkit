@@ -129,10 +129,6 @@ if __name__ == "__main__":
     else:
         raise NameError(f"Algorithm '{args.algorithm}' is not defined")
 
-    # plot model to png
-    #agent.actor.save()
-    #agent.critic_1.save()
-
     # uloz inicializacny model
     agent.actor.model.save(f"{args.save}model_A_{args.environment}.h5")
     print("Actor's init model saved successful 😊")

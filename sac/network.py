@@ -90,9 +90,6 @@ class Actor:
 
         return pi_action, logp_pi
 
-    def save_plot(self):
-        plot_model(self.model, to_file="img/model_A_SAC.png")
-
     def create_lock(self, path):
         # cakaj na zamok
         self.lockfile = f"{path}.lock"
@@ -161,6 +158,3 @@ class Critic:
         self.optimizer = Adam(learning_rate=learning_rate)
 
         self.model.summary()
-
-    def save_plot(self):
-        plot_model(self.model, to_file="img/model_C_SAC.png")

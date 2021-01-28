@@ -95,10 +95,6 @@ if __name__ == "__main__":
     else:
         raise NameError(f"Algorithm '{args.algorithm}' is not defined")
 
-    # plot model to png
-    #agent.actor.save()
-    #agent.critic_1.save()
-
     # replay buffer
     rpm = ReplayBufferReader(
         db_name=args.database,
