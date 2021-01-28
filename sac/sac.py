@@ -173,7 +173,7 @@ class SAC:
             batch = rpm.sample_batch(batch_size)
 
             # re-new noise matrix every update of 'log_std' params
-            #self.actor.sample_weights()
+            self.actor.sample_weights()
 
             # Alpha param update
             self.loss_alpha.update_state(self._update_alpha(batch))

@@ -1,0 +1,1 @@
+docker run -it --rm -v $HOME:/root markub/rl-toolkit:cpu bash

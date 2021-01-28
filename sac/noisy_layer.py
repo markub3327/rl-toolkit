@@ -49,9 +49,12 @@ class NoisyLayer(Layer):
     def compute_output_shape(self, input_shape):
         return (input_shape[0], self.units)
 
+    def get_std(self):
+        return tf.exp(self.log_std)
+
     def sample_weights(self):
         # get scale (0, ∞)
-        std = tf.exp(self.log_std)
+        std = self.get_std()
 
         w_dist = tfp.distributions.Normal(tf.zeros_like(std), std)
         self.exploration_mat.assign(w_dist.sample())

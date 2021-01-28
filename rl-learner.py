@@ -9,7 +9,7 @@ from sac import SAC
 from td3 import TD3
 
 # utilities
-from utils import ReplayBuffer
+from utils import ReplayBufferWriter
 
 if __name__ == "__main__":
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     # Init Weights & Biases
     if args.wandb:
-        wandb.init(project="rl-baselines")
+        wandb.init(project="rl-toolkit")
 
         # Settings
         wandb.config.gamma = args.gamma
@@ -138,7 +138,7 @@ if __name__ == "__main__":
     print("Actor's init model saved successful 😊")
 
     # replay buffer
-    rpm = ReplayBuffer(
+    rpm = ReplayBufferWriter(
         size=args.batch_size * 64,
         obs_dim=env.observation_space.shape,
         act_dim=env.action_space.shape,
@@ -154,11 +154,11 @@ if __name__ == "__main__":
         total_steps = 0
         while total_steps < args.max_steps or len(rpm) < args.max_steps:
             if len(rpm) >= 10000:
-                # pozastav
-                agent.actor.create_lock(f"{args.save}model_A_{args.environment}_weights.h5")
-
                 # synchronizuj s DB
                 rpm.sync()
+
+                # pozastav
+                agent.actor.create_lock(f"{args.save}model_A_{args.environment}_weights.h5")
 
                 # aktualizuj model
                 agent.update(rpm, args.batch_size, 64, logging_wandb=args.wandb)
@@ -166,13 +166,13 @@ if __name__ == "__main__":
                 # uloz novy model
                 agent.actor.save_weights(f"{args.save}model_A_{args.environment}_weights.h5")
 
+                # uvolni
+                agent.actor.release_lock()
+
                 print(f"Epoch: {total_steps}")
                 print(f"ReplayBuffer: {len(rpm)}")
 
                 total_steps += 64  # zapocitavaj iba iteracie ucenia
-
-                # uvolni
-                agent.actor.release_lock()
             else:
                 sys.stdout.write('\rPopulating database up to 10000 samples...')   
                 sys.stdout.flush()
@@ -191,3 +191,6 @@ if __name__ == "__main__":
 
         # zatvor prostredie
         env.close()
+
+        # uvolni zamok ak existoval
+        agent.actor.release_lock()

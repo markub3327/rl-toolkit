@@ -1,22 +1,42 @@
-# RL agent toolkit
+# RL toolkit
 
-[![Release](https://img.shields.io/github/release/markub3327/rl-agent)](https://github.com/markub3327/rl-agent/releases)
-![Tag](https://img.shields.io/github/v/tag/markub3327/rl-agent)
+[![Release](https://img.shields.io/github/release/markub3327/rl-toolkit)](https://github.com/markub3327/rl-toolkit/releases)
+![Tag](https://img.shields.io/github/v/tag/markub3327/rl-toolkit)
 
-[![Issues](https://img.shields.io/github/issues/markub3327/rl-agent)](https://github.com/markub3327/rl-agent/issues)
-![Commits](https://img.shields.io/github/commit-activity/w/markub3327/rl-agent)
+[![Issues](https://img.shields.io/github/issues/markub3327/rl-toolkit)](https://github.com/markub3327/rl-toolkit/issues)
+![Commits](https://img.shields.io/github/commit-activity/w/markub3327/rl-toolkit)
 
-![Languages](https://img.shields.io/github/languages/count/markub3327/rl-agent)
-![Size](https://img.shields.io/github/repo-size/markub3327/rl-agent)
-
-[![MIT](https://img.shields.io/github/license/markub3327/rl-agent)](LICENSE)
-
+![Languages](https://img.shields.io/github/languages/count/markub3327/rl-toolkit)
+![Size](https://img.shields.io/github/repo-size/markub3327/rl-toolkit)
 
 ## Papers
 
   * **Soft Actor-Critic** (https://arxiv.org/pdf/1812.05905.pdf)
   * **Twin Delayed DDPG** (https://arxiv.org/pdf/1802.09477.pdf)
   * **Generalized State-Dependent Exploration** (https://arxiv.org/pdf/2005.05719.pdf)
+
+
+## Topology
+
+<p align="center"><b>Actor (Twin Delayed DDPG)</b></p>
+<p align="center">
+  <img src="img/model_A_TD3.png" alt="actor">
+</p>
+
+<p align="center"><b>Critic (Twin Delayed DDPG)</b></p>
+<p align="center">
+  <img src="img/model_C_TD3.png" alt="critic">
+</p>
+
+<p align="center"><b>Actor (Soft Actor-Critic)</b></p>
+<p align="center">
+  <img src="img/model_A_SAC.png" alt="actor">
+</p>
+
+<p align="center"><b>Critic (Soft Actor-Critic)</b></p>
+<p align="center">
+  <img src="img/model_C_SAC.png" alt="critic">
+</p>
 
 ## Tested environments
   

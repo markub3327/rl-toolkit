@@ -1,10 +1,11 @@
 import numpy as np
 import pymongo
 
+from abc import ABC, abstractmethod
 
-class ReplayBuffer:
+class ReplayBuffer(ABC):
     """
-    An experiences replay buffer
+    Base class that represent an experiences replay buffer
     ----------------------
 
     Use database to store large amount of interactions from many games.
@@ -18,12 +19,9 @@ class ReplayBuffer:
 
     def __init__(
         self,
-        size,
-        obs_dim,
-        act_dim,
-        env_name: str,
         db_name: str,
-        server_name: str = "localhost",
+        env_name: str,
+        server_name: str,
         server_port: int = 27017,
     ):
 
@@ -48,6 +46,32 @@ class ReplayBuffer:
 
         # drop all old data
         self._collection.remove({})
+
+    def __len__(self):
+        raise NotImplementedError()
+
+    @abstractmethod
+    def sync(self):
+        raise NotImplementedError()
+
+class ReplayBufferWriter(ReplayBuffer):
+
+    def __init__(
+        self,
+        db_name,
+        env_name,
+        size,
+        obs_dim,
+        act_dim,
+        server_name,
+        server_port=27017
+    ):
+        super().__init__(
+            db_name,
+            env_name,
+            server_name=server_name,
+            server_port=server_port
+        )
 
         # in-memory experiences buffer
         self.obs_buf = np.zeros((size,) + obs_dim, dtype=np.float32)
@@ -88,3 +112,54 @@ class ReplayBuffer:
 
         print(f'RPM max_size: {self.max_size}')
         print(f'RPM curr_size: {self.size}')
+
+class ReplayBufferReader(ReplayBuffer):
+    """
+    An experiences replay buffer
+    ----------------------
+    Use database to store large amount of interactions from many games.
+    Every game environment has own collection of documents stored in database.
+    In-memory buffer is synchronized with database after every episode.
+      *  MongoDB
+      *  In-memory buffer (<= 1000)
+    """
+
+    def __init__(
+        self,
+        db_name,
+        env_name,
+        server_name,
+        server_port=27017
+    ):
+        super().__init__(
+            db_name,
+            env_name,
+            server_name=server_name,
+            server_port=server_port
+        )
+
+        # in-memory experiences buffer
+        self._buffer = []
+
+    def store(self, state, action, reward, next_state, done):
+        # transition (ID-State-Action-Reward-State-Done)
+        self._buffer.append(
+            dict(
+                #_id=timestep,  # the unique ID of document in collection <==> timestep in game !!!
+                state=state.tobytes(),
+                action=action.tobytes(),
+                reward=reward,
+                next_state=next_state.tobytes(),
+                done=done,
+            )
+        )
+
+    def __len__(self):
+        return len(self._buffer)
+
+    def sync(self):
+        # store transitions into db
+        self._collection.insert_many(self._buffer)
+
+        # clear buffer
+        self._buffer.clear()

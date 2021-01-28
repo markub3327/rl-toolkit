@@ -9,7 +9,7 @@ from sac import Actor as ActorSAC
 from td3 import Actor as ActorTD3
 
 # utilities
-from utils import ReplayBuffer
+from utils import ReplayBufferReader
 
 if __name__ == "__main__":
 
@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     # Init Weights & Biases
     if args.wandb:
-        wandb.init(project="rl-baselines")
+        wandb.init(project="rl-toolkit")
 
         # Settings
         wandb.config.max_steps = args.max_steps
@@ -100,12 +100,10 @@ if __name__ == "__main__":
     #agent.critic_1.save()
 
     # replay buffer
-    rpm = ReplayBuffer(
-        obs_dim=env.observation_space.shape,
-        act_dim=env.action_space.shape,
-        env_name=args.environment,
+    rpm = ReplayBufferReader(
         db_name=args.database,
-        server_name="192.168.1.2",
+        env_name=args.environment,
+        server_name="192.168.1.2"
     )
 
     print(env.action_space.low, env.action_space.high)
@@ -119,17 +117,21 @@ if __name__ == "__main__":
 
             obs = env.reset()
 
+            # pozastav
+            agent.create_lock(f"{args.model}model_A_{args.environment}_weights.h5")
             # nacitaj model na zaciatku herneho kola
             agent.load_weights(f"{args.model}model_A_{args.environment}_weights.h5")
+            # uvolni
+            agent.release_lock()
 
             # reset noise
-            #agent.sample_weights()
+            agent.sample_weights()
 
             # collect rollout
             while not done:
                 # reset noise
-                #if total_steps % 64 == 0:
-                #    agent.sample_weights()
+                if total_steps % 64 == 0:
+                    agent.sample_weights()
 
                 # select action randomly or using policy network
                 if total_steps < args.warm_up_steps:
@@ -137,7 +139,8 @@ if __name__ == "__main__":
                     action = env.action_space.sample()
                 else:
                     # add batch dim, convert to numpy array
-                    action = agent.predict(np.expand_dims(obs, axis=0))[0].numpy()
+                    action, _ = agent.predict(np.expand_dims(obs, axis=0), with_logprob=False)
+                    action = np.squeeze(action.numpy(), axis=0)
 
                 # perform action
                 new_obs, reward, done, _ = env.step(action)
@@ -172,7 +175,10 @@ if __name__ == "__main__":
                     }
                 )
     except KeyboardInterrupt:
-        print("Terminated by user! 👋")
+        print("Terminated by user! 👋")            
     finally:
         # zatvor prostredie
         env.close()
+
+        # uvolni zamok ak existoval
+        agent.release_lock()

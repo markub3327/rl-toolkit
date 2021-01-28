@@ -20,8 +20,10 @@ class Actor:
         action_shape=None,
         learning_rate=None,
         model_path=None,
-        clip_mean: float = 2.0
+        clip_mean: float = 2.0,
+        epsilon: float = 1e-06
     ):
+        self.epsilon = epsilon
 
         if model_path == None:
             state_input = Input(shape=state_shape, name="state_input")
@@ -34,21 +36,22 @@ class Actor:
                 lambda x: tf.clip_by_value(x, -clip_mean, clip_mean), name="clip_mean"
             )(mean)
 
-            log_std = Dense(action_shape[0], name="log_std")(l2)
-            log_std = Lambda(
-                lambda x: tf.math.softplus(x) + 1e-5
-            )(log_std)
+            #log_std = Dense(action_shape[0], name="log_std")(l2)
+            #log_std = Lambda(
+            #    lambda x: tf.math.softplus(x) + 1e-5
+            #)(log_std)
 
-            #self._noisy_l1 = NoisyLayer(action_shape[0], name="log_std")
-            #noisy_l1 = self._noisy_l1(latent_sde)
-            #config = self._noisy_l1.get_config()
-            #print(config)
+            self._noisy_l1 = NoisyLayer(action_shape[0], name="log_std")
+            noisy_l1 = self._noisy_l1(l2)
+            config = self._noisy_l1.get_config()
+            print(config)
 
             # Vytvor model
-            self.model = Model(inputs=state_input, outputs=[mean, log_std])
+            self.model = Model(inputs=state_input, outputs=[mean, noisy_l1, l2])
         else:
             # Nacitaj model
-            self.model = load_model(model_path, custom_objects={"NoisyLayer": NoisyLayer})
+            self.model = load_model(model_path, custom_objects={"NoisyLayer": NoisyLayer}, compile=False)
+            self._noisy_l1 = self.model.get_layer(name="log_std")
             print("Actor loaded from file succesful ... 😊")
 
         # Optimalizator modelu
@@ -59,23 +62,26 @@ class Actor:
 
         self.model.summary()
 
+        # init lockfile
+        self.is_locked = False
+
     @tf.function
     def predict(self, x, with_logprob=True, deterministic=False):
-        mean, log_std = self.model(x)
+        mean, noise, latent_sde = self.model(x)
 
         if deterministic:
             pi_action = mean
             logp_pi = None
         else:
-            pi_distribution = tfp.distributions.TransformedDistribution(
-                    distribution=tfp.distributions.Normal(
-                        mean, log_std
-                    ),
-                    bijector=self.bijector,
-            )
-            pi_action = pi_distribution.sample()
-
+            pi_action = self.bijector.forward(mean + noise)
             if with_logprob:
+                variance = tf.matmul(tf.square(latent_sde), tf.square(self._noisy_l1.get_std()))
+                pi_distribution = tfp.distributions.TransformedDistribution(
+                    distribution=tfp.distributions.Normal(
+                        mean, tf.sqrt(variance + self.epsilon)
+                    ),
+                    bijector=self.bijector
+                )
                 logp_pi = pi_distribution.log_prob(pi_action)
                 # sum independent log_probs
                 logp_pi = tf.reduce_sum(logp_pi, axis=1, keepdims=True)
@@ -108,6 +114,13 @@ class Actor:
         # uloz model
         self.model.save_weights(path)
         print("Saved weights successful 😊")
+    
+
+    def load_weights(self, path):
+        if os.path.exists(path):
+            # nacitaj model
+            self.model.load_weights(path)
+            print("Loaded succesful ... 😊")
 
     def release_lock(self):
         if self.is_locked:
