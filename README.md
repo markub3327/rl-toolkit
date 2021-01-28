@@ -15,6 +15,15 @@
   * **Twin Delayed DDPG** (https://arxiv.org/pdf/1802.09477.pdf)
   * **Generalized State-Dependent Exploration** (https://arxiv.org/pdf/2005.05719.pdf)
 
+## Using
+
+```shell
+# Run learner instance
+python3 rl-learner.py [-h] -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
+
+# Run agent (worker) instance
+python3 rl-agent.py [-h] -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
+```
 
 ## Topology
 
