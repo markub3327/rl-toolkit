@@ -3,6 +3,7 @@ import pymongo
 
 from abc import ABC, abstractmethod
 
+
 class ReplayBuffer(ABC):
     """
     Base class that represent an experiences replay buffer
@@ -54,23 +55,13 @@ class ReplayBuffer(ABC):
     def sync(self):
         raise NotImplementedError()
 
-class ReplayBufferWriter(ReplayBuffer):
 
+class ReplayBufferWriter(ReplayBuffer):
     def __init__(
-        self,
-        db_name,
-        env_name,
-        size,
-        obs_dim,
-        act_dim,
-        server_name,
-        server_port=27017
+        self, db_name, env_name, size, obs_dim, act_dim, server_name, server_port=27017
     ):
         super().__init__(
-            db_name,
-            env_name,
-            server_name=server_name,
-            server_port=server_port
+            db_name, env_name, server_name=server_name, server_port=server_port
         )
 
         # in-memory experiences buffer
@@ -86,11 +77,13 @@ class ReplayBufferWriter(ReplayBuffer):
 
     def sample_batch(self, batch_size):
         idxs = np.random.randint(0, self.size, size=batch_size)
-        return dict(obs=self.obs_buf[idxs],
-                    obs2=self.obs2_buf[idxs],
-                    act=self.act_buf[idxs],
-                    rew=self.rew_buf[idxs],
-                    done=self.done_buf[idxs])
+        return dict(
+            obs=self.obs_buf[idxs],
+            obs2=self.obs2_buf[idxs],
+            act=self.act_buf[idxs],
+            rew=self.rew_buf[idxs],
+            done=self.done_buf[idxs],
+        )
 
     def sync(self):
         db_count = self._collection.count()
@@ -110,8 +103,9 @@ class ReplayBufferWriter(ReplayBuffer):
             self.done_buf[self.size] = x["done"]
             self.size += 1
 
-        print(f'RPM max_size: {self.max_size}')
-        print(f'RPM curr_size: {self.size}')
+        print(f"RPM max_size: {self.max_size}")
+        print(f"RPM curr_size: {self.size}")
+
 
 class ReplayBufferReader(ReplayBuffer):
     """
@@ -124,18 +118,9 @@ class ReplayBufferReader(ReplayBuffer):
       *  In-memory buffer (<= 1000)
     """
 
-    def __init__(
-        self,
-        db_name,
-        env_name,
-        server_name,
-        server_port=27017
-    ):
+    def __init__(self, db_name, env_name, server_name, server_port=27017):
         super().__init__(
-            db_name,
-            env_name,
-            server_name=server_name,
-            server_port=server_port
+            db_name, env_name, server_name=server_name, server_port=server_port
         )
 
         # in-memory experiences buffer
@@ -145,7 +130,7 @@ class ReplayBufferReader(ReplayBuffer):
         # transition (ID-State-Action-Reward-State-Done)
         self._buffer.append(
             dict(
-                #_id=timestep,  # the unique ID of document in collection <==> timestep in game !!!
+                # _id=timestep,  # the unique ID of document in collection <==> timestep in game !!!
                 state=state.tobytes(),
                 action=action.tobytes(),
                 reward=reward,

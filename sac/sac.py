@@ -144,7 +144,9 @@ class SAC:
             # tf.print(f'a_losses: {a_losses}')
 
         grads = tape.gradient(a_loss, self.actor.model.trainable_variables)
-        self.actor.optimizer.apply_gradients(zip(grads, self.actor.model.trainable_variables))
+        self.actor.optimizer.apply_gradients(
+            zip(grads, self.actor.model.trainable_variables)
+        )
 
         return a_loss
 

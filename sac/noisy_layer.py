@@ -29,14 +29,14 @@ class NoisyLayer(Layer):
             shape=[self.last_dim, self.units],
             initializer=initializers.Constant(value=self.log_std_init),
             dtype=self.dtype,
-            trainable=True
+            trainable=True,
         )
         self.exploration_mat = self.add_weight(
             "exploration_mat",
             shape=[self.last_dim, self.units],
             initializer=initializers.Zeros(),
             dtype=self.dtype,
-            trainable=False
+            trainable=False,
         )
 
         # sample new noise matrix

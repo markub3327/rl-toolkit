@@ -65,3 +65,7 @@ RUN python3 -m pip --no-cache-dir install -r requirements.txt
 
 # nastav pracovny priecinok na /root
 WORKDIR /root
+
+# naklonuj RL nastroje
+RUN git clone https://github.com/markub3327/rl-toolkit.git
+WORKDIR /root/rl-toolkit/

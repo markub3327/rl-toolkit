@@ -154,13 +154,17 @@ if __name__ == "__main__":
                 rpm.sync()
 
                 # pozastav
-                agent.actor.create_lock(f"{args.save}model_A_{args.environment}_weights.h5")
+                agent.actor.create_lock(
+                    f"{args.save}model_A_{args.environment}_weights.h5"
+                )
 
                 # aktualizuj model
                 agent.update(rpm, args.batch_size, 64, logging_wandb=args.wandb)
 
                 # uloz novy model
-                agent.actor.save_weights(f"{args.save}model_A_{args.environment}_weights.h5")
+                agent.actor.save_weights(
+                    f"{args.save}model_A_{args.environment}_weights.h5"
+                )
 
                 # uvolni
                 agent.actor.release_lock()
@@ -170,7 +174,7 @@ if __name__ == "__main__":
 
                 total_steps += 64  # zapocitavaj iba iteracie ucenia
             else:
-                sys.stdout.write('\rPopulating database up to 10000 samples...')   
+                sys.stdout.write("\rPopulating database up to 10000 samples...")
                 sys.stdout.flush()
     except KeyboardInterrupt:
         print("Terminated by user! 👋")

@@ -1,1 +1,1 @@
-docker run -it --rm -v $HOME:/root markub/rl-toolkit:cpu bash
+docker run -it markub/rl-toolkit:cpu bash

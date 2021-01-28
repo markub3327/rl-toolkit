@@ -97,9 +97,7 @@ if __name__ == "__main__":
 
     # replay buffer
     rpm = ReplayBufferReader(
-        db_name=args.database,
-        env_name=args.environment,
-        server_name="192.168.1.2"
+        db_name=args.database, env_name=args.environment, server_name="192.168.1.2"
     )
 
     print(env.action_space.low, env.action_space.high)
@@ -131,7 +129,9 @@ if __name__ == "__main__":
                     action = env.action_space.sample()
                 else:
                     # add batch dim, convert to numpy array
-                    action, _ = agent.predict(np.expand_dims(obs, axis=0), with_logprob=False)
+                    action, _ = agent.predict(
+                        np.expand_dims(obs, axis=0), with_logprob=False
+                    )
                     action = np.squeeze(action.numpy(), axis=0)
 
                 # perform action
@@ -146,11 +146,10 @@ if __name__ == "__main__":
 
                 # super critical !!!
                 obs = new_obs
-                
+
                 # reset noise
                 if total_steps % 64 == 0:
                     agent.sample_weights()
-
 
             # after each episode
             total_episodes += 1
@@ -172,7 +171,7 @@ if __name__ == "__main__":
                     }
                 )
     except KeyboardInterrupt:
-        print("Terminated by user! 👋")            
+        print("Terminated by user! 👋")
     finally:
         # zatvor prostredie
         env.close()

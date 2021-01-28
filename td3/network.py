@@ -29,6 +29,7 @@ class Actor:
 
         self.model.summary()
 
+
 # Trieda kritika
 class Critic:
     def __init__(self, state_shape=None, action_shape=None, lr=None, model_path=None):

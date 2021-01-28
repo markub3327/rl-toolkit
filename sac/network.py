@@ -21,7 +21,7 @@ class Actor:
         learning_rate=None,
         model_path=None,
         clip_mean: float = 2.0,
-        epsilon: float = 1e-06
+        epsilon: float = 1e-06,
     ):
         self.epsilon = epsilon
 
@@ -36,10 +36,10 @@ class Actor:
                 lambda x: tf.clip_by_value(x, -clip_mean, clip_mean), name="clip_mean"
             )(mean)
 
-            #log_std = Dense(action_shape[0], name="log_std")(l2)
-            #log_std = Lambda(
+            # log_std = Dense(action_shape[0], name="log_std")(l2)
+            # log_std = Lambda(
             #    lambda x: tf.math.softplus(x) + 1e-5
-            #)(log_std)
+            # )(log_std)
 
             self._noisy_l1 = NoisyLayer(action_shape[0], name="log_std")
             noisy_l1 = self._noisy_l1(l2)
@@ -50,7 +50,9 @@ class Actor:
             self.model = Model(inputs=state_input, outputs=[mean, noisy_l1, l2])
         else:
             # Nacitaj model
-            self.model = load_model(model_path, custom_objects={"NoisyLayer": NoisyLayer}, compile=False)
+            self.model = load_model(
+                model_path, custom_objects={"NoisyLayer": NoisyLayer}, compile=False
+            )
             self._noisy_l1 = self.model.get_layer(name="log_std")
             print("Actor loaded from file succesful ... 😊")
 
@@ -75,12 +77,14 @@ class Actor:
         else:
             pi_action = self.bijector.forward(mean + noise)
             if with_logprob:
-                variance = tf.matmul(tf.square(latent_sde), tf.square(self._noisy_l1.get_std()))
+                variance = tf.matmul(
+                    tf.square(latent_sde), tf.square(self._noisy_l1.get_std())
+                )
                 pi_distribution = tfp.distributions.TransformedDistribution(
                     distribution=tfp.distributions.Normal(
                         mean, tf.sqrt(variance + self.epsilon)
                     ),
-                    bijector=self.bijector
+                    bijector=self.bijector,
                 )
                 logp_pi = pi_distribution.log_prob(pi_action)
                 # sum independent log_probs
@@ -95,14 +99,14 @@ class Actor:
         self.lockfile = f"{path}.lock"
         while True:
             try:
-                self.fd = os.open(self.lockfile, os.O_CREAT|os.O_EXCL|os.O_RDWR)
+                self.fd = os.open(self.lockfile, os.O_CREAT | os.O_EXCL | os.O_RDWR)
                 self.is_locked = True
-                print('Lockfile created')
+                print("Lockfile created")
                 break
             except OSError as e:
                 if e.errno != errno.EEXIST:
                     raise
-                sys.stdout.write('\rWarning: File is already open by another user...')   
+                sys.stdout.write("\rWarning: File is already open by another user...")
                 sys.stdout.flush()
                 # release medium
                 time.sleep(0.05)
@@ -111,7 +115,6 @@ class Actor:
         # uloz model
         self.model.save_weights(path)
         print("Saved weights successful 😊")
-    
 
     def load_weights(self, path):
         if os.path.exists(path):
@@ -128,6 +131,7 @@ class Actor:
 
     def sample_weights(self):
         self._noisy_l1.sample_weights()
+
 
 # Trieda kritika
 class Critic:
