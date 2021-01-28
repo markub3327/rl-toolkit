@@ -75,7 +75,7 @@ python3 rl-agent.py [-h] -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 <p align="center">
   <img src="img/results.png" alt="results">
 </p>
-<p align="center"><a href="https://app.wandb.ai/markub/rl-baselines" target="_blank">For more charts click here.</a></p>
+<p align="center"><a href="https://wandb.ai/markub/rl-toolkit/" target="_blank">For more charts click here.</a></p>
 
 
 ----------------------------------
