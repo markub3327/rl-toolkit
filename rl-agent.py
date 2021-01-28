@@ -129,10 +129,6 @@ if __name__ == "__main__":
 
             # collect rollout
             while not done:
-                # reset noise
-                if total_steps % 64 == 0:
-                    agent.sample_weights()
-
                 # select action randomly or using policy network
                 if total_steps < args.warm_up_steps:
                     # warmup
@@ -154,6 +150,11 @@ if __name__ == "__main__":
 
                 # super critical !!!
                 obs = new_obs
+                
+                # reset noise
+                if total_steps % 64 == 0:
+                    agent.sample_weights()
+
 
             # after each episode
             total_episodes += 1
