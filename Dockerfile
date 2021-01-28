@@ -14,7 +14,6 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-numpy \
     git \
-    graphviz \
     && rm -rf /var/lib/apt/lists/*
 
 # Some TF tools expect a "python" binary
@@ -22,7 +21,7 @@ RUN ln -s $(which python3) /usr/local/bin/python
 
 ###########################################
 # OpenAI Gym
-# see: https://github.com/openai/gym
+# Source: https://github.com/openai/gym
 ###########################################
 RUN apt-get -y update && apt-get install -y \
         unzip \
@@ -43,13 +42,11 @@ RUN python3 -m pip install --no-cache-dir -e '.[box2d,classic_control]'
 
 ###########################################
 # Tensorflow
-# see: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/dockerfiles/dockerfiles/cpu.Dockerfile
+# Source: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/dockerfiles/dockerfiles/cpu.Dockerfile
 ###########################################
 RUN python3 -m pip --no-cache-dir install --upgrade \
     "pip" \
-    setuptools \
-    pydot
-
+    setuptools
 # Options:
 #   tensorflow
 #   tensorflow-gpu
@@ -64,10 +61,7 @@ RUN python3 -m pip install --no-cache-dir ${TF_PACKAGE}${TF_PACKAGE_VERSION:+==$
 ###########################################
 # Dependencies
 ###########################################
-RUN python3 -m pip --no-cache-dir install \
-    wandb \
-    tensorflow_probability \
-    pybullet
+RUN python3 -m pip --no-cache-dir install -r requirements.txt
 
 # nastav pracovny priecinok na /root
 WORKDIR /root
