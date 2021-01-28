@@ -52,12 +52,12 @@ python3 rl-agent.py [-h] -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
   <img src="img/model_C_TD3.png" alt="critic">
 </p>
 
-<p align="center"><b>Actor (Soft Actor-Critic)</b></p>
+<p align="center"><b>Actor (Soft Actor-Critic) - Netron</b></p>
 <p align="center">
   <img src="img/model_A_SAC.png" alt="actor">
 </p>
 
-<p align="center"><b>Critic (Soft Actor-Critic)</b></p>
+<p align="center"><b>Critic (Soft Actor-Critic) - Netron</b></p>
 <p align="center">
   <img src="img/model_C_SAC.png" alt="critic">
 </p>
