@@ -9,7 +9,7 @@ from sac import SAC
 from td3 import TD3
 
 # utilities
-from utils import ReplayBufferWriter
+from utils import ReplayBufferReader
 
 if __name__ == "__main__":
 
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     print("Actor's init model saved successful 😊")
 
     # replay buffer
-    rpm = ReplayBufferWriter(
+    rpm = ReplayBufferReader(
         size=args.batch_size * 64,
         obs_dim=env.observation_space.shape,
         act_dim=env.action_space.shape,
