@@ -119,7 +119,7 @@ def main(env_name: str,
                 # warmup
                 action = env.action_space.sample()
             else:
-                action = agent.get_action(obs)
+                action = agent.get_action(obs).numpy()
 
             # perform action
             new_obs, reward, done, _ = env.step(action)
