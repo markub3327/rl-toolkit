@@ -67,5 +67,5 @@ RUN python3 -m pip --no-cache-dir install -r requirements.txt
 WORKDIR /root
 
 # naklonuj RL nastroje
-RUN git clone --single-branch --branch <branchname> https://github.com/markub3327/rl-toolkit.git
+RUN git clone --single-branch --branch rl-toolkit-old https://github.com/markub3327/rl-toolkit.git
 WORKDIR /root/rl-toolkit/
