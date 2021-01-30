@@ -56,7 +56,7 @@ class ReplayBuffer(ABC):
         raise NotImplementedError()
 
 
-class ReplayBufferWriter(ReplayBuffer):
+class ReplayBufferReader(ReplayBuffer):
     def __init__(
         self, db_name, env_name, size, obs_dim, act_dim, server_name, server_port=27017
     ):
@@ -107,7 +107,7 @@ class ReplayBufferWriter(ReplayBuffer):
         print(f"RPM curr_size: {self.size}")
 
 
-class ReplayBufferReader(ReplayBuffer):
+class ReplayBufferWriter(ReplayBuffer):
     """
     An experiences replay buffer
     ----------------------
