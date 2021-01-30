@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-numpy \
     git \
+    graphviz \
     && rm -rf /var/lib/apt/lists/*
 
 # Some TF tools expect a "python" binary
@@ -46,7 +47,8 @@ RUN python3 -m pip install --no-cache-dir -e '.[box2d,classic_control]'
 ###########################################
 RUN python3 -m pip --no-cache-dir install --upgrade \
     "pip" \
-    setuptools
+    setuptools \
+    pydot
 # Options:
 #   tensorflow
 #   tensorflow-gpu
