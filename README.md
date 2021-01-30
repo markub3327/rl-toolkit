@@ -15,6 +15,31 @@
   * **Twin Delayed DDPG** (https://arxiv.org/pdf/1802.09477.pdf)
   * **Generalized State-Dependent Exploration** (https://arxiv.org/pdf/2005.05719.pdf)
 
+## Setting up container
+
+#### YOU MUST HAVE INSTALL DOCKER !!!
+
+```shell
+# 1. Build the Docker image
+./build.sh
+
+# 2. Run the container's shell
+./run.sh
+
+# if scripts are cannot be runned please use before
+chmod +x build.sh
+```
+
+## Using
+
+```shell
+# Run RL toolkit for training
+python3 main.py [-h] -env ENV_NAME -s PATH_TO_MODEL [--wandb]
+
+# Run RL toolkit for testing
+python3 main.py [-h] -env ENV_NAME --model_a PATH_TO_MODEL --test [--wandb]
+```
+
 ## Topology
 
 <p align="center"><b>Actor (Twin Delayed DDPG)</b></p>
