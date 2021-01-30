@@ -21,10 +21,10 @@
 
 ```shell
 # 1. Build the Docker image
-./build.sh
+docker build -t markub/rl-toolkit:cpu .
 
 # 2. Run the container's shell
-./run.sh
+docker run -it markub/rl-toolkit:cpu bash
 
 # if scripts are cannot be runned please use before
 chmod +x build.sh
