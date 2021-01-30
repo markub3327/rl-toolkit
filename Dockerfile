@@ -63,7 +63,9 @@ RUN python3 -m pip install --no-cache-dir ${TF_PACKAGE}${TF_PACKAGE_VERSION:+==$
 ###########################################
 # Dependencies
 ###########################################
-RUN python3 -m pip --no-cache-dir install -r requirements.txt
+COPY requirements.txt /tmp/
+
+RUN python3 -m pip --no-cache-dir install -r /tmp/requirements.txt
 
 # nastav pracovny priecinok na /root
 WORKDIR /root

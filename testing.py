@@ -19,7 +19,7 @@ def main(env_name: str,
 
     # inicializuj prostredie Weights & Biases
     if logging_wandb == True:
-        wandb.init(project="rl-baselines")
+        wandb.init(project="rl-toolkit")
 
     # load actor model
     if (alg == 'td3'):
