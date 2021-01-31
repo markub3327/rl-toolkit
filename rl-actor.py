@@ -9,7 +9,7 @@ from sac import Actor as ActorSAC
 from td3 import Actor as ActorTD3
 
 # utilities
-from utils import ReplayBufferReader
+from utils import ReplayBufferWriter
 
 def normalize_state(state, min_val, max_val):
     # Normalize state values to [-1, 1] range
@@ -100,7 +100,7 @@ if __name__ == "__main__":
         raise NameError(f"Algorithm '{args.algorithm}' is not defined")
 
     # replay buffer
-    rpm = ReplayBufferReader(
+    rpm = ReplayBufferWriter(
         db_name=args.database, env_name=args.environment, server_name="192.168.1.2"
     )
 
