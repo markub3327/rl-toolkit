@@ -37,7 +37,7 @@ chmod +x build.sh
 python3 rl-learner.py [-h] -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
 
 # Run agent (worker) instance
-python3 rl-agent.py [-h] -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
+python3 rl-actor.py [-h] -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 ```
 
 ## Topology

@@ -11,6 +11,10 @@ from td3 import Actor as ActorTD3
 # utilities
 from utils import ReplayBufferReader
 
+def normalize_state(state, min_val, max_val):
+    # Normalize state values to [-1, 1] range
+    return state / max_val
+
 if __name__ == "__main__":
 
     my_parser = argparse.ArgumentParser(
@@ -66,7 +70,7 @@ if __name__ == "__main__":
     my_parser.add_argument("-s", "--save", type=str, help="Path for saving model files")
     my_parser.add_argument("-f", "--model", type=str, help="Actor's model file")
 
-    # Get args
+    # nacitaj zadane argumenty programu
     args = my_parser.parse_args()
     print(args)
 
@@ -101,25 +105,24 @@ if __name__ == "__main__":
     )
 
     print(env.action_space.low, env.action_space.high)
+    print(env.observation_space.low, env.observation_space.high)
 
     # hlavny cyklus hry
     try:
         total_steps, total_episodes = 0, 0
+        # until learner finishes
         while total_steps < args.max_steps:
             done = False
             episode_reward, episode_timesteps = 0.0, 0
 
             obs = env.reset()
+            print(obs)
 
-            # pozastav
-            agent.create_lock(f"{args.model}model_A_{args.environment}_weights.h5")
-            # nacitaj model na zaciatku herneho kola
-            agent.load_weights(f"{args.model}model_A_{args.environment}_weights.h5")
-            # uvolni
-            agent.release_lock()
-
-            # reset noise
-            agent.sample_weights()
+            # normalizacia stavov 
+            # - nevyhnutne pri rozdielnych rozsahoch meranej veliciny,
+            # - urychluje proces ucenia 
+            obs = normalize_state(obs, env.observation_space.low, env.observation_space.high)
+            print(obs)
 
             # collect rollout
             while not done:
@@ -130,12 +133,15 @@ if __name__ == "__main__":
                 else:
                     # add batch dim, convert to numpy array
                     action, _ = agent.predict(
-                        np.expand_dims(obs, axis=0), with_logprob=False
+                        np.expand_dims(obs, axis=0), 
+                        with_logprob=False,
+                        deterministic=False
                     )
                     action = np.squeeze(action.numpy(), axis=0)
 
                 # perform action
                 new_obs, reward, done, _ = env.step(action)
+                new_obs = normalize_state(new_obs, env.observation_space.low, env.observation_space.high)
 
                 episode_reward += reward
                 episode_timesteps += 1
@@ -147,15 +153,15 @@ if __name__ == "__main__":
                 # super critical !!!
                 obs = new_obs
 
-                # reset noise
+                # synchronizacne okno
                 if total_steps % 64 == 0:
                     agent.sample_weights()
 
+                    # po kazdej epizode sync s DB
+                    rpm.sync()
+
             # after each episode
             total_episodes += 1
-
-            # po kazdej epizode sync s DB
-            rpm.sync()
 
             print(f"Epoch: {total_episodes}")
             print(f"EpsReward: {episode_reward}")
@@ -170,6 +176,16 @@ if __name__ == "__main__":
                         "replayBuffer": len(rpm),
                     }
                 )
+            
+            # nacitaj model na zaciatku herneho kola
+            # pozastav
+            agent.create_lock(f"{args.model}model_A_{args.environment}_weights.h5")
+            # nacitaj model na zaciatku herneho kola
+            agent.load_weights(f"{args.model}model_A_{args.environment}_weights.h5")
+            # uvolni
+            agent.release_lock()
+            # reset noise
+            agent.sample_weights()
     except KeyboardInterrupt:
         print("Terminated by user! 👋")
     finally:

@@ -148,24 +148,22 @@ if __name__ == "__main__":
     # hlavny cyklus ucenia
     try:
         total_steps = 0
-        while total_steps < args.max_steps or len(rpm) < args.max_steps:
-            if len(rpm) >= 10000:
+        while total_steps < args.max_steps:
+            if len(rpm) > (args.batch_size * 64):
                 # synchronizuj s DB
                 rpm.sync()
+
+                # aktualizuj model
+                agent.update(rpm, args.batch_size, 64, logging_wandb=args.wandb)
 
                 # pozastav
                 agent.actor.create_lock(
                     f"{args.save}model_A_{args.environment}_weights.h5"
                 )
-
-                # aktualizuj model
-                agent.update(rpm, args.batch_size, 64, logging_wandb=args.wandb)
-
                 # uloz novy model
                 agent.actor.save_weights(
                     f"{args.save}model_A_{args.environment}_weights.h5"
                 )
-
                 # uvolni
                 agent.actor.release_lock()
 
