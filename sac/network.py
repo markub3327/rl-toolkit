@@ -64,7 +64,7 @@ class Actor:
         mean, latent_sde = self.model(x)
 
         if deterministic:
-            pi_action = mean
+            pi_action = self.bijector.forward(mean)
             logp_pi = None
         else:
             noise = tf.matmul(latent_sde, self.exploration_mat)
