@@ -17,7 +17,7 @@
 
 ## Setting up container
 
-#### YOU MUST HAVE INSTALL DOCKER !!!
+#### YOU MUST HAVE INSTALLED DOCKER !!!
 
 ```shell
 # 1. Build the Docker image
