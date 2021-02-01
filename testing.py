@@ -42,7 +42,11 @@ def main(env_name: str,
             env.render()
             
             if (alg == 'sac'):
-                action, _ = actor.model(tf.expand_dims(obs, axis=0))
+                action, _ = actor.predict(
+                    tf.expand_dims(obs, axis=0),
+                    with_logprob=False,
+                    deterministic=True
+                )
             elif (alg == 'td3'):
                 action = actor.model(tf.expand_dims(obs, axis=0))
 
