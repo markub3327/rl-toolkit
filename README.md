@@ -21,20 +21,21 @@
 
 ```shell
 # 1. Build the Docker image
-docker build -t markub/rl-toolkit:cpu .
+./build.sh
 
-# 2. Run the container's shell
-docker run -it markub/rl-toolkit:cpu bash
+# 2. Run 'RL toolkit' in the container
+./run.sh python3 rl-learner.py [-h]
+./run.sh python3 rl-actor.py [-h] 
 ```
 
 ## Using
 
 ```shell
 # Run learner instance
-python3 rl-learner.py [-h] -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
+python3 rl-learner.py [-h] -alg sac -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
 
 # Run agent (worker) instance
-python3 rl-actor.py [-h] -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
+python3 rl-actor.py [-h] -alg td3 -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 ```
 
 ## Topology
