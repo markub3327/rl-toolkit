@@ -14,7 +14,6 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-numpy \
     git \
-    graphviz \
     && rm -rf /var/lib/apt/lists/*
 
 # Some TF tools expect a "python" binary
@@ -39,7 +38,7 @@ RUN apt-get -y update && apt-get install -y \
 WORKDIR /usr/local/
 RUN git clone https://github.com/openai/gym.git
 WORKDIR /usr/local/gym/
-RUN python3 -m pip install --no-cache-dir -e '.[box2d,classic_control]'
+RUN python3 -m pip install --no-cache-dir -e '.[nomujoco]'
 
 ###########################################
 # Tensorflow
@@ -47,8 +46,7 @@ RUN python3 -m pip install --no-cache-dir -e '.[box2d,classic_control]'
 ###########################################
 RUN python3 -m pip --no-cache-dir install --upgrade \
     "pip" \
-    setuptools \
-    pydot
+    setuptools
 # Options:
 #   tensorflow
 #   tensorflow-gpu
@@ -67,9 +65,11 @@ COPY requirements.txt /tmp/
 
 RUN python3 -m pip --no-cache-dir install -r /tmp/requirements.txt
 
-# nastav pracovny priecinok na /root
-WORKDIR /root
+# vytvor pracovny priecinok pre RL nastroje
+RUN mkdir /root/rl-toolkit
+WORKDIR /root/rl-toolkit
 
-# naklonuj RL nastroje
-RUN git clone --single-branch --branch rl-toolkit-old https://github.com/markub3327/rl-toolkit.git
-WORKDIR /root/rl-toolkit/
+# nastav vychodiskovy bod pre kontajner
+COPY docker_entrypoint.sh /tmp/
+RUN chmod +x /tmp/docker_entrypoint.sh
+ENTRYPOINT ["/tmp/docker_entrypoint.sh"]
