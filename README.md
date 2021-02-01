@@ -17,17 +17,14 @@
 
 ## Setting up container
 
-#### YOU MUST HAVE INSTALL DOCKER !!!
+#### YOU MUST HAVE INSTALLED DOCKER !!!
 
 ```shell
 # 1. Build the Docker image
 ./build.sh
 
-# 2. Run the container's shell
-./run.sh
-
-# if scripts are cannot be runned please use before
-chmod +x build.sh
+# 2. Run 'RL toolkit' in the container
+./run.sh python3 main.py [-h]
 ```
 
 ## Using
