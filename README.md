@@ -72,7 +72,7 @@ python3 main.py [-h] -env ENV_NAME --model_a PATH_TO_MODEL --test [--wandb]
 <p align="center">
   <img src="img/results.png" alt="results">
 </p>
-<p align="center"><a href="https://app.wandb.ai/markub/rl-baselines" target="_blank">For more charts click here.</a></p>
+<p align="center"><a href="https://wandb.ai/markub/rl-toolkit?workspace=user-markub" target="_blank">For more charts click here.</a></p>
 
 **Framework:** Tensorflow 2.3.1
 </br>
