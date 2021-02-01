@@ -1,14 +1,5 @@
 # RL training toolkit
 
-[![Release](https://img.shields.io/github/release/markub3327/rl-baselines)](https://github.com/markub3327/rl-baselines/releases)
-![Tag](https://img.shields.io/github/v/tag/markub3327/rl-baselines)
-
-[![Issues](https://img.shields.io/github/issues/markub3327/rl-baselines)](https://github.com/markub3327/rl-baselines/issues)
-![Commits](https://img.shields.io/github/commit-activity/w/markub3327/rl-baselines)
-
-![Languages](https://img.shields.io/github/languages/count/markub3327/rl-baselines)
-![Size](https://img.shields.io/github/repo-size/markub3327/rl-baselines)
-
 ## Papers
 
   * **Soft Actor-Critic** (https://arxiv.org/pdf/1812.05905.pdf)
