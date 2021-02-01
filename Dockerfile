@@ -38,7 +38,7 @@ RUN apt-get -y update && apt-get install -y \
 WORKDIR /usr/local/
 RUN git clone https://github.com/openai/gym.git
 WORKDIR /usr/local/gym/
-RUN python3 -m pip install --no-cache-dir -e '.[box2d,classic_control]'
+RUN python3 -m pip install --no-cache-dir -e '.[nomujoco]'
 
 ###########################################
 # Tensorflow
@@ -61,11 +61,15 @@ RUN python3 -m pip install --no-cache-dir ${TF_PACKAGE}${TF_PACKAGE_VERSION:+==$
 ###########################################
 # Dependencies
 ###########################################
-RUN python3 -m pip --no-cache-dir install -r requirements.txt
+COPY requirements.txt /tmp/
 
-# nastav pracovny priecinok na /root
-WORKDIR /root
+RUN python3 -m pip --no-cache-dir install -r /tmp/requirements.txt
 
-# naklonuj RL nastroje
-RUN git clone https://github.com/markub3327/rl-toolkit.git
-WORKDIR /root/rl-toolkit/
+# vytvor pracovny priecinok pre RL nastroje
+RUN mkdir /root/rl-toolkit
+WORKDIR /root/rl-toolkit
+
+# nastav vychodiskovy bod pre kontajner
+COPY docker_entrypoint.sh /tmp/
+RUN chmod +x /tmp/docker_entrypoint.sh
+ENTRYPOINT ["/tmp/docker_entrypoint.sh"]
