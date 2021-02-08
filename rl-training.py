@@ -167,7 +167,6 @@ if __name__ == "__main__":
 
     # replay buffer
     rpm = ReplayBuffer(
-        args.environment,
         env.observation_space.shape,
         env.action_space.shape,
         args.replay_size,
