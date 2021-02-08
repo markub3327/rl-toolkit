@@ -57,9 +57,9 @@ if __name__ == "__main__":
         wandb.init(project="rl-toolkit")
 
     # load actor model
-    if (args.algorithm == 'td3'):
+    if args.algorithm == "td3":
         actor = ActorTD3(model_path=args.model)
-    elif (args.algorithm == 'sac'):
+    elif args.algorithm == "sac":
         actor = ActorSAC(model_path=args.model)
     else:
         raise NameError(f"algorithm '{args.algorithm}' is not defined")
@@ -75,14 +75,12 @@ if __name__ == "__main__":
         # collect rollout
         while not done:
             env.render()
-            
-            if (args.algorithm == 'sac'):
+
+            if args.algorithm == "sac":
                 action, _ = actor.predict(
-                    tf.expand_dims(obs, axis=0),
-                    with_logprob=False,
-                    deterministic=True
+                    tf.expand_dims(obs, axis=0), with_logprob=False, deterministic=True
                 )
-            elif (args.algorithm == 'td3'):
+            elif args.algorithm == "td3":
                 action = actor.model(tf.expand_dims(obs, axis=0))
 
             # perform action
@@ -98,12 +96,17 @@ if __name__ == "__main__":
         # after each episode
         total_episodes += 1
 
-        print(f'Epoch: {total_episodes}')
-        print(f'EpsReward: {episode_reward}')
-        print(f'EpsSteps: {episode_timesteps}')
-        print(f'TotalInteractions: {total_steps}')
+        print(f"Epoch: {total_episodes}")
+        print(f"EpsReward: {episode_reward}")
+        print(f"EpsSteps: {episode_timesteps}")
+        print(f"TotalInteractions: {total_steps}")
         if args.wandb == True:
-            wandb.log({"epoch": total_episodes, "score": episode_reward, "steps": episode_timesteps})
-        
-    
+            wandb.log(
+                {
+                    "epoch": total_episodes,
+                    "score": episode_reward,
+                    "steps": episode_timesteps,
+                }
+            )
+
     env.close()

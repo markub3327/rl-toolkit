@@ -8,41 +8,48 @@ import tensorflow_probability as tfp
 
 # Trieda hraca
 class Actor:
-
     def __init__(
         self,
-        state_shape = None,
-        action_shape = None,
-        learning_rate = None,
-        model_path = None,
+        state_shape=None,
+        action_shape=None,
+        learning_rate=None,
+        model_path=None,
         log_std_init: float = -3.0,
-        clip_mean: float = 2.0
+        clip_mean: float = 2.0,
     ):
 
         if model_path == None:
-            state_input = Input(shape=state_shape, name='state_input')
-            l1 = Dense(400, activation='relu', name='h1')(state_input)
-            l2 = Dense(300, activation='relu', name='h2')(l1)       # latent_sde
-        
+            state_input = Input(shape=state_shape, name="state_input")
+            l1 = Dense(400, activation="relu", name="h1")(state_input)
+            l2 = Dense(300, activation="relu", name="h2")(l1)  # latent_sde
+
             # vystupna vrstva   -- 'mean' musi byt v intervale (-∞, ∞)
-            mean = Dense(action_shape[0], activation='linear', name='mean')(l2)
-            mean = Lambda(lambda x: tf.clip_by_value(x, -clip_mean, clip_mean), name='clip_mean')(mean)
+            mean = Dense(action_shape[0], activation="linear", name="mean")(l2)
+            mean = Lambda(
+                lambda x: tf.clip_by_value(x, -clip_mean, clip_mean), name="clip_mean"
+            )(mean)
 
             # variance params
-            self.log_std = tf.Variable(tf.ones([300, action_shape[0]]) * log_std_init, trainable=True, name='log_std')
-            self.exploration_mat = tf.Variable(tf.zeros_like(self.log_std), trainable=False, name='exploration_mat')
-            #print(self.log_std)
+            self.log_std = tf.Variable(
+                tf.ones([300, action_shape[0]]) * log_std_init,
+                trainable=True,
+                name="log_std",
+            )
+            self.exploration_mat = tf.Variable(
+                tf.zeros_like(self.log_std), trainable=False, name="exploration_mat"
+            )
+            # print(self.log_std)
 
             # sample new noise matrix
             self.sample_weights()
-            #print(self.exploration_mat)
+            # print(self.exploration_mat)
 
             # Vytvor model
             self.model = Model(inputs=state_input, outputs=[mean, l2])
         else:
             # Nacitaj model
             self.model = tf.keras.models.load_model(model_path)
-            print('Actor loaded from file succesful ...')            
+            print("Actor loaded from file succesful ...")
 
         # Optimalizator modelu
         self.optimizer = Adam(learning_rate=learning_rate)
@@ -70,10 +77,14 @@ class Actor:
             pi_action = self.bijector.forward(mean + noise)
 
             if with_logprob:
-                variance = tf.matmul(tf.square(latent_sde), tf.square(tf.exp(self.log_std)))
+                variance = tf.matmul(
+                    tf.square(latent_sde), tf.square(tf.exp(self.log_std))
+                )
                 pi_distribution = tfp.distributions.TransformedDistribution(
-                    distribution=tfp.distributions.Normal(mean, tf.sqrt(variance + 1e-6)),
-                    bijector=self.bijector
+                    distribution=tfp.distributions.Normal(
+                        mean, tf.sqrt(variance + 1e-6)
+                    ),
+                    bijector=self.bijector,
                 )
                 logp_pi = pi_distribution.log_prob(pi_action)
                 # sum independent log_probs
@@ -83,36 +94,32 @@ class Actor:
 
         return pi_action, logp_pi
 
+
 # Trieda kritika
 class Critic:
-
     def __init__(
-        self,
-        state_shape = None,
-        action_shape = None,
-        learning_rate = None,
-        model_path = None
+        self, state_shape=None, action_shape=None, learning_rate=None, model_path=None
     ):
 
         if model_path == None:
             # vstupna vsrtva
-            state_input = Input(shape=state_shape, name='state_input')
-            action_input = Input(shape=action_shape, name='action_input')
+            state_input = Input(shape=state_shape, name="state_input")
+            action_input = Input(shape=action_shape, name="action_input")
 
             merged = Concatenate()([state_input, action_input])
-            l1 = Dense(400, activation='relu', name='h1')(merged)
-            l2 = Dense(300, activation='relu', name='h2')(l1)
+            l1 = Dense(400, activation="relu", name="h1")(merged)
+            l2 = Dense(300, activation="relu", name="h2")(l1)
 
             # vystupna vrstva   -- Q hodnoty su v intervale (-∞, ∞)
-            output = Dense(1, activation='linear', name='q_val')(l2)
+            output = Dense(1, activation="linear", name="q_val")(l2)
 
             # Vytvor model
             self.model = Model(inputs=[state_input, action_input], outputs=output)
         else:
             # Nacitaj model
             self.model = tf.keras.models.load_model(model_path)
-            print('Critic loaded from file succesful ...')
-        
+            print("Critic loaded from file succesful ...")
+
         # Optimalizator modelu
         self.optimizer = Adam(learning_rate=learning_rate)
 
