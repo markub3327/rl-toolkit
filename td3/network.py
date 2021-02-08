@@ -1,7 +1,6 @@
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Concatenate, Dense
-from tensorflow.keras.utils import plot_model
 
 import tensorflow as tf
 
@@ -35,10 +34,6 @@ class Actor:
         self.optimizer = Adam(learning_rate=lr)
 
         self.model.summary()
-
-    def save(self):
-        plot_model(self.model, to_file='img/model_A_TD3.png')
-
 
 # Trieda kritika
 class Critic:
@@ -74,6 +69,3 @@ class Critic:
         self.optimizer = Adam(learning_rate=lr)
 
         self.model.summary()
-
-    def save(self):
-        plot_model(self.model, to_file='img/model_C_TD3.png')

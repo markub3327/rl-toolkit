@@ -1,4 +1,13 @@
-# RL training toolkit
+# RL toolkit
+
+[![Release](https://img.shields.io/github/release/markub3327/rl-toolkit)](https://github.com/markub3327/rl-toolkit/releases)
+![Tag](https://img.shields.io/github/v/tag/markub3327/rl-toolkit)
+
+[![Issues](https://img.shields.io/github/issues/markub3327/rl-toolkit)](https://github.com/markub3327/rl-toolkit/issues)
+![Commits](https://img.shields.io/github/commit-activity/w/markub3327/rl-toolkit)
+
+![Languages](https://img.shields.io/github/languages/count/markub3327/rl-toolkit)
+![Size](https://img.shields.io/github/repo-size/markub3327/rl-toolkit)
 
 ## Papers
 
@@ -11,44 +20,19 @@
 #### YOU MUST HAVE INSTALLED DOCKER !!!
 
 ```shell
-# 1. Build the Docker image
+# Build the Docker image
 ./build.sh
-
-# 2. Run 'RL toolkit' in the container
-./run.sh python3 main.py [-h]
 ```
 
 ## Using
 
 ```shell
-# Run RL toolkit for training
-python3 main.py [-h] -env ENV_NAME -s PATH_TO_MODEL [--wandb]
+# Run training
+./run.sh python3 rl-training.py [-h] -alg sac -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
 
-# Run RL toolkit for testing
-python3 main.py [-h] -env ENV_NAME --model_a PATH_TO_MODEL --test [--wandb]
+# Run testing
+./run.sh python3 rl-testing.py [-h] -alg td3 -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 ```
-
-## Topology
-
-<p align="center"><b>Actor (Twin Delayed DDPG)</b></p>
-<p align="center">
-  <img src="img/model_A_TD3.png" alt="actor">
-</p>
-
-<p align="center"><b>Critic (Twin Delayed DDPG)</b></p>
-<p align="center">
-  <img src="img/model_C_TD3.png" alt="critic">
-</p>
-
-<p align="center"><b>Actor (Soft Actor-Critic)</b></p>
-<p align="center">
-  <img src="img/model_A_SAC.png" alt="actor">
-</p>
-
-<p align="center"><b>Critic (Soft Actor-Critic)</b></p>
-<p align="center">
-  <img src="img/model_C_SAC.png" alt="critic">
-</p>
 
 ## Tested environments
   
@@ -58,6 +42,7 @@ python3 main.py [-h] -env ENV_NAME --model_a PATH_TO_MODEL --test [--wandb]
   * LunarLanderContinuous-v2
   * Walker2DBulletEnv-v0
   * AntBulletEnv-v0
+  * HalfCheetahBulletEnv-v0
 
 <p align="center"><b>Summary</b></p>
 <p align="center">
@@ -65,8 +50,12 @@ python3 main.py [-h] -env ENV_NAME --model_a PATH_TO_MODEL --test [--wandb]
 </p>
 <p align="center"><a href="https://wandb.ai/markub/rl-toolkit?workspace=user-markub" target="_blank">For more charts click here.</a></p>
 
-**Framework:** Tensorflow 2.3.1
-</br>
-**Languages:** Python 3.8 
-</br>
+----------------------------------
+
+**Framework:** Tensorflow 2.4.0
+<br>
+**Languages:** Python 3.8
+<br>
+**Database**: Redis 6.0 (Rapsberry Pi 4, Ubuntu Server 20.04 LTS)
+<br>
 **Author**: Martin Kubovcik

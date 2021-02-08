@@ -1,7 +1,6 @@
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Concatenate, Dense, Lambda
-from tensorflow.keras.utils import plot_model
 
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -84,10 +83,6 @@ class Actor:
 
         return pi_action, logp_pi
 
-    def save(self):
-        plot_model(self.model, to_file='img/model_A_SAC.png')
-
-
 # Trieda kritika
 class Critic:
 
@@ -122,6 +117,3 @@ class Critic:
         self.optimizer = Adam(learning_rate=learning_rate)
 
         self.model.summary()
-
-    def save(self):
-        plot_model(self.model, to_file='img/model_C_SAC.png')
