@@ -104,7 +104,7 @@ class SAC:
         # update critic '1'
         with tf.GradientTape() as tape:
             q_values = self.critic_1.model([batch["obs"], batch["act"]])
-            q_losses = 0.5 * tf.losses.mean_squared_error(
+            q_losses = tf.losses.mean_squared_error(
                 y_true=Q_targets, y_pred=q_values
             )
             q1_loss = tf.nn.compute_average_loss(q_losses)
@@ -118,7 +118,7 @@ class SAC:
         # update critic '2'
         with tf.GradientTape() as tape:
             q_values = self.critic_2.model([batch["obs"], batch["act"]])
-            q_losses = 0.5 * tf.losses.mean_squared_error(
+            q_losses = tf.losses.mean_squared_error(
                 y_true=Q_targets, y_pred=q_values
             )
             q2_loss = tf.nn.compute_average_loss(q_losses)
@@ -148,9 +148,8 @@ class SAC:
             a_loss = tf.nn.compute_average_loss(a_losses)
             # tf.print(f'a_losses: {a_losses}')
 
-        w_params = self.actor.model.trainable_variables + [self.actor.log_std]
-        grads = tape.gradient(a_loss, w_params)
-        self.actor.optimizer.apply_gradients(zip(grads, w_params))
+        grads = tape.gradient(a_loss, self.actor.model.trainable_variables)
+        self.actor.optimizer.apply_gradients(zip(grads, self.actor.model.trainable_variables))
 
         return a_loss
 
@@ -179,7 +178,7 @@ class SAC:
             batch = rpm.sample(batch_size)
 
             # re-new noise matrix every update of 'log_std' params
-            self.actor.sample_weights()
+            self.actor.reset_noise()
 
             # Alpha param update
             self.loss_alpha.update_state(self._update_alpha(batch))

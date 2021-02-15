@@ -180,14 +180,11 @@ if __name__ == "__main__":
         done = False
         episode_reward, episode_timesteps = 0.0, 0
 
+        # init env
         obs = env.reset()
 
         # reset noise
-        if args.algorithm == "td3":
-            agent.noise.reset()
-        # re-new noise matrix
-        elif args.algorithm == "sac":
-            agent.actor.sample_weights()
+        agent.actor.reset_noise()
 
         # collect rollout
         while not done:

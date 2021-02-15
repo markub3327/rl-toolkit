@@ -1,12 +1,21 @@
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Concatenate, Dense
+from utils.noise import OrnsteinUhlenbeckActionNoise, NormalActionNoise
 
 import tensorflow as tf
 
 # Trieda hraca
 class Actor:
-    def __init__(self, state_shape=None, action_shape=None, lr=None, model_path=None):
+    def __init__(
+        self, 
+        noise_type: str,
+        action_noise: float,
+        state_shape=None, 
+        action_shape=None, 
+        lr=None, 
+        model_path=None,
+    ):
 
         if model_path == None:
             state_input = Input(shape=state_shape, name="state_input")
@@ -26,8 +35,24 @@ class Actor:
         # Skompiluj model
         self.optimizer = Adam(learning_rate=lr)
 
+        # select noise generator
+        if noise_type == "normal":
+            self.noise = NormalActionNoise(
+                mean=0.0, sigma=action_noise, size=self.model.output_shape
+            )
+        elif noise_type == "ornstein-uhlenbeck":
+            self.noise = OrnsteinUhlenbeckActionNoise(
+                mean=0.0, sigma=action_noise, size=self.model.output_shape
+            )
+        else:
+            raise NameError(f"'{noise_type}' noise is not defined")
+        print(f'self.model.output_shape: {self.model.output_shape}')
+
         self.model.summary()
 
+    @tf.function
+    def reset_noise(self):
+        self.noise.reset()
 
 # Trieda kritika
 class Critic:
