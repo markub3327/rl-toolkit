@@ -28,7 +28,7 @@
 
 ```shell
 # Run training
-./run.sh python3 rl-training.py [-h] -alg sac -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
+./run.sh python3 main.py [-h] -alg sac -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
 
 # Run testing
 ./run.sh python3 rl-testing.py [-h] -alg td3 -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]

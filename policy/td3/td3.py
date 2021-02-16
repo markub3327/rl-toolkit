@@ -14,7 +14,8 @@ class TD3(OffPolicy):
 
     def __init__(
         self,
-        env,
+        state_shape,
+        action_shape,
         actor_learning_rate: float,
         critic_learning_rate: float,
         tau: float,
@@ -29,7 +30,6 @@ class TD3(OffPolicy):
         model_c2_path: str,
     ):
         super(TD3, self).__init__(
-            env=env,
             tau=tau,
             gamma=gamma,
         )
@@ -47,44 +47,44 @@ class TD3(OffPolicy):
         self.actor = Actor(
             noise_type=noise_type,
             action_noise=action_noise,
-            state_shape=self.env.observation_space.shape, 
-            action_shape=self.env.action_space.shape, 
+            state_shape=state_shape,
+            action_shape=action_shape,
             lr=actor_learning_rate, 
             model_path=model_a_path, 
         )
         self.actor_targ = Actor(
             noise_type=noise_type,
             action_noise=action_noise,
-            state_shape=self.env.observation_space.shape, 
-            action_shape=self.env.action_space.shape, 
+            state_shape=state_shape,
+            action_shape=action_shape,
             lr=actor_learning_rate, 
             model_path=model_a_path, 
         )
 
         # Critic network & target network
         self.critic_1 = Critic(
-            state_shape=self.env.observation_space.shape,
-            action_shape=self.env.action_space.shape, 
+            state_shape=state_shape,
+            action_shape=action_shape,
             lr=critic_learning_rate, 
             model_path=model_c1_path
         )
         self.critic_targ_1 = Critic(
-            state_shape=self.env.observation_space.shape,
-            action_shape=self.env.action_space.shape, 
+            state_shape=state_shape,
+            action_shape=action_shape,
             lr=critic_learning_rate, 
             model_path=model_c1_path
         )
 
         # Critic network & target network
         self.critic_2 = Critic(
-            state_shape=self.env.observation_space.shape,
-            action_shape=self.env.action_space.shape, 
+            state_shape=state_shape,
+            action_shape=action_shape,
             lr=critic_learning_rate, 
             model_path=model_c2_path
         )
         self.critic_targ_2 = Critic(
-            state_shape=self.env.observation_space.shape,
-            action_shape=self.env.action_space.shape, 
+            state_shape=state_shape,
+            action_shape=action_shape,
             lr=critic_learning_rate, 
             model_path=model_c2_path
         )
@@ -202,30 +202,3 @@ class TD3(OffPolicy):
         self.loss_a.reset_states()
         self.loss_c1.reset_states()
         self.loss_c2.reset_states()
-
-    def run(self, rpm):
-        done = False
-        episode_reward, episode_timesteps = 0.0, 0
-
-        # collect rollouts
-        while not done:
-            # select action randomly or using policy network
-            if total_steps < args.learning_starts:
-                # warmup
-                action = self.env.action_space.sample()
-            else:
-                action = self.get_action(obs).numpy()
-
-            # perform action
-            new_obs, reward, done, _ = self.env.step(action)
-
-            episode_reward += reward
-            episode_timesteps += 1
-
-            # store interaction
-            rpm.store(obs, action, reward, new_obs, done)
-
-            # super critical !!!
-            obs = new_obs
-
-        return episode_reward, episode_timesteps, done

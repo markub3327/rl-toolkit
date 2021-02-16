@@ -10,12 +10,10 @@ class OffPolicy(ABC):
 
     def __init__(
         self,
-        env,
         tau: float,
         gamma: float,
     ):
 
-        self.env = env
         self.gamma = tf.constant(gamma)
         self.tau = tf.constant(tau)
 
@@ -32,8 +30,4 @@ class OffPolicy(ABC):
 
     @abstractmethod
     def update(self, rpm, batch_size, gradient_steps, logging_wandb):
-        ...
-
-    @abstractmethod
-    def run(self, rpm):
         ...
