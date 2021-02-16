@@ -133,14 +133,15 @@ class RLTraining:
                     self._rpm, self.batch_size, self.gradient_steps, logging_wandb=self.logging_wandb
                 )
 
-        # zatvor prostredie
-        self._env.close()
-
     def save(self, save_path):
         # Save model to local drive
         self._agent.actor.model.save(f"{save_path}model_A.h5")
         self._agent.critic_1.model.save(f"{save_path}model_C1.h5")
         self._agent.critic_2.model.save(f"{save_path}model_C2.h5")
+
+    def close(self):
+        # exit environment
+        self._env.close()
 
     def _logging(self):
         print("=============================================")

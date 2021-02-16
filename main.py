@@ -125,9 +125,15 @@ if __name__ == "__main__":
         logging_wandb=args.wandb
     )
 
-    # run training process
-    rl_training.train()
+    try:
+        # run training process
+        rl_training.train()
+    except KeyboardInterrupt:
+        print("Terminated by user ... Bay bay")
+    finally:
+        # zatvor prostredie
+        rl_training.close()
 
-    # save models
-    if args.save is not None:
-        rl_training.save(args.save)
+        # save models
+        if args.save is not None:
+            rl_training.save(args.save)
