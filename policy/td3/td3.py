@@ -124,7 +124,7 @@ class TD3(OffPolicy):
         # update critic '1'
         with tf.GradientTape() as tape:
             q_values = self.critic_1.model([batch["obs"], batch["act"]])
-            q_losses = tf.keras.losses.mean_squared_error(
+            q_losses = tf.losses.huber(         # less sensitive to outliers in batch
                 y_true=Q_targets, y_pred=q_values
             )
             q1_loss = tf.nn.compute_average_loss(q_losses)
@@ -137,7 +137,7 @@ class TD3(OffPolicy):
         # update critic '2'
         with tf.GradientTape() as tape:
             q_values = self.critic_2.model([batch["obs"], batch["act"]])
-            q_losses = tf.keras.losses.mean_squared_error(
+            q_losses = tf.losses.huber(         # less sensitive to outliers in batch
                 y_true=Q_targets, y_pred=q_values
             )
             q2_loss = tf.nn.compute_average_loss(q_losses)

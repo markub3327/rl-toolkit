@@ -143,11 +143,14 @@ class RLTraining:
         self._agent.critic_2.model.save(f"{save_path}model_C2.h5")
 
     def _logging(self):
+        print("=============================================")
         print(f"Epoch: {self._total_episodes}")
         print(f"EpsReward: {self._episode_reward}")
         print(f"EpsSteps: {self._episode_steps}")
         print(f"TotalInteractions: {self._total_steps}")
         print(f"ReplayBuffer: {len(self._rpm)}")
+        print("=============================================")
+        print(f"Training ... {round((self._total_steps / self.max_steps) * 100.0)} %")
         if self.logging_wandb:
             wandb.log(
                 {
@@ -199,5 +202,3 @@ class RLTraining:
 
             # super critical !!!
             self._last_obs = new_obs
-
-        print(f"env_timesteps: {env_step}")

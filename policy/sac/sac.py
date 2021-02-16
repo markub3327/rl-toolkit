@@ -222,5 +222,3 @@ class SAC(OffPolicy):
         self.loss_c1.reset_states()
         self.loss_c2.reset_states()
         self.loss_alpha.reset_states()
-        
-        print(f"grad_timesteps: {gradient_step}")
