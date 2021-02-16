@@ -36,7 +36,7 @@ class Actor:
             self.model = Model(inputs=state_input, outputs=[mean, noise, latent_sde])
         else:
             # Nacitaj model
-            self.model = tf.keras.models.load_model(model_path)
+            self.model = tf.keras.models.load_model(model_path, custom_objects={"NoisyLayer": NoisyLayer}, compile=False)
             print("Actor loaded from file succesful ...")
 
         # Optimalizator modelu

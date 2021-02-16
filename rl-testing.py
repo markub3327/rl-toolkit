@@ -5,8 +5,8 @@ import argparse
 
 import tensorflow as tf
 
-from sac import Actor as ActorSAC
-from td3 import Actor as ActorTD3
+from policy.sac import Actor as ActorSAC
+from policy.td3 import Actor as ActorTD3
 
 
 if __name__ == "__main__":

@@ -29,7 +29,7 @@ class Actor:
             self.model = Model(inputs=state_input, outputs=output)
         else:
             # Nacitaj model
-            self.model = tf.keras.models.load_model(model_path)
+            self.model = tf.keras.models.load_model(model_path, compile=False)
             print("Actor loaded from file succesful ...")
 
         # Skompiluj model
