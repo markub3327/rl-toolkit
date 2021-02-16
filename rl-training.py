@@ -5,8 +5,7 @@ import numpy as np
 import pybullet_envs
 
 # policy
-from td3 import TD3
-from sac import SAC
+from policy import TD3, SAC
 
 # utilities
 from utils.replaybuffer import ReplayBuffer
@@ -78,7 +77,10 @@ if __name__ == "__main__":
         default=10000,
     )
     my_parser.add_argument(
-        "--update_every", type=int, help="Train frequency", default=64
+        "--env_steps", type=int, help="Num. of environment steps", default=64
+    )
+    my_parser.add_argument(
+        "--gradient_steps", type=int, help="Num. of gradient steps", default=64
     )
     my_parser.add_argument(
         "--target_noise",
@@ -124,7 +126,8 @@ if __name__ == "__main__":
         wandb.config.replay_size = args.replay_size
         wandb.config.learning_starts = args.learning_starts
         wandb.config.update_after = args.update_after
-        wandb.config.update_every = args.update_every
+        wandb.config.gradient_steps = args.gradient_steps
+        wandb.config.env_steps = args.env_steps
         wandb.config.max_steps = args.max_steps
         wandb.config.action_noise = args.action_noise
         wandb.config.target_noise = args.target_noise
@@ -134,9 +137,9 @@ if __name__ == "__main__":
     # policy
     if args.algorithm == "td3":
         agent = TD3(
-            env.observation_space.shape,
-            env.action_space.shape,
-            learning_rate=args.learning_rate,
+            env=env,
+            actor_learning_rate=args.learning_rate,
+            critic_learning_rate=args.learning_rate,
             tau=args.tau,
             gamma=args.gamma,
             noise_type=args.noise_type,
@@ -150,14 +153,13 @@ if __name__ == "__main__":
         )
     elif args.algorithm == "sac":
         agent = SAC(
-            env.observation_space.shape,
-            env.action_space.shape,
+            env=env,
             actor_learning_rate=args.learning_rate,
             critic_learning_rate=args.learning_rate,
             alpha_learning_rate=args.learning_rate,
             tau=args.tau,
             gamma=args.gamma,
-            policy_delay=args.policy_delay,
+            env_steps=args.env_steps,
             model_a_path=args.model_a,
             model_c1_path=args.model_c1,
             model_c2_path=args.model_c2,
@@ -174,66 +176,70 @@ if __name__ == "__main__":
 
     print(env.action_space.low, env.action_space.high)
 
+    
+    # init env
+    agent.last_obs = env.reset()
+    total_steps, total_episodes, episode_reward, episode_steps = 0, 0, 0, 0
+
     # hlavny cyklus hry
-    total_steps, total_episodes = 0, 0
     while total_steps < args.max_steps:
-        done = False
-        episode_reward, episode_timesteps = 0.0, 0
+        # select action randomly or using policy network
+        if total_steps < args.learning_starts:
+            # warmup
+            action = env.action_space.sample()
 
-        # init env
-        obs = env.reset()
-
-        # reset noise
-        agent.actor.reset_noise()
-
-        # collect rollout
-        while not done:
-            # select action randomly or using policy network
-            if total_steps < args.learning_starts:
-                # warmup
-                action = env.action_space.sample()
-            else:
-                action = agent.get_action(obs).numpy()
-
-            # perform action
+            # Step in the environment
             new_obs, reward, done, _ = env.step(action)
 
-            episode_reward += reward
-            episode_timesteps += 1
+            episode_steps += 1
             total_steps += 1
 
-            # store interaction
-            rpm.store(obs, action, reward, new_obs, done)
+            # Update the replay buffer
+            rpm.store(agent.last_obs, action, reward, new_obs, done)
 
             # super critical !!!
-            obs = new_obs
+            agent.last_obs = new_obs
+        else:
+            reward, timesteps, done = agent.run(rpm)
 
-            # update models after episode
-            if (
-                total_steps > args.update_after
-                and len(rpm) > args.batch_size
-                and (total_steps % args.update_every) == 0
-            ):
-                agent.update(
-                    rpm, args.batch_size, args.update_every, logging_wandb=args.wandb
-                )
+            episode_steps += timesteps
+            total_steps += timesteps
+            print(timesteps)
+
+        # after each rollouts
+        episode_reward += reward
+
+        # update models after episode
+        if (
+            total_steps > args.update_after
+            and len(rpm) > args.batch_size
+        ):
+            agent.update(
+                rpm, args.batch_size, args.gradient_steps, logging_wandb=args.wandb
+            )
 
         # after each episode
-        total_episodes += 1
+        if done:
+            print(f"Epoch: {total_episodes}")
+            print(f"EpsReward: {episode_reward}")
+            print(f"EpsSteps: {episode_steps}")
+            print(f"TotalInteractions: {total_steps}")
+            print(f"ReplayBuffer: {len(rpm)}")
+            if args.wandb == True:
+                wandb.log(
+                    {
+                        "epoch": total_episodes,
+                        "score": episode_reward,
+                        "steps": episode_steps,
+                        "replayBuffer": len(rpm),
+                    }
+                )
 
-        print(f"Epoch: {total_episodes}")
-        print(f"EpsReward: {episode_reward}")
-        print(f"EpsSteps: {episode_timesteps}")
-        print(f"TotalInteractions: {total_steps}")
-        if args.wandb == True:
-            wandb.log(
-                {
-                    "epoch": total_episodes,
-                    "score": episode_reward,
-                    "steps": episode_timesteps,
-                    "replayBuffer": len(rpm),
-                }
-            )
+            episode_reward, episode_steps = 0, 0
+            total_episodes += 1
+
+            # init env
+            agent.last_obs = env.reset()
 
     # Save model to local drive
     if args.save is not None:

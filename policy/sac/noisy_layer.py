@@ -6,6 +6,12 @@ import tensorflow_probability as tfp
 
 
 class NoisyLayer(Layer):
+    """
+    Noisy layer used by gSDE to predict noise
+
+    https://arxiv.org/pdf/2005.05719.pdf
+    """
+
     def __init__(self, units, log_std_init: float = -3.0, **kwargs):
         super(NoisyLayer, self).__init__(**kwargs)
         self.units = units

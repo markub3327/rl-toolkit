@@ -1,10 +1,11 @@
+from policy.off_policy import OffPolicy
 from .network import Actor, Critic
 
 import wandb
 import tensorflow as tf
 
 
-class SAC:
+class SAC(OffPolicy):
     """
     Soft Actor-Critic
 
@@ -13,22 +14,25 @@ class SAC:
 
     def __init__(
         self,
-        state_shape,
-        action_shape,
-        actor_learning_rate,
-        critic_learning_rate,
-        alpha_learning_rate,
-        tau,
-        gamma,
-        policy_delay,
-        model_a_path,
-        model_c1_path,
-        model_c2_path,
+        env,
+        actor_learning_rate: float,
+        critic_learning_rate: float,
+        alpha_learning_rate: float,
+        tau: float,
+        gamma: float,
+        env_steps: int,
+        model_a_path: str,
+        model_c1_path: str,
+        model_c2_path: str,
     ):
+        super(SAC, self).__init__(
+            env=env,
+            tau=tau,
+            gamma=gamma,
+        )
 
-        self._gamma = tf.constant(gamma)
-        self._tau = tf.constant(tau)
-        self._policy_delay = policy_delay
+        self.env_steps = env_steps
+        self.last_obs = None        # empty state
 
         # logging metrics
         self.loss_a = tf.keras.metrics.Mean()
@@ -42,46 +46,54 @@ class SAC:
         self._alpha_optimizer = tf.keras.optimizers.Adam(
             learning_rate=alpha_learning_rate, name="alpha_optimizer"
         )
-        self._target_entropy = tf.cast(-tf.reduce_prod(action_shape), dtype=tf.float32)
+        self._target_entropy = tf.cast(-tf.reduce_prod(self.env.action_space.shape), dtype=tf.float32)
         # print(self._target_entropy)
         # print(self._alpha)
 
         # Actor network
         self.actor = Actor(
-            state_shape, action_shape, actor_learning_rate, model_path=model_a_path
+            state_shape=self.env.observation_space.shape, 
+            action_shape=self.env.action_space.shape, 
+            lr=actor_learning_rate, 
+            model_path=model_a_path
         )
 
         # Critic network & target network
         self.critic_1 = Critic(
-            state_shape, action_shape, critic_learning_rate, model_path=model_c1_path
+            state_shape=self.env.observation_space.shape, 
+            action_shape=self.env.action_space.shape, 
+            lr=critic_learning_rate, 
+            model_path=model_c1_path
         )
         self.critic_targ_1 = Critic(
-            state_shape, action_shape, critic_learning_rate, model_path=model_c1_path
+            state_shape=self.env.observation_space.shape, 
+            action_shape=self.env.action_space.shape, 
+            lr=critic_learning_rate, 
+            model_path=model_c1_path
         )
 
         # Critic network & target network
         self.critic_2 = Critic(
-            state_shape, action_shape, critic_learning_rate, model_path=model_c2_path
+            state_shape=self.env.observation_space.shape, 
+            action_shape=self.env.action_space.shape, 
+            lr=critic_learning_rate, 
+            model_path=model_c2_path
         )
         self.critic_targ_2 = Critic(
-            state_shape, action_shape, critic_learning_rate, model_path=model_c2_path
+            state_shape=self.env.observation_space.shape, 
+            action_shape=self.env.action_space.shape, 
+            lr=critic_learning_rate, 
+            model_path=model_c2_path
         )
 
         # first make a hard copy
-        self._update_target(self.critic_1, self.critic_targ_1, tau=tf.constant(1.0))
-        self._update_target(self.critic_2, self.critic_targ_2, tau=tf.constant(1.0))
+        self.update_target(self.critic_1, self.critic_targ_1, tau=tf.constant(1.0))
+        self.update_target(self.critic_2, self.critic_targ_2, tau=tf.constant(1.0))
 
     @tf.function
     def get_action(self, state):
         a, _ = self.actor.predict(tf.expand_dims(state, axis=0), with_logprob=False)
         return tf.squeeze(a, axis=0)  # remove batch_size dim
-
-    @tf.function
-    def _update_target(self, net, net_targ, tau):
-        for source_weight, target_weight in zip(
-            net.model.trainable_variables, net_targ.model.trainable_variables
-        ):
-            target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
     # ------------------------------------ update critic ----------------------------------- #
     @tf.function
@@ -97,7 +109,7 @@ class SAC:
         # Bellman Equation
         Q_targets = tf.stop_gradient(
             batch["rew"]
-            + (1 - batch["done"]) * self._gamma * (next_q - self._alpha * next_log_pi)
+            + (1 - batch["done"]) * self.gamma * (next_q - self._alpha * next_log_pi)
         )
         # tf.print(f'qTarget: {Q_targets.shape}')
 
@@ -173,7 +185,7 @@ class SAC:
 
         return alpha_loss
 
-    def update(self, rpm, batch_size, gradient_steps, logging_wandb=True):
+    def update(self, rpm, batch_size, gradient_steps, logging_wandb):
         for gradient_step in range(1, gradient_steps + 1):
             batch = rpm.sample(batch_size)
 
@@ -192,8 +204,8 @@ class SAC:
             self.loss_a.update_state(self._update_actor(batch))
 
             # ---------------------------- soft update target networks ---------------------------- #
-            self._update_target(self.critic_1, self.critic_targ_1, tau=self._tau)
-            self._update_target(self.critic_2, self.critic_targ_2, tau=self._tau)
+            self.update_target(self.critic_1, self.critic_targ_1, tau=self.tau)
+            self.update_target(self.critic_2, self.critic_targ_2, tau=self.tau)
 
             # print(gradient_step, self.loss_a.result(), self.loss_c1.result(), self.loss_c2.result(), self.loss_alpha.result())
 
@@ -214,3 +226,33 @@ class SAC:
         self.loss_c1.reset_states()
         self.loss_c2.reset_states()
         self.loss_alpha.reset_states()
+
+    def run(self, rpm):
+        env_reward, env_timesteps = 0.0, 0
+
+        # reset noise
+        self.actor.reset_noise()
+
+        # collect rollouts
+        for env_step in range(self.env_steps):
+            # Get the noisy action
+            action = self.get_action(self.last_obs).numpy()
+
+            # Step in the environment
+            new_obs, reward, done, _ = self.env.step(action)
+
+            # update variables
+            env_reward += reward
+            env_timesteps += 1
+
+            # Update the replay buffer
+            rpm.store(self.last_obs, action, reward, new_obs, done)
+
+            # check end of episode
+            if done:
+                break
+
+            # super critical !!!
+            self.last_obs = new_obs
+
+        return env_reward, env_timesteps, done

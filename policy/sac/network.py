@@ -13,7 +13,7 @@ class Actor:
         self,
         state_shape=None,
         action_shape=None,
-        learning_rate=None,
+        lr=None,
         model_path=None,
         clip_mean: float = 2.0,
     ):
@@ -21,7 +21,7 @@ class Actor:
         if model_path == None:
             state_input = Input(shape=state_shape, name="state_input")
             l1 = Dense(400, activation="relu", name="h1")(state_input)
-            latent_sde = Dense(300, activation="relu", name="h2")(l1)
+            latent_sde = Dense(300, activation="relu", name="latent_sde")(l1)
 
             # vystupna vrstva   -- 'mean' musi byt v intervale (-∞, ∞)
             mean = Dense(action_shape[0], activation="linear", name="mean")(latent_sde)
@@ -40,7 +40,7 @@ class Actor:
             print("Actor loaded from file succesful ...")
 
         # Optimalizator modelu
-        self.optimizer = Adam(learning_rate=learning_rate)
+        self.optimizer = Adam(learning_rate=lr)
         self.bijector = tfp.bijectors.Tanh()
 
         self.model.summary()
@@ -81,7 +81,7 @@ class Actor:
 # Trieda kritika
 class Critic:
     def __init__(
-        self, state_shape=None, action_shape=None, learning_rate=None, model_path=None
+        self, state_shape=None, action_shape=None, lr=None, model_path=None
     ):
 
         if model_path == None:
@@ -104,6 +104,6 @@ class Critic:
             print("Critic loaded from file succesful ...")
 
         # Optimalizator modelu
-        self.optimizer = Adam(learning_rate=learning_rate)
+        self.optimizer = Adam(learning_rate=lr)
 
         self.model.summary()
