@@ -15,12 +15,18 @@ class RLTraining:
     def __init__(
         self, 
         env_name: str,
+        max_steps: int,
+        env_steps: int,
+        gradient_steps: int,
+        learning_starts: int,
         policy: str,
+        update_after: int,
         replay_size: int,
+        batch_size: int,
         learning_rate: float,
         tau: float,
         gamma: float,
-        noise_type: str, 
+        noise_type: str,
         action_noise: float,
         target_noise: float,
         noise_clip: float,
@@ -28,9 +34,40 @@ class RLTraining:
         model_a_path: str,
         model_c1_path: str,
         model_c2_path: str,
+        logging_wandb: bool
     ):
+        self.max_steps = max_steps
+        self.env_steps = env_steps
+        self.gradient_steps = gradient_steps
+        self.learning_starts = learning_starts
+        self.batch_size = batch_size
+        self.update_after = update_after
+        self.logging_wandb = logging_wandb
+
         # Herne prostredie
         self._env = gym.make(env_name)
+
+        # inicializuj prostredie Weights & Biases
+        if self.logging_wandb:
+            wandb.init(project="rl-toolkit")
+
+            ###
+            ### Settings
+            ###
+            wandb.config.gamma = gamma
+            wandb.config.batch_size = batch_size
+            wandb.config.tau = tau
+            wandb.config.learning_rate = learning_rate
+            wandb.config.replay_size = replay_size
+            wandb.config.learning_starts = learning_starts
+            wandb.config.update_after = update_after
+            wandb.config.gradient_steps = gradient_steps
+            wandb.config.env_steps = env_steps
+            wandb.config.max_steps = max_steps
+            wandb.config.action_noise = action_noise
+            wandb.config.target_noise = target_noise
+            wandb.config.noise_clip = noise_clip
+            wandb.config.policy_delay = policy_delay
 
         # replay buffer
         self._rpm = ReplayBuffer(
@@ -74,7 +111,13 @@ class RLTraining:
             raise NameError(f"Algorithm '{policy}' is not defined")
 
     def train(self):
-        self._total_steps, self._total_episodes = 0, 0
+        self._total_steps = 0
+        self._total_episodes = 0
+        self._episode_reward = 0
+        self._episode_steps = 0
+
+        # init environment
+        self._last_obs = self._env.reset()
 
         # hlavny cyklus hry
         while self._total_steps < self.max_steps:
@@ -87,7 +130,7 @@ class RLTraining:
                 and len(self._rpm) > self.batch_size
             ):
                 self._agent.update(
-                    self._rpm, self.batch_size, self.gradient_steps, logging_wandb=self.wandb
+                    self._rpm, self.batch_size, self.gradient_steps, logging_wandb=self.logging_wandb
                 )
 
         # zatvor prostredie
@@ -105,7 +148,7 @@ class RLTraining:
         print(f"EpsSteps: {self._episode_steps}")
         print(f"TotalInteractions: {self._total_steps}")
         print(f"ReplayBuffer: {len(self._rpm)}")
-        if self.wandb:
+        if self.logging_wandb:
             wandb.log(
                 {
                     "epoch": self._total_episodes,
@@ -117,17 +160,17 @@ class RLTraining:
 
     def _collect_rollouts(self):
         # re-new noise matrix before every rollouts
-        self.actor.reset_noise()
+        self._agent.actor.reset_noise()
 
         # collect rollouts
         for env_step in range(self.env_steps):
             # select action randomly or using policy network
             if self._total_steps < self.learning_starts:
                 # warmup
-                action = self.env.action_space.sample()
+                action = self._env.action_space.sample()
             else:
                 # Get the noisy action
-                action = self.get_action(self._last_obs).numpy()
+                action = self._agent.get_action(self._last_obs).numpy()
 
             # Step in the environment
             new_obs, reward, done, _ = self._env.step(action)
@@ -142,11 +185,14 @@ class RLTraining:
 
             # check the end of episode
             if done:
+                self._logging()
+
                 self._episode_reward = 0
                 self._episode_steps = 0
                 self._total_episodes += 1
 
-                self._logging()
+                # init environment
+                self._last_obs = self._env.reset()
 
                 # interrupt the rollout
                 break
