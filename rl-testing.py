@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     # Herne prostredie
     env = gym.make(args.environment)
-    env.render()
+    # env.render()
 
     # inicializuj prostredie Weights & Biases
     if args.wandb == True:
@@ -74,7 +74,7 @@ if __name__ == "__main__":
 
         # collect rollout
         while not done:
-            env.render()
+            # env.render()
 
             if args.algorithm == "sac":
                 action, _ = actor.predict(
