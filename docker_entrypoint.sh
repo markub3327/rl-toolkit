@@ -1,6 +1,5 @@
 #!/bin/bash
-# This script is the entrypoint for our Docker image.
-# Source: https://github.com/openai/gym/blob/master/bin/docker_entrypoint
+#  https://github.com/openai/gym/blob/master/bin/docker_entrypoint
 
 set -ex
 
