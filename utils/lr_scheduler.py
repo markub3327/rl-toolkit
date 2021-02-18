@@ -1,4 +1,3 @@
-
 def linear(t, initial_value):
     """
     Linear learning rate scheduler

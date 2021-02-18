@@ -36,7 +36,7 @@ class TD3(OffPolicy):
         lr_scheduler,
         tau: float,
         gamma: float,
-        noise_type: str, 
+        noise_type: str,
         action_noise: float,
         target_noise: float,
         noise_clip: float,
@@ -45,11 +45,7 @@ class TD3(OffPolicy):
         model_c1_path: str,
         model_c2_path: str,
     ):
-        super(TD3, self).__init__(
-            tau=tau,
-            gamma=gamma,
-            lr_scheduler=lr_scheduler
-        )
+        super(TD3, self).__init__(tau=tau, gamma=gamma, lr_scheduler=lr_scheduler)
 
         self._target_noise = tf.constant(target_noise)
         self._noise_clip = tf.constant(noise_clip)
@@ -66,44 +62,44 @@ class TD3(OffPolicy):
             action_noise=action_noise,
             state_shape=state_shape,
             action_shape=action_shape,
-            lr=actor_learning_rate, 
-            model_path=model_a_path, 
+            lr=actor_learning_rate,
+            model_path=model_a_path,
         )
         self.actor_targ = Actor(
             noise_type=noise_type,
             action_noise=action_noise,
             state_shape=state_shape,
             action_shape=action_shape,
-            lr=actor_learning_rate, 
-            model_path=model_a_path, 
+            lr=actor_learning_rate,
+            model_path=model_a_path,
         )
 
         # Critic network & target network
         self.critic_1 = Critic(
             state_shape=state_shape,
             action_shape=action_shape,
-            lr=critic_learning_rate, 
-            model_path=model_c1_path
+            lr=critic_learning_rate,
+            model_path=model_c1_path,
         )
         self.critic_targ_1 = Critic(
             state_shape=state_shape,
             action_shape=action_shape,
-            lr=critic_learning_rate, 
-            model_path=model_c1_path
+            lr=critic_learning_rate,
+            model_path=model_c1_path,
         )
 
         # Critic network & target network
         self.critic_2 = Critic(
             state_shape=state_shape,
             action_shape=action_shape,
-            lr=critic_learning_rate, 
-            model_path=model_c2_path
+            lr=critic_learning_rate,
+            model_path=model_c2_path,
         )
         self.critic_targ_2 = Critic(
             state_shape=state_shape,
             action_shape=action_shape,
-            lr=critic_learning_rate, 
-            model_path=model_c2_path
+            lr=critic_learning_rate,
+            model_path=model_c2_path,
         )
 
         # first make a hard copy
@@ -141,7 +137,7 @@ class TD3(OffPolicy):
         # update critic '1'
         with tf.GradientTape() as tape:
             q_values = self.critic_1.model([batch["obs"], batch["act"]])
-            q_losses = tf.losses.huber(         # less sensitive to outliers in batch
+            q_losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_targets, y_pred=q_values
             )
             q1_loss = tf.nn.compute_average_loss(q_losses)
@@ -154,7 +150,7 @@ class TD3(OffPolicy):
         # update critic '2'
         with tf.GradientTape() as tape:
             q_values = self.critic_2.model([batch["obs"], batch["act"]])
-            q_losses = tf.losses.huber(         # less sensitive to outliers in batch
+            q_losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_targets, y_pred=q_values
             )
             q2_loss = tf.nn.compute_average_loss(q_losses)
@@ -187,10 +183,22 @@ class TD3(OffPolicy):
 
     # ------------------------------------ update learning rate ----------------------------------- #
     def _update_learning_rate(self, epoch):
-        K.set_value(self.critic_1.optimizer.learning_rate, self.lr_scheduler(epoch, self.critic_learning_rate)) 
-        K.set_value(self.critic_2.optimizer.learning_rate, self.lr_scheduler(epoch, self.critic_learning_rate))
-        K.set_value(self.actor.optimizer.learning_rate, self.lr_scheduler(epoch, self.actor_learning_rate))
-        K.set_value(self._alpha_optimizer.learning_rate, self.lr_scheduler(epoch, self.alpha_learning_rate))
+        K.set_value(
+            self.critic_1.optimizer.learning_rate,
+            self.lr_scheduler(epoch, self.critic_learning_rate),
+        )
+        K.set_value(
+            self.critic_2.optimizer.learning_rate,
+            self.lr_scheduler(epoch, self.critic_learning_rate),
+        )
+        K.set_value(
+            self.actor.optimizer.learning_rate,
+            self.lr_scheduler(epoch, self.actor_learning_rate),
+        )
+        K.set_value(
+            self._alpha_optimizer.learning_rate,
+            self.lr_scheduler(epoch, self.alpha_learning_rate),
+        )
 
         print(self.critic_1.optimizer.learning_rate)
         print(self.critic_2.optimizer.learning_rate)

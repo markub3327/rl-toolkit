@@ -11,12 +11,7 @@ class OffPolicy(ABC):
     :param lr_scheduler: type of learning rate scheduler
     """
 
-    def __init__(
-        self,
-        tau: float,
-        gamma: float,
-        lr_scheduler
-    ):
+    def __init__(self, tau: float, gamma: float, lr_scheduler):
 
         self.gamma = tf.constant(gamma)
         self.tau = tf.constant(tau)

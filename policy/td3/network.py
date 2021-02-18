@@ -8,12 +8,12 @@ import tensorflow as tf
 # Trieda hraca
 class Actor:
     def __init__(
-        self, 
+        self,
         noise_type: str,
         action_noise: float,
-        state_shape=None, 
-        action_shape=None, 
-        lr=None, 
+        state_shape=None,
+        action_shape=None,
+        lr=None,
         model_path=None,
     ):
 
@@ -46,13 +46,14 @@ class Actor:
             )
         else:
             raise NameError(f"'{noise_type}' noise is not defined")
-        print(f'self.model.output_shape: {self.model.output_shape}')
+        print(f"self.model.output_shape: {self.model.output_shape}")
 
         self.model.summary()
 
     @tf.function
     def reset_noise(self):
         self.noise.reset()
+
 
 # Trieda kritika
 class Critic:

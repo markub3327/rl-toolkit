@@ -36,7 +36,9 @@ class Actor:
             self.model = Model(inputs=state_input, outputs=[mean, noise, latent_sde])
         else:
             # Nacitaj model
-            self.model = tf.keras.models.load_model(model_path, custom_objects={"NoisyLayer": NoisyLayer}, compile=False)
+            self.model = tf.keras.models.load_model(
+                model_path, custom_objects={"NoisyLayer": NoisyLayer}, compile=False
+            )
             print("Actor loaded from file succesful ...")
 
         # Optimalizator modelu
@@ -80,9 +82,7 @@ class Actor:
 
 # Trieda kritika
 class Critic:
-    def __init__(
-        self, state_shape=None, action_shape=None, lr=None, model_path=None
-    ):
+    def __init__(self, state_shape=None, action_shape=None, lr=None, model_path=None):
 
         if model_path == None:
             # vstupna vsrtva

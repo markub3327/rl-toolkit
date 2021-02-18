@@ -24,13 +24,13 @@ class NoisyLayer(Layer):
             shape=(input_shape[-1], self.units),
             initializer=initializers.Constant(value=self.log_std_init),
             trainable=True,
-            name="log_std"
+            name="log_std",
         )
         self.exploration_mat = self.add_weight(
             shape=(input_shape[-1], self.units),
             initializer=initializers.Zeros(),
             trainable=False,
-            name="exploration_mat"
+            name="exploration_mat",
         )
 
         self.sample_weights()

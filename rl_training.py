@@ -12,12 +12,10 @@ from utils.lr_scheduler import linear
 
 
 class RLTraining:
-    """
-    
-    """
-        
+    """"""
+
     def __init__(
-        self, 
+        self,
         env_name: str,
         max_steps: int,
         env_steps: int,
@@ -39,7 +37,7 @@ class RLTraining:
         model_a_path: str,
         model_c1_path: str,
         model_c2_path: str,
-        logging_wandb: bool
+        logging_wandb: bool,
     ):
         self.max_steps = max_steps
         self.env_steps = env_steps
@@ -85,7 +83,7 @@ class RLTraining:
 
         # replay buffer
         self._rpm = ReplayBuffer(
-            obs_dim=self._env.observation_space.shape, 
+            obs_dim=self._env.observation_space.shape,
             act_dim=self._env.action_space.shape,
             size=replay_size,
         )
@@ -147,7 +145,11 @@ class RLTraining:
                 and len(self._rpm) > self.batch_size
             ):
                 self._agent.update(
-                    self._rpm, self._norm_timesteps, self.batch_size, self.gradient_steps, logging_wandb=self.logging_wandb
+                    self._rpm,
+                    self._norm_timesteps,
+                    self.batch_size,
+                    self.gradient_steps,
+                    logging_wandb=self.logging_wandb,
                 )
 
             # update _norm_timesteps

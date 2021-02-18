@@ -50,7 +50,10 @@ if __name__ == "__main__":
         "-lr", "--learning_rate", type=float, help="Learning rate", default=7.3e-4
     )
     my_parser.add_argument(
-        "--lr_scheduler", type=str, help="Learning rate scheduler (none, linear)", default="none"
+        "--lr_scheduler",
+        type=str,
+        help="Learning rate scheduler (none, linear)",
+        default="none",
     )
     my_parser.add_argument("--tau", type=float, help="Soft update rate", default=0.02)
     my_parser.add_argument(
@@ -124,9 +127,9 @@ if __name__ == "__main__":
         noise_clip=args.noise_clip,
         policy_delay=args.policy_delay,
         model_a_path=args.model_a,
-        model_c1_path=args.model_c1, 
+        model_c1_path=args.model_c1,
         model_c2_path=args.model_c2,
-        logging_wandb=args.wandb
+        logging_wandb=args.wandb,
     )
 
     try:

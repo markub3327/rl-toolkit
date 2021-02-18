@@ -9,10 +9,11 @@ class ActionNoise(ABC):
     @abstractmethod
     def sample(self):
         ...
-    
+
     @abstractmethod
     def reset(self):
         ...
+
 
 class OrnsteinUhlenbeckActionNoise(ActionNoise):
     """
