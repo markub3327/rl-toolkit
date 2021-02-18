@@ -183,30 +183,24 @@ class TD3(OffPolicy):
 
     # ------------------------------------ update learning rate ----------------------------------- #
     def _update_learning_rate(self, epoch):
-        K.set_value(
+        tf.keras.backend.set_value(
             self.critic_1.optimizer.learning_rate,
             self.lr_scheduler(epoch, self.critic_learning_rate),
         )
-        K.set_value(
+        tf.keras.backend.set_value(
             self.critic_2.optimizer.learning_rate,
             self.lr_scheduler(epoch, self.critic_learning_rate),
         )
-        K.set_value(
+        tf.keras.backend.set_value(
             self.actor.optimizer.learning_rate,
             self.lr_scheduler(epoch, self.actor_learning_rate),
         )
-        K.set_value(
+        tf.keras.backend.set_value(
             self._alpha_optimizer.learning_rate,
             self.lr_scheduler(epoch, self.alpha_learning_rate),
         )
 
-        print(self.critic_1.optimizer.learning_rate)
-        print(self.critic_2.optimizer.learning_rate)
-        print(self.actor.optimizer.learning_rate)
-        print(self._alpha_optimizer.learning_rate)
-        print(epoch)
-
-    def update(self, rpm, epoch, batch_size, gradient_steps, logging_wandb):
+    def update(self, rpm, epoch, batch_size, gradient_steps):
         # Update learning rate by lr_scheduler
         if self.lr_scheduler is not None:
             self._update_learning_rate(epoch)
@@ -230,16 +224,22 @@ class TD3(OffPolicy):
 
             # print(gradient_step, self.loss_a.result(), self.loss_c1.result(), self.loss_c2.result())
 
+    def logging(self, step):
         # logging of epoch's mean loss
-        if logging_wandb:
-            wandb.log(
-                {
-                    "loss_a": self.loss_a.result(),
-                    "loss_c1": self.loss_c1.result(),
-                    "loss_c2": self.loss_c2.result(),
-                }
-            )
+        wandb.log(
+            {
+                "loss_a": self.loss_a.result(),
+                "loss_c1": self.loss_c1.result(),
+                "loss_c2": self.loss_c2.result(),
+                "critic_learning_rate": self.critic_1.optimizer.learning_rate,
+                "actor_learning_rate": self.actor.optimizer.learning_rate,
+                "alpha_learning_rate": self._alpha_optimizer.learning_rate,
+            },
+            step=step,
+        )
+        self._clear_metrics()  # clear stored metrics of losses
 
+    def _clear_metrics(self):
         # reset logger
         self.loss_a.reset_states()
         self.loss_c1.reset_states()

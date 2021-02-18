@@ -29,5 +29,9 @@ class OffPolicy(ABC):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
     @abstractmethod
-    def update(self, rpm, epoch, batch_size, gradient_steps, logging_wandb):
+    def update(self, rpm, epoch, batch_size, gradient_steps):
+        ...
+
+    @abstractmethod
+    def logging(self, step):
         ...

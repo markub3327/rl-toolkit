@@ -152,8 +152,9 @@ class RLTraining:
                     self._norm_timesteps,
                     self.batch_size,
                     self.gradient_steps,
-                    logging_wandb=self.logging_wandb,
                 )
+                if self.logging_wandb:
+                    self._agent.logging(self._total_steps)
 
     def save(self, save_path):
         # Save model to local drive
@@ -181,7 +182,8 @@ class RLTraining:
                     "score": self._episode_reward,
                     "steps": self._episode_steps,
                     "replayBuffer": len(self._rpm),
-                }
+                },
+                step=self._total_steps,
             )
 
     def _collect_rollouts(self):
