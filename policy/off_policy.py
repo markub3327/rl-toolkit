@@ -6,16 +6,21 @@ import tensorflow as tf
 class OffPolicy(ABC):
     """
     The base for Off-Policy algorithms
+    :param tau: the soft update coefficient (float)
+    :param gamma: the discount factor (float)
+    :param lr_scheduler: type of learning rate scheduler
     """
 
     def __init__(
         self,
         tau: float,
         gamma: float,
+        lr_scheduler
     ):
 
         self.gamma = tf.constant(gamma)
         self.tau = tf.constant(tau)
+        self.lr_scheduler = lr_scheduler
 
     @abstractmethod
     def get_action(self, state):
@@ -29,5 +34,5 @@ class OffPolicy(ABC):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
     @abstractmethod
-    def update(self, rpm, batch_size, gradient_steps, logging_wandb):
+    def update(self, rpm, epoch, batch_size, gradient_steps, logging_wandb):
         ...

@@ -8,10 +8,14 @@ from policy import TD3, SAC
 
 # utilities
 from utils.replay_buffer import ReplayBuffer
+from utils.lr_scheduler import linear
 
 
 class RLTraining:
-
+    """
+    
+    """
+        
     def __init__(
         self, 
         env_name: str,
@@ -24,6 +28,7 @@ class RLTraining:
         replay_size: int,
         batch_size: int,
         learning_rate: float,
+        lr_scheduler: str,
         tau: float,
         gamma: float,
         noise_type: str,
@@ -58,6 +63,7 @@ class RLTraining:
             wandb.config.batch_size = batch_size
             wandb.config.tau = tau
             wandb.config.learning_rate = learning_rate
+            wandb.config.lr_scheduler = lr_scheduler
             wandb.config.replay_size = replay_size
             wandb.config.learning_starts = learning_starts
             wandb.config.update_after = update_after
@@ -68,6 +74,14 @@ class RLTraining:
             wandb.config.target_noise = target_noise
             wandb.config.noise_clip = noise_clip
             wandb.config.policy_delay = policy_delay
+
+        # select lr
+        if lr_scheduler == "none":
+            self.lr_scheduler = None
+        elif lr_scheduler == "linear":
+            self.lr_scheduler = linear
+        else:
+            raise NameError(f"'{lr_scheduler}' learning rate scheduler is not defined")
 
         # replay buffer
         self._rpm = ReplayBuffer(
@@ -83,6 +97,7 @@ class RLTraining:
                 action_shape=self._env.action_space.shape,
                 actor_learning_rate=learning_rate,
                 critic_learning_rate=learning_rate,
+                lr_scheduler=self.lr_scheduler,
                 tau=tau,
                 gamma=gamma,
                 noise_type=noise_type,
@@ -101,6 +116,7 @@ class RLTraining:
                 actor_learning_rate=learning_rate,
                 critic_learning_rate=learning_rate,
                 alpha_learning_rate=learning_rate,
+                lr_scheduler=self.lr_scheduler,
                 tau=tau,
                 gamma=gamma,
                 model_a_path=model_a_path,
@@ -112,6 +128,7 @@ class RLTraining:
 
     def train(self):
         self._total_steps = 0
+        self._norm_timesteps = 0
         self._total_episodes = 0
         self._episode_reward = 0
         self._episode_steps = 0
@@ -130,8 +147,11 @@ class RLTraining:
                 and len(self._rpm) > self.batch_size
             ):
                 self._agent.update(
-                    self._rpm, self.batch_size, self.gradient_steps, logging_wandb=self.logging_wandb
+                    self._rpm, self._norm_timesteps, self.batch_size, self.gradient_steps, logging_wandb=self.logging_wandb
                 )
+
+            # update _norm_timesteps
+            self._norm_timesteps = float(self._total_steps) / float(self.max_steps)
 
     def save(self, save_path):
         # Save model to local drive
@@ -151,7 +171,7 @@ class RLTraining:
         print(f"TotalInteractions: {self._total_steps}")
         print(f"ReplayBuffer: {len(self._rpm)}")
         print("=============================================")
-        print(f"Training ... {round((self._total_steps / self.max_steps) * 100.0)} %")
+        print(f"Training ... {round(self._norm_timesteps * 100.0)} %")
         if self.logging_wandb:
             wandb.log(
                 {

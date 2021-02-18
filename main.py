@@ -49,6 +49,9 @@ if __name__ == "__main__":
     my_parser.add_argument(
         "-lr", "--learning_rate", type=float, help="Learning rate", default=7.3e-4
     )
+    my_parser.add_argument(
+        "--lr_scheduler", type=str, help="Learning rate scheduler (none, linear)", default="none"
+    )
     my_parser.add_argument("--tau", type=float, help="Soft update rate", default=0.02)
     my_parser.add_argument(
         "--batch_size", type=int, help="Size of the batch", default=256
@@ -112,6 +115,7 @@ if __name__ == "__main__":
         replay_size=args.replay_size,
         batch_size=args.batch_size,
         learning_rate=args.learning_rate,
+        lr_scheduler=args.lr_scheduler,
         tau=args.tau,
         gamma=args.gamma,
         noise_type=args.noise_type,

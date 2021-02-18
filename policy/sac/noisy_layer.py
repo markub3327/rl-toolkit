@@ -8,6 +8,8 @@ import tensorflow_probability as tfp
 class NoisyLayer(Layer):
     """
     Noisy layer used by gSDE to predict noise
+    :param units: number of noisy neurons (int)
+    :param log_std_init: initialization value of weights (float)
 
     https://arxiv.org/pdf/2005.05719.pdf
     """

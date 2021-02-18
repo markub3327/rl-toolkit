@@ -8,6 +8,21 @@ import tensorflow as tf
 class TD3(OffPolicy):
     """
     Twin Delayed DDPG
+    :param state_shape: the shape of state space
+    :param action_shape: the shape of action space
+    :param actor_learning_rate: learning rate for actor's optimizer (float)
+    :param critic_learning_rate: learning rate for critic's optimizer (float)
+    :param lr_scheduler: type of learning rate scheduler
+    :param tau: the soft update coefficient for target networks (float)
+    :param gamma: the discount factor (float)
+    :param noise_type: the type of noise generator (str)
+    :param action_noise: the scale of the action noise (float)
+    :param target_noise: the scale of the target noise (float)
+    :param noise_clip: the bound of target noise (float)
+    :param policy_delay: periodicity of updating policy and target networks (int)
+    :param model_a_path: path to the actor's model (str)
+    :param model_c1_path: path to the critic_1's model (str)
+    :param model_c2_path: path to the critic_2's model (str)
 
     https://arxiv.org/pdf/1802.09477.pdf
     """
@@ -18,6 +33,7 @@ class TD3(OffPolicy):
         action_shape,
         actor_learning_rate: float,
         critic_learning_rate: float,
+        lr_scheduler,
         tau: float,
         gamma: float,
         noise_type: str, 
@@ -32,6 +48,7 @@ class TD3(OffPolicy):
         super(TD3, self).__init__(
             tau=tau,
             gamma=gamma,
+            lr_scheduler=lr_scheduler
         )
 
         self._target_noise = tf.constant(target_noise)
@@ -168,7 +185,24 @@ class TD3(OffPolicy):
 
         return a_loss
 
-    def update(self, rpm, batch_size, gradient_steps, logging_wandb):
+    # ------------------------------------ update learning rate ----------------------------------- #
+    def _update_learning_rate(self, epoch):
+        K.set_value(self.critic_1.optimizer.learning_rate, self.lr_scheduler(epoch, self.critic_learning_rate)) 
+        K.set_value(self.critic_2.optimizer.learning_rate, self.lr_scheduler(epoch, self.critic_learning_rate))
+        K.set_value(self.actor.optimizer.learning_rate, self.lr_scheduler(epoch, self.actor_learning_rate))
+        K.set_value(self._alpha_optimizer.learning_rate, self.lr_scheduler(epoch, self.alpha_learning_rate))
+
+        print(self.critic_1.optimizer.learning_rate)
+        print(self.critic_2.optimizer.learning_rate)
+        print(self.actor.optimizer.learning_rate)
+        print(self._alpha_optimizer.learning_rate)
+        print(epoch)
+
+    def update(self, rpm, epoch, batch_size, gradient_steps, logging_wandb):
+        # Update learning rate by lr_scheduler
+        if self.lr_scheduler is not None:
+            self._update_learning_rate(epoch)
+
         for gradient_step in range(1, gradient_steps + 1):
             batch = rpm.sample(batch_size)
 
