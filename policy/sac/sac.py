@@ -215,12 +215,6 @@ class SAC(OffPolicy):
             self.lr_scheduler(epoch, self.alpha_learning_rate),
         )
 
-        print(self.critic_1.optimizer.learning_rate)
-        print(self.critic_2.optimizer.learning_rate)
-        print(self.actor.optimizer.learning_rate)
-        print(self._alpha_optimizer.learning_rate)
-        print(epoch)
-
     def update(self, rpm, epoch, batch_size, gradient_steps, logging_wandb):
         # Update learning rate by lr_scheduler
         if self.lr_scheduler is not None:
@@ -258,6 +252,9 @@ class SAC(OffPolicy):
                     "loss_c2": self.loss_c2.result(),
                     "loss_alpha": self.loss_alpha.result(),
                     "alpha": self._alpha,
+                    "critic_learning_rate": self.critic_1.optimizer.learning_rate,
+                    "actor_learning_rate": self.actor.optimizer.learning_rate,
+                    "alpha_learning_rate": self._alpha_optimizer.learning_rate
                 }
             )
 

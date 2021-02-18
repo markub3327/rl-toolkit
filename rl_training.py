@@ -141,7 +141,6 @@ class RLTraining:
 
             # update _norm_timesteps
             self._norm_timesteps = float(self._total_steps) / float(self.max_steps)
-            print(float(self._total_steps), float(self.max_steps))
 
             # update models
             if (
