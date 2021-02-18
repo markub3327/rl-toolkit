@@ -139,10 +139,14 @@ class RLTraining:
             # collect rollouts
             self._collect_rollouts()
 
+            # update _norm_timesteps
+            self._norm_timesteps = float(self._total_steps) / float(self.max_steps)
+            print(float(self._total_steps), float(self.max_steps))
+
             # update models
             if (
-                self._total_steps > self.update_after
-                and len(self._rpm) > self.batch_size
+                self._total_steps >= self.update_after
+                and len(self._rpm) >= self.batch_size
             ):
                 self._agent.update(
                     self._rpm,
@@ -151,9 +155,6 @@ class RLTraining:
                     self.gradient_steps,
                     logging_wandb=self.logging_wandb,
                 )
-
-            # update _norm_timesteps
-            self._norm_timesteps = float(self._total_steps) / float(self.max_steps)
 
     def save(self, save_path):
         # Save model to local drive
