@@ -106,7 +106,8 @@ if __name__ == "__main__":
                     "epoch": total_episodes,
                     "score": episode_reward,
                     "steps": episode_timesteps,
-                }
+                },
+                step=total_steps
             )
 
     env.close()
