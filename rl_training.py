@@ -8,7 +8,7 @@ from policy import TD3, SAC
 
 # utilities
 from utils.replay_buffer import ReplayBuffer
-from utils.lr_scheduler import linear
+from utils.lr_scheduler import linear, exponential
 
 
 class RLTraining:
@@ -78,6 +78,8 @@ class RLTraining:
             self.lr_scheduler = None
         elif lr_scheduler == "linear":
             self.lr_scheduler = linear
+        elif lr_scheduler == "exp":
+            self.lr_scheduler = exponential
         else:
             raise NameError(f"'{lr_scheduler}' learning rate scheduler is not defined")
 
