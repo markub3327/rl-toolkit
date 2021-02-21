@@ -8,7 +8,7 @@ from policy import TD3, SAC
 
 # utilities
 from utils.replay_buffer import ReplayBuffer
-from utils.lr_scheduler import linear, exponential
+from utils.lr_scheduler import linear
 
 
 class RLTraining:
