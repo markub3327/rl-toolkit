@@ -28,15 +28,14 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
     """
 
     def __init__(self, mean, sigma, shape, theta=0.15, dt=1e-2):
+        super(OrnsteinUhlenbeckActionNoise, self).__init__(shape)
         self._theta = tf.constant(theta)
         self._mu = tf.constant(mean)
         self._sigma = tf.constant(sigma)
         self._dt = tf.constant(dt)
         self.noise_prev = tf.Variable(tf.zeros(self.shape), dtype=tf.float32)
         self.reset()
-        super(OrnsteinUhlenbeckActionNoise, self).__init__(shape)
 
-    @tf.function
     def sample(self):
         noise = (
             self.noise_prev
@@ -46,7 +45,6 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         self.noise_prev.assign(noise)
         return noise
 
-    @tf.function
     def reset(self):
         """
         reset the Ornstein Uhlenbeck noise, to the initial position
@@ -63,11 +61,10 @@ class NormalActionNoise(ActionNoise):
     """
 
     def __init__(self, mean, sigma, shape):
+        super(NormalActionNoise, self).__init__(shape)
         self._mu = tf.constant(mean)
         self._sigma = tf.constant(sigma)
-        super(NormalActionNoise, self).__init__(shape)
 
-    @tf.function
     def sample(self):
         return tf.random.normal(self.shape, mean=self._mu, stddev=self._sigma)
 

@@ -224,7 +224,6 @@ class OffPolicy(ABC):
             # super critical !!!
             self._last_obs = new_obs
 
-    @tf.function
     def _update_target(self, net, net_targ, tau):
         for source_weight, target_weight in zip(
             net.model.trainable_variables, net_targ.model.trainable_variables

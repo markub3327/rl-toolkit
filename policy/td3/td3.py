@@ -169,7 +169,6 @@ class TD3(OffPolicy):
         return a
 
     # ------------------------------------ update critic ----------------------------------- #
-    @tf.function
     def _update_critic(self, batch):
         next_action = self._actor_targ.model(batch["obs2"])
 
@@ -217,7 +216,6 @@ class TD3(OffPolicy):
         return q1_loss, q2_loss
 
     # ------------------------------------ update actor ----------------------------------- #
-    @tf.function
     def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
@@ -250,6 +248,7 @@ class TD3(OffPolicy):
             self._lr_scheduler(epoch, self._actor_learning_rate),
         )
 
+    @tf.function
     def _update(self):
         # Update learning rate by lr_scheduler
         if self._lr_scheduler is not None:
@@ -257,7 +256,7 @@ class TD3(OffPolicy):
                 float(self._total_steps) / float(self._max_steps)
             )
 
-        for gradient_step in range(1, self._gradient_steps + 1):
+        for gradient_step in tf.range(1, self._gradient_steps + 1):
             batch = self._rpm.sample(self._batch_size)
 
             # Critic models update
