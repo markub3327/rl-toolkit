@@ -118,7 +118,7 @@ class OffPolicy(ABC):
                 {
                     "epoch": self._total_episodes,
                     "score": self._episode_reward,
-                    "steps": self.__episode_steps,
+                    "steps": self._episode_steps,
                 },
                 step=self._total_steps,
             )
