@@ -204,7 +204,7 @@ class OffPolicy(ABC):
 
             # check the end of episode
             if done:
-                self._logging_game()
+                self._logging_train()
 
                 self._episode_reward = 0
                 self._episode_steps = 0
