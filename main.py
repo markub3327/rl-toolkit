@@ -1,7 +1,9 @@
-from rl_training import RLTraining
-
 import argparse
+import gym
+import pybullet_envs
 
+# policy
+from policy import TD3, SAC
 
 if __name__ == "__main__":
 
@@ -103,44 +105,78 @@ if __name__ == "__main__":
     my_parser.add_argument("--model_a", type=str, help="Actor's model file")
     my_parser.add_argument("--model_c1", type=str, help="Critic 1's model file")
     my_parser.add_argument("--model_c2", type=str, help="Critic 2's model file")
+    my_parser.add_argument("--test", action="store_true", help="Select the testing mode")
 
     # nacitaj zadane argumenty programu
     args = my_parser.parse_args()
 
-    rl_training = RLTraining(
-        env_name=args.environment,
-        max_steps=args.max_steps,
-        env_steps=args.env_steps,
-        gradient_steps=args.gradient_steps,
-        learning_starts=args.learning_starts,
-        policy=args.policy,
-        update_after=args.update_after,
-        replay_size=args.replay_size,
-        batch_size=args.batch_size,
-        learning_rate=args.learning_rate,
-        lr_scheduler=args.lr_scheduler,
-        tau=args.tau,
-        gamma=args.gamma,
-        noise_type=args.noise_type,
-        action_noise=args.action_noise,
-        target_noise=args.target_noise,
-        noise_clip=args.noise_clip,
-        policy_delay=args.policy_delay,
-        model_a_path=args.model_a,
-        model_c1_path=args.model_c1,
-        model_c2_path=args.model_c2,
-        logging_wandb=args.wandb,
-    )
+    # Herne prostredie
+    env = gym.make(args.environment)
+
+    # init policy
+    if args.policy == "td3":
+        agent = TD3(
+            env=env,
+            max_steps=args.max_steps,
+            env_steps=args.env_steps,
+            gradient_steps=args.gradient_steps,
+            learning_starts=args.learning_starts,
+            update_after=args.update_after,
+            replay_size=args.replay_size,
+            batch_size=args.batch_size,
+            actor_learning_rate=args.learning_rate,
+            critic_learning_rate=args.learning_rate,
+            lr_scheduler=args.lr_scheduler,
+            tau=args.tau,
+            gamma=args.gamma,
+            noise_type=args.noise_type,
+            action_noise=args.action_noise,
+            target_noise=args.target_noise,
+            noise_clip=args.noise_clip,
+            policy_delay=args.policy_delay,
+            model_a_path=args.model_a,
+            model_c1_path=args.model_c1,
+            model_c2_path=args.model_c2,
+            logging_wandb=args.wandb,
+        )
+    elif args.policy == "sac":
+        agent = SAC(
+            env=env,
+            max_steps=args.max_steps,
+            env_steps=args.env_steps,
+            gradient_steps=args.gradient_steps,
+            learning_starts=args.learning_starts,
+            update_after=args.update_after,
+            replay_size=args.replay_size,
+            batch_size=args.batch_size,
+            actor_learning_rate=args.learning_rate,
+            critic_learning_rate=args.learning_rate,
+            alpha_learning_rate=args.learning_rate,
+            lr_scheduler=args.lr_scheduler,
+            tau=args.tau,
+            gamma=args.gamma,
+            model_a_path=args.model_a,
+            model_c1_path=args.model_c1,
+            model_c2_path=args.model_c2,
+            logging_wandb=args.wandb,
+        )
+    else:
+        raise NameError(f"Algorithm '{args.policy}' is not defined")
 
     try:
-        # run training process
-        rl_training.train()
+        if args.test:
+            # run testing process
+            agent.test()
+        else:
+            # run training process
+            agent.train()
     except KeyboardInterrupt:
         print("Terminated by user ... Bay bay")
     finally:
         # zatvor prostredie
-        rl_training.close()
-
-        # save models
-        if args.save is not None:
-            rl_training.save(args.save)
+        env.close()
+        # uloz siete ak je v mode train
+        if args.test == False:
+            # save models
+            if args.save is not None:
+                agent.save(args.save)

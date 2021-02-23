@@ -1,9 +1,8 @@
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Concatenate, Dense
+from tensorflow.keras.models import load_model
 from utils.noise import OrnsteinUhlenbeckActionNoise, NormalActionNoise
-
-import tensorflow as tf
 
 # Trieda hraca
 class Actor:
@@ -29,7 +28,7 @@ class Actor:
             self.model = Model(inputs=state_input, outputs=output)
         else:
             # Nacitaj model
-            self.model = tf.keras.models.load_model(model_path, compile=False)
+            self.model = load_model(model_path, compile=False)
             print("Actor loaded from file succesful ...")
 
         # Skompiluj model
@@ -50,7 +49,6 @@ class Actor:
 
         self.model.summary()
 
-    @tf.function
     def reset_noise(self):
         self.noise.reset()
 
@@ -75,7 +73,7 @@ class Critic:
             self.model = Model(inputs=[state_input, action_input], outputs=output)
         else:
             # Nacitaj model
-            self.model = tf.keras.models.load_model(model_path)
+            self.model = load_model(model_path)
             print("Critic loaded from file succesful ...")
 
         # Skompiluj model

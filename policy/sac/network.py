@@ -1,6 +1,7 @@
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Concatenate, Dense, Lambda
+from tensorflow.keras.models import load_model
 from .noisy_layer import NoisyLayer
 
 import tensorflow as tf
@@ -36,7 +37,7 @@ class Actor:
             self.model = Model(inputs=state_input, outputs=[mean, noise, latent_sde])
         else:
             # Nacitaj model
-            self.model = tf.keras.models.load_model(
+            self.model = load_model(
                 model_path, custom_objects={"NoisyLayer": NoisyLayer}, compile=False
             )
             print("Actor loaded from file succesful ...")
@@ -47,11 +48,9 @@ class Actor:
 
         self.model.summary()
 
-    @tf.function
     def reset_noise(self):
         self.noisy_l.sample_weights()
 
-    @tf.function
     def predict(self, x, with_logprob=True, deterministic=False):
         mean, noise, latent_sde = self.model(x)
 
@@ -100,7 +99,7 @@ class Critic:
             self.model = Model(inputs=[state_input, action_input], outputs=output)
         else:
             # Nacitaj model
-            self.model = tf.keras.models.load_model(model_path)
+            self.model = load_model(model_path)
             print("Critic loaded from file succesful ...")
 
         # Optimalizator modelu
