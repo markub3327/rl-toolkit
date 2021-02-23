@@ -7,6 +7,7 @@ import tensorflow as tf
 from utils.replay_buffer import ReplayBuffer
 from utils.lr_scheduler import linear
 
+
 class OffPolicy(ABC):
     """
     The base for Off-Policy algorithms
@@ -18,22 +19,22 @@ class OffPolicy(ABC):
     def __init__(
         self,
         env,
-        #---
+        # ---
         max_steps: int,
         env_steps: int,
         gradient_steps: int,
-        #---
+        # ---
         learning_starts: int,
         update_after: int,
-        #---
+        # ---
         replay_size: int,
         batch_size: int,
         lr_scheduler: str,
-        #---
-        tau: float, 
+        # ---
+        tau: float,
         gamma: float,
-        #---
-        logging_wandb: bool
+        # ---
+        logging_wandb: bool,
     ):
         self._env = env
         self._max_steps = max_steps
@@ -71,7 +72,7 @@ class OffPolicy(ABC):
     @abstractmethod
     def _update(self):
         ...
-    
+
     @abstractmethod
     def save(self, path):
         ...
@@ -88,7 +89,9 @@ class OffPolicy(ABC):
         print(f"TotalInteractions: {self._total_steps}")
         print(f"ReplayBuffer: {len(self._rpm)}")
         print("=============================================")
-        print(f"Training ... {round(float(self._total_steps) / float(self._max_steps) * 100.0)} %")
+        print(
+            f"Training ... {round(float(self._total_steps) / float(self._max_steps) * 100.0)} %"
+        )
         if self._logging_wandb:
             wandb.log(
                 {
@@ -107,7 +110,9 @@ class OffPolicy(ABC):
         print(f"Steps: {self._episode_steps}")
         print(f"TotalInteractions: {self._total_steps}")
         print("=============================================")
-        print(f"Testing ... {round(float(self._total_steps) / float(self._max_steps) * 100.0)} %")
+        print(
+            f"Testing ... {round(float(self._total_steps) / float(self._max_steps) * 100.0)} %"
+        )
         if self._logging_wandb:
             wandb.log(
                 {
@@ -115,7 +120,7 @@ class OffPolicy(ABC):
                     "score": self._episode_reward,
                     "steps": self.__episode_steps,
                 },
-                step=self._total_steps
+                step=self._total_steps,
             )
 
     def train(self):
@@ -158,7 +163,7 @@ class OffPolicy(ABC):
 
                 # Get the action
                 action = self._get_action(self._last_obs, deterministic=True).numpy()
-                
+
                 # perform action
                 new_obs, reward, done, _ = self._env.step(action)
 

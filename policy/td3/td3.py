@@ -30,34 +30,34 @@ class TD3(OffPolicy):
     def __init__(
         self,
         env,
-        #---
+        # ---
         max_steps: int,
         env_steps: int,
         gradient_steps: int,
-        #---
+        # ---
         learning_starts: int,
         update_after: int,
-        #---
+        # ---
         replay_size: int,
         batch_size: int,
-        #---
+        # ---
         actor_learning_rate: float,
         critic_learning_rate: float,
         lr_scheduler: str,
-        #---
-        tau: float, 
+        # ---
+        tau: float,
         gamma: float,
-        #---
+        # ---
         noise_type: str,
         action_noise: float,
         target_noise: float,
         noise_clip: float,
         policy_delay: int,
-        #---
+        # ---
         model_a_path: str,
         model_c1_path: str,
         model_c2_path: str,
-        logging_wandb: bool
+        logging_wandb: bool,
     ):
         super(TD3, self).__init__(
             env=env,
@@ -71,7 +71,7 @@ class TD3(OffPolicy):
             lr_scheduler=lr_scheduler,
             tau=tau,
             gamma=gamma,
-            logging_wandb=logging_wandb
+            logging_wandb=logging_wandb,
         )
 
         self._target_noise = tf.constant(target_noise)
@@ -253,7 +253,9 @@ class TD3(OffPolicy):
     def _update(self):
         # Update learning rate by lr_scheduler
         if self._lr_scheduler is not None:
-            self._update_learning_rate(float(self._total_steps) / float(self._max_steps))
+            self._update_learning_rate(
+                float(self._total_steps) / float(self._max_steps)
+            )
 
         for gradient_step in range(1, self._gradient_steps + 1):
             batch = self._rpm.sample(self._batch_size)
@@ -285,7 +287,7 @@ class TD3(OffPolicy):
                     "critic_learning_rate": self._critic_1.optimizer.learning_rate,
                     "actor_learning_rate": self._actor.optimizer.learning_rate,
                 },
-                step=self._total_steps
+                step=self._total_steps,
             )
         self._clear_metrics()  # clear stored metrics of losses
 

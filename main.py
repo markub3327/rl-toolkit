@@ -105,7 +105,9 @@ if __name__ == "__main__":
     my_parser.add_argument("--model_a", type=str, help="Actor's model file")
     my_parser.add_argument("--model_c1", type=str, help="Critic 1's model file")
     my_parser.add_argument("--model_c2", type=str, help="Critic 2's model file")
-    my_parser.add_argument("--test", action="store_true", help="Select the testing mode")
+    my_parser.add_argument(
+        "--test", action="store_true", help="Select the testing mode"
+    )
 
     # nacitaj zadane argumenty programu
     args = my_parser.parse_args()

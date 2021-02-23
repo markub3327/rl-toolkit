@@ -37,15 +37,14 @@ class Actor:
         # select noise generator
         if noise_type == "normal":
             self.noise = NormalActionNoise(
-                mean=0.0, sigma=action_noise, size=self.model.output_shape
+                mean=0.0, sigma=action_noise, shape=self.model.output_shape[1:]
             )
         elif noise_type == "ornstein-uhlenbeck":
             self.noise = OrnsteinUhlenbeckActionNoise(
-                mean=0.0, sigma=action_noise, size=self.model.output_shape
+                mean=0.0, sigma=action_noise, shape=self.model.output_shape[1:]
             )
         else:
             raise NameError(f"'{noise_type}' noise is not defined")
-        print(f"self.model.output_shape: {self.model.output_shape}")
 
         self.model.summary()
 
