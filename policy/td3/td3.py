@@ -1,5 +1,6 @@
-from policy.off_policy import OffPolicy
 from .network import Actor, Critic
+from policy.off_policy import OffPolicy
+from utils.noise import OrnsteinUhlenbeckActionNoise, NormalActionNoise
 
 import wandb
 import tensorflow as tf
@@ -8,23 +9,33 @@ import tensorflow as tf
 class TD3(OffPolicy):
     """
     Twin Delayed DDPG
-    :param state_shape: the shape of state space
-    :param action_shape: the shape of action space
-    :param actor_learning_rate: learning rate for actor's optimizer (float)
-    :param critic_learning_rate: learning rate for critic's optimizer (float)
-    :param lr_scheduler: type of learning rate scheduler
-    :param tau: the soft update coefficient for target networks (float)
-    :param gamma: the discount factor (float)
-    :param noise_type: the type of noise generator (str)
-    :param action_noise: the scale of the action noise (float)
-    :param target_noise: the scale of the target noise (float)
-    :param noise_clip: the bound of target noise (float)
-    :param policy_delay: periodicity of updating policy and target networks (int)
-    :param model_a_path: path to the actor's model (str)
-    :param model_c1_path: path to the critic_1's model (str)
-    :param model_c2_path: path to the critic_2's model (str)
+    =================
 
-    https://arxiv.org/pdf/1802.09477.pdf
+    Paper: https://arxiv.org/pdf/1802.09477.pdf
+
+    Attributes:
+        env: the instance of environment object
+        max_steps (int): maximum number of interactions do in environment
+        env_steps (int): maximum number of steps in each rollout
+        gradient_steps (int): number of update steps after each rollout
+        learning_starts (int): number of interactions before using policy network
+        update_after (int): number of interactions before learning starts
+        replay_size (int): the maximum size of experiences replay buffer
+        batch_size (int): size of mini-batch used for training
+        actor_learning_rate (float): learning rate for actor's optimizer
+        critic_learning_rate (float): learning rate for critic's optimizer
+        lr_scheduler (str): type of learning rate scheduler
+        tau (float): the soft update coefficient for target networks
+        gamma (float): the discount factor
+        noise_type (str): the type of noise generator
+        action_noise (float): the scale of the action noise
+        target_noise (float): the scale of the target noise
+        noise_clip (float): the bound of target noise
+        policy_delay (int): periodicity of updating policy and target networks
+        model_a_path (str): path to the actor's model
+        model_c1_path (str): path to the critic_1's model
+        model_c2_path (str): path to the critic_2's model
+        logging_wandb (bool): logging by WanDB
     """
 
     def __init__(
@@ -79,6 +90,18 @@ class TD3(OffPolicy):
         self._policy_delay = policy_delay
         self._actor_learning_rate = actor_learning_rate
         self._critic_learning_rate = critic_learning_rate
+
+        # select noise generator
+        if noise_type == "normal":
+            self._noise = NormalActionNoise(
+                mean=0.0, sigma=action_noise, shape=self.model.output_shape[1:]
+            )
+        elif noise_type == "ornstein-uhlenbeck":
+            self._noise = OrnsteinUhlenbeckActionNoise(
+                mean=0.0, sigma=action_noise, shape=self.model.output_shape[1:]
+            )
+        else:
+            raise NameError(f"'{noise_type}' noise is not defined")
 
         # logging metrics
         self._loss_a = tf.keras.metrics.Mean()
@@ -165,7 +188,7 @@ class TD3(OffPolicy):
         a = self._actor.model(tf.expand_dims(state, axis=0))
         a = tf.squeeze(a, axis=0)  # remove batch_size dim
         if deterministic == False:
-            a = tf.clip_by_value(a + self._actor.noise.sample(), -1.0, 1.0)
+            a = tf.clip_by_value(a + self._noise.sample(), -1.0, 1.0)
         return a
 
     # ------------------------------------ update critic ----------------------------------- #

@@ -2,17 +2,25 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Concatenate, Dense
 from tensorflow.keras.models import load_model
-from utils.noise import OrnsteinUhlenbeckActionNoise, NormalActionNoise
 
-# Trieda hraca
+
 class Actor:
+    """
+    Actor (for TD3)
+    ===============
+
+    Attributes:
+        state_shape: the shape of state space
+        action_shape: the shape of action space
+        learning_rate (float): learning rate for optimizer
+        model_path (str): path to the model
+    """
+
     def __init__(
         self,
-        noise_type: str,
-        action_noise: float,
         state_shape=None,
         action_shape=None,
-        lr=None,
+        learning_rate=None,
         model_path=None,
     ):
 
@@ -32,29 +40,26 @@ class Actor:
             print("Actor loaded from file succesful ...")
 
         # Skompiluj model
-        self.optimizer = Adam(learning_rate=lr)
-
-        # select noise generator
-        if noise_type == "normal":
-            self.noise = NormalActionNoise(
-                mean=0.0, sigma=action_noise, shape=self.model.output_shape[1:]
-            )
-        elif noise_type == "ornstein-uhlenbeck":
-            self.noise = OrnsteinUhlenbeckActionNoise(
-                mean=0.0, sigma=action_noise, shape=self.model.output_shape[1:]
-            )
-        else:
-            raise NameError(f"'{noise_type}' noise is not defined")
+        self.optimizer = Adam(learning_rate=learning_rate)
 
         self.model.summary()
 
-    def reset_noise(self):
-        self.noise.reset()
 
-
-# Trieda kritika
 class Critic:
-    def __init__(self, state_shape=None, action_shape=None, lr=None, model_path=None):
+    """
+    Critic (for TD3)
+    ===============
+
+    Attributes:
+        state_shape: the shape of state space
+        action_shape: the shape of action space
+        learning_rate (float): learning rate for optimizer
+        model_path (str): path to the model
+    """
+
+    def __init__(
+        self, state_shape=None, action_shape=None, learning_rate=None, model_path=None
+    ):
 
         if model_path == None:
             # vstupna vsrtva
@@ -76,6 +81,6 @@ class Critic:
             print("Critic loaded from file succesful ...")
 
         # Skompiluj model
-        self.optimizer = Adam(learning_rate=lr)
+        self.optimizer = Adam(learning_rate=learning_rate)
 
         self.model.summary()

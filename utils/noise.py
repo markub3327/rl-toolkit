@@ -17,12 +17,17 @@ class ActionNoise(ABC):
 
 class OrnsteinUhlenbeckActionNoise(ActionNoise):
     """
-    An Ornstein Uhlenbeck action noise, this is designed to approximate Brownian motion with friction.
-    :param mean: the mean of the noise (float)
-    :param sigma: the scale of the noise (float)
-    :param shape: shape of generated noise matrix
-    :param theta: the rate of mean reversion (float)
-    :param dt: the timestep for the noise (float)
+    An Ornstein Uhlenbeck action noise
+    ==================================
+
+    This is designed to approximate Brownian motion with friction.
+
+    Attributes:
+        mean (float): the mean of the noise
+        sigma (float): the scale of the noise
+        shape: shape of generated noise matrix
+        theta (float): the rate of mean reversion
+        dt (float): the timestep for the noise
 
     Based on http://math.stackexchange.com/questions/1287634/implementing-ornstein-uhlenbeck-in-matlab
     """
@@ -55,9 +60,12 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
 class NormalActionNoise(ActionNoise):
     """
     A Gaussian action noise
-    :param mean: the mean value of the noise (float)
-    :param sigma: the scale of the noise (float)
-    :param shape: shape of generated noise matrix
+    =======================
+
+    Attributes:
+        mean (float): the mean value of the noise
+        sigma (float): the scale of the noise
+        shape: shape of generated noise matrix
     """
 
     def __init__(self, mean, sigma, shape):

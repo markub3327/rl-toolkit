@@ -11,9 +11,21 @@ from utils.lr_scheduler import linear
 class OffPolicy(ABC):
     """
     The base for Off-Policy algorithms
-    :param tau: the soft update coefficient (float)
-    :param gamma: the discount factor (float)
-    :param lr_scheduler: type of learning rate scheduler
+    ==================================
+
+    Attributes:
+        env: the instance of environment object
+        max_steps (int): maximum number of interactions do in environment
+        env_steps (int): maximum number of steps in each rollout
+        gradient_steps (int): number of update steps after each rollout
+        learning_starts (int): number of interactions before using policy network
+        update_after (int): number of interactions before learning starts
+        replay_size (int): the maximum size of experiences replay buffer
+        batch_size (int): size of mini-batch used for training
+        lr_scheduler (str): type of learning rate scheduler
+        tau (float): the soft update coefficient for target networks
+        gamma (float): the discount factor
+        logging_wandb (bool): logging by WanDB
     """
 
     def __init__(

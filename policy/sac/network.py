@@ -8,13 +8,24 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 
-# Trieda hraca
 class Actor:
+    """
+    Actor (for SAC)
+    ===============
+
+    Attributes:
+        state_shape: the shape of state space
+        action_shape: the shape of action space
+        learning_rate (float): learning rate for optimizer
+        model_path (str): path to the model
+        clip_mean (float): limit the mean of action distribution to specific range (avoid inf)
+    """
+
     def __init__(
         self,
         state_shape=None,
         action_shape=None,
-        lr=None,
+        learning_rate=None,
         model_path=None,
         clip_mean: float = 2.0,
     ):
@@ -43,7 +54,7 @@ class Actor:
             print("Actor loaded from file succesful ...")
 
         # Optimalizator modelu
-        self.optimizer = Adam(learning_rate=lr)
+        self.optimizer = Adam(learning_rate=learning_rate)
         self.bijector = tfp.bijectors.Tanh()
 
         self.model.summary()
@@ -79,9 +90,21 @@ class Actor:
         return pi_action, logp_pi
 
 
-# Trieda kritika
 class Critic:
-    def __init__(self, state_shape=None, action_shape=None, lr=None, model_path=None):
+    """
+    Critic (for SAC)
+    ===============
+
+    Attributes:
+        state_shape: the shape of state space
+        action_shape: the shape of action space
+        learning_rate (float): learning rate for optimizer
+        model_path (str): path to the model
+    """
+
+    def __init__(
+        self, state_shape=None, action_shape=None, learning_rate=None, model_path=None
+    ):
 
         if model_path == None:
             # vstupna vsrtva
@@ -103,6 +126,6 @@ class Critic:
             print("Critic loaded from file succesful ...")
 
         # Optimalizator modelu
-        self.optimizer = Adam(learning_rate=lr)
+        self.optimizer = Adam(learning_rate=learning_rate)
 
         self.model.summary()
