@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+import math
 import wandb
 import tensorflow as tf
 
@@ -102,7 +103,7 @@ class OffPolicy(ABC):
         print(f"ReplayBuffer: {len(self._rpm)}")
         print("=============================================")
         print(
-            f"Training ... {round(float(self._total_steps) / float(self._max_steps) * 100.0)} %"
+            f"Training ... {math.floor(float(self._total_steps) / float(self._max_steps) * 100.0)} %"
         )
         if self._logging_wandb:
             wandb.log(
@@ -123,7 +124,7 @@ class OffPolicy(ABC):
         print(f"TotalInteractions: {self._total_steps}")
         print("=============================================")
         print(
-            f"Testing ... {round(float(self._total_steps) / float(self._max_steps) * 100.0)} %"
+            f"Testing ... {math.floor(float(self._total_steps) / float(self._max_steps) * 100.0)} %"
         )
         if self._logging_wandb:
             wandb.log(
