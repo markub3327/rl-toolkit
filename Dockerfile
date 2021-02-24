@@ -4,7 +4,7 @@ FROM ubuntu:20.04
 # nastav jazyk
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 
-# nastav apt-get
+# nastav apt-get, aby nepotrebovala usera
 ARG DEBIAN_FRONTEND=noninteractive
 
 # nainstaluj python3 a vycisti balicky
@@ -66,10 +66,11 @@ COPY requirements.txt /tmp/
 RUN python3 -m pip --no-cache-dir install -r /tmp/requirements.txt
 
 # vytvor pracovny priecinok pre RL nastroje
-RUN mkdir /root/rl-toolkit
+WORKDIR /root
+RUN git clone https://github.com/markub3327/rl-toolkit.git
 WORKDIR /root/rl-toolkit
 
 # nastav vychodiskovy bod pre kontajner
-COPY docker_entrypoint.sh /tmp/
-RUN chmod +x /tmp/docker_entrypoint.sh
-ENTRYPOINT ["/tmp/docker_entrypoint.sh"]
+COPY docker_entrypoint.sh /root
+RUN chmod +x /root/docker_entrypoint.sh
+ENTRYPOINT ["/root/docker_entrypoint.sh"]
