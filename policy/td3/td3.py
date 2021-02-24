@@ -114,7 +114,7 @@ class TD3(OffPolicy):
             action_noise=action_noise,
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            lr=actor_learning_rate,
+            learning_rate=actor_learning_rate,
             model_path=model_a_path,
         )
         self._actor_targ = Actor(
@@ -122,7 +122,7 @@ class TD3(OffPolicy):
             action_noise=action_noise,
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            lr=actor_learning_rate,
+            learning_rate=actor_learning_rate,
             model_path=model_a_path,
         )
 
@@ -130,13 +130,13 @@ class TD3(OffPolicy):
         self._critic_1 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            lr=critic_learning_rate,
+            learning_rate=critic_learning_rate,
             model_path=model_c1_path,
         )
         self._critic_targ_1 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            lr=critic_learning_rate,
+            learning_rate=critic_learning_rate,
             model_path=model_c1_path,
         )
 
@@ -144,13 +144,13 @@ class TD3(OffPolicy):
         self._critic_2 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            lr=critic_learning_rate,
+            learning_rate=critic_learning_rate,
             model_path=model_c2_path,
         )
         self._critic_targ_2 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            lr=critic_learning_rate,
+            learning_rate=critic_learning_rate,
             model_path=model_c2_path,
         )
 

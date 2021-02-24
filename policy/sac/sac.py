@@ -101,7 +101,7 @@ class SAC(OffPolicy):
         self._actor = Actor(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            lr=actor_learning_rate,
+            learning_rate=actor_learning_rate,
             model_path=model_a_path,
         )
 
@@ -109,13 +109,13 @@ class SAC(OffPolicy):
         self._critic_1 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            lr=critic_learning_rate,
+            learning_rate=critic_learning_rate,
             model_path=model_c1_path,
         )
         self._critic_targ_1 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            lr=critic_learning_rate,
+            learning_rate=critic_learning_rate,
             model_path=model_c1_path,
         )
 
@@ -123,13 +123,13 @@ class SAC(OffPolicy):
         self._critic_2 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            lr=critic_learning_rate,
+            learning_rate=critic_learning_rate,
             model_path=model_c2_path,
         )
         self._critic_targ_2 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            lr=critic_learning_rate,
+            learning_rate=critic_learning_rate,
             model_path=model_c2_path,
         )
 
@@ -166,6 +166,7 @@ class SAC(OffPolicy):
         return tf.squeeze(a, axis=0)  # remove batch_size dim
 
     # ------------------------------------ update critic ----------------------------------- #
+    @tf.function
     def _update_critic(self, batch):
         next_action, next_log_pi = self._actor.predict(batch["obs2"])
 
@@ -212,6 +213,7 @@ class SAC(OffPolicy):
         return q1_loss, q2_loss
 
     # ------------------------------------ update actor ----------------------------------- #
+    @tf.function
     def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
@@ -236,6 +238,7 @@ class SAC(OffPolicy):
         return a_loss
 
     # ------------------------------------ update alpha ----------------------------------- #
+    @tf.function
     def _update_alpha(self, batch):
         y_pred, log_pi = self._actor.predict(batch["obs"])
         # tf.print(f'y_pred: {y_pred.shape}')
@@ -273,7 +276,7 @@ class SAC(OffPolicy):
             self._lr_scheduler(epoch, self._alpha_learning_rate),
         )
 
-    @tf.function
+    #@tf.function       -- trouble with RPM
     def _update(self):
         # Update learning rate by lr_scheduler
         if self._lr_scheduler is not None:
@@ -281,7 +284,7 @@ class SAC(OffPolicy):
                 float(self._total_steps) / float(self._max_steps)
             )
 
-        for gradient_step in tf.range(1, self._gradient_steps + 1):
+        for gradient_step in range(1, self._gradient_steps + 1):
             batch = self._rpm.sample(self._batch_size)
 
             # re-new noise matrix every update of 'log_std' params
