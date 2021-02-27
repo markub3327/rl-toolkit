@@ -19,19 +19,26 @@
 
 #### YOU MUST HAVE INSTALLED DOCKER !!!
 
+### Build the Docker image
+
 ```shell
-# Build the Docker image
-./build.sh
+docker build -t markub/rl-toolkit:cpu .
+```
+
+### Run the container
+
+```shell
+docker run -it --rm -v $PWD:/root/rl-toolkit markub/rl-toolkit:cpu python3 training.py / testing.py
 ```
 
 ## Using
 
 ```shell
 # Run training
-./run.sh python3 main.py [-h] -alg sac -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
+python3 training.py [-h] -alg sac -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
 
 # Run testing
-./run.sh python3 rl-testing.py [-h] -alg td3 -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
+python3 testing.py [-h] -alg td3 -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 ```
 
 ## Tested environments
