@@ -4,7 +4,7 @@ FROM ubuntu:20.04
 # nastav jazyk
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 
-# nastav apt-get, aby nepotrebovala usera
+# nastav apt-get
 ARG DEBIAN_FRONTEND=noninteractive
 
 # nainstaluj python3 a vycisti balicky
@@ -66,8 +66,7 @@ COPY requirements.txt /tmp/
 RUN python3 -m pip --no-cache-dir install -r /tmp/requirements.txt
 
 # vytvor pracovny priecinok pre RL nastroje
-WORKDIR /root
-RUN git clone https://github.com/markub3327/rl-toolkit.git
+RUN mkdir /root/rl-toolkit
 WORKDIR /root/rl-toolkit
 
 # nastav vychodiskovy bod pre kontajner
