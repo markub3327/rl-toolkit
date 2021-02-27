@@ -75,9 +75,9 @@ class SAC(OffPolicy):
             logging_wandb=logging_wandb,
         )
 
-        self._actor_learning_rate = actor_learning_rate
-        self._critic_learning_rate = critic_learning_rate
-        self._alpha_learning_rate = alpha_learning_rate
+        self._actor_learning_rate = tf.constant(actor_learning_rate)
+        self._critic_learning_rate = tf.constant(critic_learning_rate)
+        self._alpha_learning_rate = tf.constant(alpha_learning_rate)
 
         # logging metrics
         self._loss_a = tf.keras.metrics.Mean()
@@ -156,7 +156,7 @@ class SAC(OffPolicy):
             wandb.config.gamma = gamma
             wandb.config.norm_obs = norm_obs
 
-    @tf.function
+    @tf.function(experimental_relax_shapes=True)
     def _get_action(self, state, deterministic):
         a, _ = self._actor.predict(
             tf.expand_dims(state, axis=0),
@@ -166,7 +166,7 @@ class SAC(OffPolicy):
         return tf.squeeze(a, axis=0)  # remove batch_size dim
 
     # ------------------------------------ update critic ----------------------------------- #
-    @tf.function
+    @tf.function(experimental_relax_shapes=True)
     def _update_critic(self, batch):
         next_action, next_log_pi = self._actor.predict(batch["obs2"])
 
@@ -213,7 +213,7 @@ class SAC(OffPolicy):
         return q1_loss, q2_loss
 
     # ------------------------------------ update actor ----------------------------------- #
-    @tf.function
+    @tf.function(experimental_relax_shapes=True)
     def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
@@ -238,7 +238,7 @@ class SAC(OffPolicy):
         return a_loss
 
     # ------------------------------------ update alpha ----------------------------------- #
-    @tf.function
+    @tf.function(experimental_relax_shapes=True)
     def _update_alpha(self, batch):
         y_pred, log_pi = self._actor.predict(batch["obs"])
         # tf.print(f'y_pred: {y_pred.shape}')
@@ -258,6 +258,7 @@ class SAC(OffPolicy):
         return alpha_loss
 
     # ------------------------------------ update learning rate ----------------------------------- #
+    @tf.function(experimental_relax_shapes=True)
     def _update_learning_rate(self, epoch):
         tf.keras.backend.set_value(
             self._critic_1.optimizer.learning_rate,
@@ -276,7 +277,18 @@ class SAC(OffPolicy):
             self._lr_scheduler(epoch, self._alpha_learning_rate),
         )
 
-    #@tf.function       -- trouble with RPM
+    @tf.function(experimental_relax_shapes=True)
+    def _do_updates(self, batch):
+        # Alpha param update
+        self._loss_alpha.update_state(self._update_alpha(batch))
+
+        l_c1, l_c2 = self._update_critic(batch)
+        self._loss_c1.update_state(l_c1)
+        self._loss_c2.update_state(l_c2)
+
+        # Actor model update
+        self._loss_a.update_state(self._update_actor(batch))
+
     def _update(self):
         # Update learning rate by lr_scheduler
         if self._lr_scheduler is not None:
@@ -284,22 +296,14 @@ class SAC(OffPolicy):
                 float(self._total_steps) / float(self._max_steps)
             )
 
-        for gradient_step in range(1, self._gradient_steps + 1):
+        for _ in range(self._gradient_steps):
             batch = self._rpm.sample(self._batch_size)
 
             # re-new noise matrix every update of 'log_std' params
             self._actor.reset_noise()
 
-            # Alpha param update
-            self._loss_alpha.update_state(self._update_alpha(batch))
-
-            # Critic models update
-            l_c1, l_c2 = self._update_critic(batch)
-            self._loss_c1.update_state(l_c1)
-            self._loss_c2.update_state(l_c2)
-
-            # Actor model update
-            self._loss_a.update_state(self._update_actor(batch))
+            # do update weights
+            self._do_updates(batch)
 
             # ---------------------------- soft update target networks ---------------------------- #
             self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)

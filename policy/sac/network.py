@@ -54,6 +54,7 @@ class Actor:
 
         self.model.summary()
 
+    @tf.function(experimental_relax_shapes=True)
     def reset_noise(self):
         self.noisy_l.sample_weights()
 

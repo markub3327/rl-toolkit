@@ -52,9 +52,9 @@ class OffPolicy(ABC):
         self._env = env
         self._max_steps = max_steps
         self._env_steps = env_steps
-        self._gradient_steps = gradient_steps
+        self._gradient_steps = tf.constant(gradient_steps)
         self._learning_starts = learning_starts
-        self._batch_size = batch_size
+        self._batch_size = tf.constant(batch_size)
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
         self._logging_wandb = logging_wandb
@@ -85,6 +85,7 @@ class OffPolicy(ABC):
     def _get_action(self, state, deterministic):
         ...
 
+    @tf.function(experimental_relax_shapes=True)
     def _update_target(self, net, net_targ, tau):
         for source_weight, target_weight in zip(
             net.model.trainable_variables, net_targ.model.trainable_variables
@@ -204,13 +205,13 @@ class OffPolicy(ABC):
                 # super critical !!!
                 self._last_obs = new_obs
 
-                # update models
-                if (
-                    self._total_steps >= self._learning_starts
-                    and len(self._rpm) >= self._batch_size
-                ):
-                    self._update()
-                    self._logging_models()
+            # update models
+            if (
+                self._total_steps >= self._learning_starts
+                and len(self._rpm) >= self._batch_size
+            ):
+                self._update()
+                self._logging_models()
 
     def test(self):
         self._total_steps = 0
