@@ -58,6 +58,7 @@ class Actor:
     def reset_noise(self):
         self.noisy_l.sample_weights()
 
+    @tf.function
     def predict(self, x, with_logprob=True, deterministic=False):
         mean, noise, latent_sde = self.model(x)
 
