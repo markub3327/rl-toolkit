@@ -17,7 +17,7 @@
 
 ## Setting up container
 
-#### YOU MUST HAVE INSTALLED DOCKER !!!
+##### YOU MUST HAVE INSTALLED DOCKER !!!
 
 ### Build the Docker image
 
