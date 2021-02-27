@@ -73,13 +73,17 @@ class OffPolicy(ABC):
             size=replay_size,
         )
 
+        # check if normalize observation
+        if tf.reduce_any(tf.math.is_inf(self._env.observation_space.high)) == False:
+            self._norm_obs = True
+        else:
+            self._norm_obs = False
+
     def _prepare_state(self, state):
-        #tf.cond(
-        #    tf.math.is_inf(self._env.observation_space.high),
-        #    lambda: state,
-        #    lambda: tf.divide(state, self._env.observation_space.high)
-        #)
-        return state / self._env.observation_space.high
+        if self._norm_obs:  #  Min-max method
+            return state / self._env.observation_space.high
+        else:
+            return state
 
     @abstractmethod
     def _get_action(self, state, deterministic):
