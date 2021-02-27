@@ -258,7 +258,6 @@ class SAC(OffPolicy):
         return alpha_loss
 
     # ------------------------------------ update learning rate ----------------------------------- #
-    @tf.function(experimental_relax_shapes=True)
     def _update_learning_rate(self, epoch):
         tf.keras.backend.set_value(
             self._critic_1.optimizer.learning_rate,
