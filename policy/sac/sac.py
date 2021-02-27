@@ -156,7 +156,7 @@ class SAC(OffPolicy):
             wandb.config.gamma = gamma
             wandb.config.norm_obs = norm_obs
 
-    @tf.function(experimental_relax_shapes=True)
+    @tf.function
     def _get_action(self, state, deterministic):
         a, _ = self._actor.predict(
             tf.expand_dims(state, axis=0),
@@ -166,7 +166,7 @@ class SAC(OffPolicy):
         return tf.squeeze(a, axis=0)  # remove batch_size dim
 
     # ------------------------------------ update critic ----------------------------------- #
-    @tf.function(experimental_relax_shapes=True)
+    @tf.function
     def _update_critic(self, batch):
         next_action, next_log_pi = self._actor.predict(batch["obs2"])
 
@@ -213,7 +213,7 @@ class SAC(OffPolicy):
         return q1_loss, q2_loss
 
     # ------------------------------------ update actor ----------------------------------- #
-    @tf.function(experimental_relax_shapes=True)
+    @tf.function
     def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
@@ -238,7 +238,7 @@ class SAC(OffPolicy):
         return a_loss
 
     # ------------------------------------ update alpha ----------------------------------- #
-    @tf.function(experimental_relax_shapes=True)
+    @tf.function
     def _update_alpha(self, batch):
         y_pred, log_pi = self._actor.predict(batch["obs"])
         # tf.print(f'y_pred: {y_pred.shape}')
@@ -276,7 +276,7 @@ class SAC(OffPolicy):
             self._lr_scheduler(epoch, self._alpha_learning_rate),
         )
 
-    @tf.function(experimental_relax_shapes=True)
+    @tf.function
     def _do_updates(self, batch):
         # Alpha param update
         self._loss_alpha.update_state(self._update_alpha(batch))

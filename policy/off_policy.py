@@ -85,7 +85,7 @@ class OffPolicy(ABC):
     def _get_action(self, state, deterministic):
         ...
 
-    @tf.function(experimental_relax_shapes=True)
+    @tf.function
     def _update_target(self, net, net_targ, tau):
         for source_weight, target_weight in zip(
             net.model.trainable_variables, net_targ.model.trainable_variables
