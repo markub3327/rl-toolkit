@@ -46,6 +46,7 @@ class OffPolicy(ABC):
         # ---
         tau: float,
         gamma: float,
+        norm_obs: bool,
         # ---
         logging_wandb: bool,
     ):
@@ -59,6 +60,7 @@ class OffPolicy(ABC):
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
         self._logging_wandb = logging_wandb
+        self._norm_obs = norm_obs
 
         if lr_scheduler == "none":
             self._lr_scheduler = None
@@ -74,14 +76,9 @@ class OffPolicy(ABC):
             size=replay_size,
         )
 
-        # check if normalize observation
-        if tf.reduce_any(tf.math.is_inf(self._env.observation_space.high)) == False:
-            self._norm_obs = True
-        else:
-            self._norm_obs = False
-
     def _prepare_state(self, state):
-        if self._norm_obs:  #  Min-max method
+        #  Min-max method
+        if self._norm_obs:
             return state / self._env.observation_space.high
         else:
             return state
@@ -121,7 +118,7 @@ class OffPolicy(ABC):
         print(f"ReplayBuffer: {len(self._rpm)}")
         print("=============================================")
         print(
-            f"Training ... {math.floor(self._total_steps / self._max_steps * 100.0)} %"
+            f"Training ... {math.floor(self._total_steps * 100.0 / self._max_steps)} %"
         )
         if self._logging_wandb:
             wandb.log(
@@ -142,7 +139,7 @@ class OffPolicy(ABC):
         print(f"TotalInteractions: {self._total_steps}")
         print("=============================================")
         print(
-            f"Testing ... {math.floor(self._total_steps / self._max_steps * 100.0)} %"
+            f"Testing ... {math.floor(self._total_steps * 100.0 / self._max_steps)} %"
         )
         if self._logging_wandb:
             wandb.log(
@@ -170,7 +167,7 @@ class OffPolicy(ABC):
             self._actor.reset_noise()
 
             # collect rollouts
-            for env_step in range(self._env_steps):
+            for _ in range(self._env_steps):
                 # select action randomly or using policy network
                 if self._total_steps < self._learning_starts:
                     # warmup
