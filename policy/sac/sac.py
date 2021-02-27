@@ -52,7 +52,7 @@ class SAC(OffPolicy):
         alpha_learning_rate: float = 3e-4,
         lr_scheduler: str = "none",
         # ---
-        tau: float = 0.01,
+        tau: float = 0.005,
         gamma: float = 0.99,
         # ---
         model_a_path: str = None,

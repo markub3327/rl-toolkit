@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+import math
 import wandb
 import tensorflow as tf
 
@@ -120,7 +121,7 @@ class OffPolicy(ABC):
         print(f"ReplayBuffer: {len(self._rpm)}")
         print("=============================================")
         print(
-            f"Training ... {tf.floor(self._total_steps / self._max_steps * 100.0)} %"
+            f"Training ... {math.floor(self._total_steps / self._max_steps * 100.0)} %"
         )
         if self._logging_wandb:
             wandb.log(
@@ -141,7 +142,7 @@ class OffPolicy(ABC):
         print(f"TotalInteractions: {self._total_steps}")
         print("=============================================")
         print(
-            f"Testing ... {tf.floor(self._total_steps / self._max_steps * 100.0)} %"
+            f"Testing ... {math.floor(self._total_steps / self._max_steps * 100.0)} %"
         )
         if self._logging_wandb:
             wandb.log(
@@ -161,9 +162,7 @@ class OffPolicy(ABC):
 
         # init environment
         self._last_obs = self._env.reset()
-        #print(self._last_obs)
         self._last_obs = self._prepare_state(self._last_obs)
-        #print(self._last_obs)
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
@@ -202,9 +201,7 @@ class OffPolicy(ABC):
 
                     # init environment
                     self._last_obs = self._env.reset()
-                    #print(self._last_obs)
                     self._last_obs = self._prepare_state(self._last_obs)
-                    #print(self._last_obs)
 
                     # interrupt the rollout
                     break

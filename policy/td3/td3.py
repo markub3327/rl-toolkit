@@ -56,7 +56,7 @@ class TD3(OffPolicy):
         critic_learning_rate: float = 1e-3,
         lr_scheduler: str = "none",
         # ---
-        tau: float = 0.01,
+        tau: float = 0.005,
         gamma: float = 0.99,
         # ---
         noise_type: str = "normal",
