@@ -19,7 +19,6 @@ class TD3(OffPolicy):
         env_steps (int): maximum number of steps in each rollout
         gradient_steps (int): number of update steps after each rollout
         learning_starts (int): number of interactions before using policy network
-        update_after (int): number of interactions before learning starts
         replay_size (int): the maximum size of experiences replay buffer
         batch_size (int): size of mini-batch used for training
         actor_learning_rate (float): learning rate for actor's optimizer
@@ -27,6 +26,7 @@ class TD3(OffPolicy):
         lr_scheduler (str): type of learning rate scheduler
         tau (float): the soft update coefficient for target networks
         gamma (float): the discount factor
+        norm_obs (bool): normalize every observation
         noise_type (str): the type of noise generator
         action_noise (float): the scale of the action noise
         target_noise (float): the scale of the target noise
@@ -47,7 +47,6 @@ class TD3(OffPolicy):
         gradient_steps: int = -1,
         # ---
         learning_starts: int = 10000,
-        update_after: int = 10000,
         # ---
         replay_size: int = 1000000,
         batch_size: int = 128,
@@ -77,7 +76,6 @@ class TD3(OffPolicy):
             env_steps=env_steps,
             gradient_steps=gradient_steps,
             learning_starts=learning_starts,
-            update_after=update_after,
             replay_size=replay_size,
             batch_size=batch_size,
             lr_scheduler=lr_scheduler,
@@ -171,7 +169,6 @@ class TD3(OffPolicy):
             wandb.config.env_steps = env_steps
             wandb.config.gradient_steps = gradient_steps
             wandb.config.learning_starts = learning_starts
-            wandb.config.update_after = update_after
             wandb.config.replay_size = replay_size
             wandb.config.batch_size = batch_size
             wandb.config.actor_learning_rate = actor_learning_rate
@@ -179,6 +176,7 @@ class TD3(OffPolicy):
             wandb.config.lr_scheduler = lr_scheduler
             wandb.config.tau = tau
             wandb.config.gamma = gamma
+            wandb.config.norm_obs = norm_obs
             wandb.config.noise_type = noise_type
             wandb.config.action_noise = action_noise
             wandb.config.target_noise = target_noise

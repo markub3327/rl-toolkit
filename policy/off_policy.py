@@ -20,12 +20,12 @@ class OffPolicy(ABC):
         env_steps (int): maximum number of steps in each rollout
         gradient_steps (int): number of update steps after each rollout
         learning_starts (int): number of interactions before using policy network
-        update_after (int): number of interactions before learning starts
         replay_size (int): the maximum size of experiences replay buffer
         batch_size (int): size of mini-batch used for training
         lr_scheduler (str): type of learning rate scheduler
         tau (float): the soft update coefficient for target networks
         gamma (float): the discount factor
+        norm_obs (bool): normalize every observation
         logging_wandb (bool): logging by WanDB
     """
 
@@ -38,7 +38,6 @@ class OffPolicy(ABC):
         gradient_steps: int,
         # ---
         learning_starts: int,
-        update_after: int,
         # ---
         replay_size: int,
         batch_size: int,
@@ -55,7 +54,6 @@ class OffPolicy(ABC):
         self._env_steps = env_steps
         self._gradient_steps = gradient_steps
         self._learning_starts = learning_starts
-        self._update_after = update_after
         self._batch_size = batch_size
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
@@ -208,7 +206,7 @@ class OffPolicy(ABC):
 
                 # update models
                 if (
-                    self._total_steps >= self._update_after
+                    self._total_steps >= self._learning_starts
                     and len(self._rpm) >= self._batch_size
                 ):
                     self._update()
