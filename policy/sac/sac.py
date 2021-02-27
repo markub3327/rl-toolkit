@@ -54,7 +54,7 @@ class SAC(OffPolicy):
         # ---
         tau: float = 0.005,
         gamma: float = 0.99,
-        norm_obs: bool,
+        norm_obs: bool = False,
         # ---
         model_a_path: str = None,
         model_c1_path: str = None,

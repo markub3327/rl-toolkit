@@ -100,6 +100,7 @@ if __name__ == "__main__":
         help="Delay between critic and policy update",
         default=2,
     )
+    my_parser.add_argument("--normalize", action="store_true", help="Normalize every observation")
     my_parser.add_argument("--wandb", action="store_true", help="Logging to wanDB")
     my_parser.add_argument("-s", "--save", type=str, help="Path for saving model files")
     my_parser.add_argument("--model_a", type=str, help="Actor's model file")
@@ -136,6 +137,7 @@ if __name__ == "__main__":
             lr_scheduler=args.lr_scheduler,
             tau=args.tau,
             gamma=args.gamma,
+            norm_obs=args.normalize,
             noise_type=args.noise_type,
             action_noise=args.action_noise,
             target_noise=args.target_noise,
@@ -162,6 +164,7 @@ if __name__ == "__main__":
             lr_scheduler=args.lr_scheduler,
             tau=args.tau,
             gamma=args.gamma,
+            norm_obs=args.normalize,
             model_a_path=args.model_a,
             model_c1_path=args.model_c1,
             model_c2_path=args.model_c2,

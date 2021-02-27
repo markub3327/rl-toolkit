@@ -58,6 +58,7 @@ class TD3(OffPolicy):
         # ---
         tau: float = 0.005,
         gamma: float = 0.99,
+        norm_obs: bool = False,
         # ---
         noise_type: str = "normal",
         action_noise: float = 0.1,
@@ -82,6 +83,7 @@ class TD3(OffPolicy):
             lr_scheduler=lr_scheduler,
             tau=tau,
             gamma=gamma,
+            norm_obs=norm_obs,
             logging_wandb=logging_wandb,
         )
 
