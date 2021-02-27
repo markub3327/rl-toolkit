@@ -71,12 +71,6 @@ if __name__ == "__main__":
         default=10000,
     )
     my_parser.add_argument(
-        "--update_after",
-        type=int,
-        help="Number of steps before training",
-        default=10000,
-    )
-    my_parser.add_argument(
         "--env_steps", type=int, help="Num. of environment steps", default=64
     )
     my_parser.add_argument(
@@ -129,7 +123,6 @@ if __name__ == "__main__":
             env_steps=args.env_steps,
             gradient_steps=args.gradient_steps,
             learning_starts=args.learning_starts,
-            update_after=args.update_after,
             replay_size=args.replay_size,
             batch_size=args.batch_size,
             actor_learning_rate=args.learning_rate,
@@ -155,7 +148,6 @@ if __name__ == "__main__":
             env_steps=args.env_steps,
             gradient_steps=args.gradient_steps,
             learning_starts=args.learning_starts,
-            update_after=args.update_after,
             replay_size=args.replay_size,
             batch_size=args.batch_size,
             actor_learning_rate=args.learning_rate,
