@@ -43,32 +43,32 @@ class TD3(OffPolicy):
         env,
         # ---
         max_steps: int,
-        env_steps: int,
-        gradient_steps: int,
+        env_steps: int = -1,
+        gradient_steps: int = -1,
         # ---
-        learning_starts: int,
-        update_after: int,
+        learning_starts: int = 10000,
+        update_after: int = 10000,
         # ---
-        replay_size: int,
-        batch_size: int,
+        replay_size: int = 1000000,
+        batch_size: int = 128,
         # ---
-        actor_learning_rate: float,
-        critic_learning_rate: float,
-        lr_scheduler: str,
+        actor_learning_rate: float = 1e-3,
+        critic_learning_rate: float = 1e-3,
+        lr_scheduler: str = "none",
         # ---
-        tau: float,
-        gamma: float,
+        tau: float = 0.01,
+        gamma: float = 0.99,
         # ---
-        noise_type: str,
-        action_noise: float,
-        target_noise: float,
-        noise_clip: float,
-        policy_delay: int,
+        noise_type: str = "normal",
+        action_noise: float = 0.1,
+        target_noise: float = 0.2,
+        noise_clip: float = 0.5,
+        policy_delay: int = 2,
         # ---
-        model_a_path: str,
-        model_c1_path: str,
-        model_c2_path: str,
-        logging_wandb: bool,
+        model_a_path: str = None,
+        model_c1_path: str = None,
+        model_c2_path: str = None,
+        logging_wandb: bool = False,
     ):
         super(TD3, self).__init__(
             env=env,

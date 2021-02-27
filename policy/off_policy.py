@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 
-import math
 import wandb
 import tensorflow as tf
 
@@ -74,9 +73,23 @@ class OffPolicy(ABC):
             size=replay_size,
         )
 
+    def _prepare_state(self, state):
+        #tf.cond(
+        #    tf.math.is_inf(self._env.observation_space.high),
+        #    lambda: state,
+        #    lambda: tf.divide(state, self._env.observation_space.high)
+        #)
+        return state / self._env.observation_space.high
+
     @abstractmethod
     def _get_action(self, state, deterministic):
         ...
+
+    def _update_target(self, net, net_targ, tau):
+        for source_weight, target_weight in zip(
+            net.model.trainable_variables, net_targ.model.trainable_variables
+        ):
+            target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
     @abstractmethod
     def _update_learning_rate(self, epoch):
@@ -103,7 +116,7 @@ class OffPolicy(ABC):
         print(f"ReplayBuffer: {len(self._rpm)}")
         print("=============================================")
         print(
-            f"Training ... {math.floor(float(self._total_steps) / float(self._max_steps) * 100.0)} %"
+            f"Training ... {tf.floor(self._total_steps / self._max_steps * 100.0)} %"
         )
         if self._logging_wandb:
             wandb.log(
@@ -124,7 +137,7 @@ class OffPolicy(ABC):
         print(f"TotalInteractions: {self._total_steps}")
         print("=============================================")
         print(
-            f"Testing ... {math.floor(float(self._total_steps) / float(self._max_steps) * 100.0)} %"
+            f"Testing ... {tf.floor(self._total_steps / self._max_steps * 100.0)} %"
         )
         if self._logging_wandb:
             wandb.log(
@@ -144,19 +157,64 @@ class OffPolicy(ABC):
 
         # init environment
         self._last_obs = self._env.reset()
+        #print(self._last_obs)
+        self._last_obs = self._prepare_state(self._last_obs)
+        #print(self._last_obs)
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
-            # collect rollouts
-            self._play()
+            # re-new noise matrix before every rollouts
+            self._actor.reset_noise()
 
-            # update models
-            if (
-                self._total_steps >= self._update_after
-                and len(self._rpm) >= self._batch_size
-            ):
-                self._update()
-                self._logging_models()
+            # collect rollouts
+            for env_step in range(self._env_steps):
+                # select action randomly or using policy network
+                if self._total_steps < self._learning_starts:
+                    # warmup
+                    action = self._env.action_space.sample()
+                else:
+                    # Get the noisy action
+                    action = self._get_action(self._last_obs, deterministic=False).numpy()
+
+                # Step in the environment
+                new_obs, reward, done, _ = self._env.step(action)
+                new_obs = self._prepare_state(new_obs)
+
+                # update variables
+                self._episode_reward += reward
+                self._episode_steps += 1
+                self._total_steps += 1
+
+                # Update the replay buffer
+                self._rpm.store(self._last_obs, action, reward, new_obs, done)
+
+                # check the end of episode
+                if done:
+                    self._logging_train()
+
+                    self._episode_reward = 0
+                    self._episode_steps = 0
+                    self._total_episodes += 1
+
+                    # init environment
+                    self._last_obs = self._env.reset()
+                    #print(self._last_obs)
+                    self._last_obs = self._prepare_state(self._last_obs)
+                    #print(self._last_obs)
+
+                    # interrupt the rollout
+                    break
+
+                # super critical !!!
+                self._last_obs = new_obs
+
+                # update models
+                if (
+                    self._total_steps >= self._update_after
+                    and len(self._rpm) >= self._batch_size
+                ):
+                    self._update()
+                    self._logging_models()
 
     def test(self):
         self._total_steps = 0
@@ -169,6 +227,7 @@ class OffPolicy(ABC):
             done = False
 
             self._last_obs = self._env.reset()
+            self._last_obs = self._prepare_state(self._last_obs)
 
             # collect rollout
             while not done:
@@ -179,6 +238,7 @@ class OffPolicy(ABC):
 
                 # perform action
                 new_obs, reward, done, _ = self._env.step(action)
+                new_obs = self._prepare_state(new_obs)
 
                 # update variables
                 self._episode_reward += reward
@@ -193,52 +253,3 @@ class OffPolicy(ABC):
 
             # logovanie
             self._logging_test()
-
-    # do a few environment steps
-    def _play(self):
-        # re-new noise matrix before every rollouts
-        self._actor.reset_noise()
-
-        # collect rollouts
-        for env_step in range(self._env_steps):
-            # select action randomly or using policy network
-            if self._total_steps < self._learning_starts:
-                # warmup
-                action = self._env.action_space.sample()
-            else:
-                # Get the noisy action
-                action = self._get_action(self._last_obs, deterministic=False).numpy()
-
-            # Step in the environment
-            new_obs, reward, done, _ = self._env.step(action)
-
-            # update variables
-            self._episode_reward += reward
-            self._episode_steps += 1
-            self._total_steps += 1
-
-            # Update the replay buffer
-            self._rpm.store(self._last_obs, action, reward, new_obs, done)
-
-            # check the end of episode
-            if done:
-                self._logging_train()
-
-                self._episode_reward = 0
-                self._episode_steps = 0
-                self._total_episodes += 1
-
-                # init environment
-                self._last_obs = self._env.reset()
-
-                # interrupt the rollout
-                break
-
-            # super critical !!!
-            self._last_obs = new_obs
-
-    def _update_target(self, net, net_targ, tau):
-        for source_weight, target_weight in zip(
-            net.model.trainable_variables, net_targ.model.trainable_variables
-        ):
-            target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)

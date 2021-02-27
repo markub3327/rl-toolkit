@@ -105,15 +105,20 @@ if __name__ == "__main__":
     my_parser.add_argument("--model_a", type=str, help="Actor's model file")
     my_parser.add_argument("--model_c1", type=str, help="Critic 1's model file")
     my_parser.add_argument("--model_c2", type=str, help="Critic 2's model file")
-    my_parser.add_argument(
-        "--test", action="store_true", help="Select the testing mode"
-    )
 
     # nacitaj zadane argumenty programu
     args = my_parser.parse_args()
 
     # Herne prostredie
     env = gym.make(args.environment)
+
+    print("Action space:")
+    print(env.action_space)
+    print(env.action_space.low, env.action_space.high)
+    print()
+    print("Observation space:")
+    print(env.observation_space)
+    print(env.observation_space.low, env.observation_space.high)
 
     # init policy
     if args.policy == "td3":
@@ -166,19 +171,13 @@ if __name__ == "__main__":
         raise NameError(f"Algorithm '{args.policy}' is not defined")
 
     try:
-        if args.test:
-            # run testing process
-            agent.test()
-        else:
-            # run training process
-            agent.train()
+        # run training process
+        agent.train()
     except KeyboardInterrupt:
         print("Terminated by user ... Bay bay")
     finally:
         # zatvor prostredie
         env.close()
-        # uloz siete ak je v mode train
-        if args.test == False:
-            # save models
-            if args.save is not None:
-                agent.save(args.save)
+        # save models
+        if args.save is not None:
+            agent.save(args.save)

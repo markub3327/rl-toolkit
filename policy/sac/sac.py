@@ -38,27 +38,27 @@ class SAC(OffPolicy):
         env,
         # ---
         max_steps: int,
-        env_steps: int,
-        gradient_steps: int,
+        env_steps: int = 64,
+        gradient_steps: int = 64,
         # ---
-        learning_starts: int,
-        update_after: int,
+        learning_starts: int = 10000,
+        update_after: int = 10000,
         # ---
-        replay_size: int,
-        batch_size: int,
+        replay_size: int = 1000000,
+        batch_size: int = 256,
         # ---
-        actor_learning_rate: float,
-        critic_learning_rate: float,
-        alpha_learning_rate: float,
-        lr_scheduler: str,
+        actor_learning_rate: float = 3e-4,
+        critic_learning_rate: float = 3e-4,
+        alpha_learning_rate: float = 3e-4,
+        lr_scheduler: str = "none",
         # ---
-        tau: float,
-        gamma: float,
+        tau: float = 0.01,
+        gamma: float = 0.99,
         # ---
-        model_a_path: str,
-        model_c1_path: str,
-        model_c2_path: str,
-        logging_wandb: bool,
+        model_a_path: str = None,
+        model_c1_path: str = None,
+        model_c2_path: str = None,
+        logging_wandb: bool = False,
     ):
         super(SAC, self).__init__(
             env=env,
