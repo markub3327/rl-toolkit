@@ -54,6 +54,7 @@ class SAC(OffPolicy):
         # ---
         tau: float = 0.005,
         gamma: float = 0.99,
+        norm_obs: bool,
         # ---
         model_a_path: str = None,
         model_c1_path: str = None,
@@ -72,6 +73,7 @@ class SAC(OffPolicy):
             lr_scheduler=lr_scheduler,
             tau=tau,
             gamma=gamma,
+            norm_obs=norm_obs,
             logging_wandb=logging_wandb,
         )
 
