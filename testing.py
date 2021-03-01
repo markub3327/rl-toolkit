@@ -35,7 +35,9 @@ if __name__ == "__main__":
         help="Maximum number of interactions doing in environment",
         default=int(1e6),
     )
-    my_parser.add_argument("--normalize", action="store_true", help="Normalize every observation")
+    my_parser.add_argument(
+        "--normalize", action="store_true", help="Normalize every observation"
+    )
     my_parser.add_argument("--wandb", action="store_true", help="Logging to wanDB")
     my_parser.add_argument("-f", "--model", type=str, help="Actor's model file")
 

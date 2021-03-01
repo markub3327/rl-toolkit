@@ -173,7 +173,9 @@ class OffPolicy(ABC):
                     action = self._env.action_space.sample()
                 else:
                     # Get the noisy action
-                    action = self._get_action(self._last_obs, deterministic=False).numpy()
+                    action = self._get_action(
+                        self._last_obs, deterministic=False
+                    )
 
                 # Step in the environment
                 new_obs, reward, done, _ = self._env.step(action)
@@ -228,7 +230,6 @@ class OffPolicy(ABC):
 
             # collect rollout
             while not done:
-                # env.render()
 
                 # Get the action
                 action = self._get_action(self._last_obs, deterministic=True).numpy()
