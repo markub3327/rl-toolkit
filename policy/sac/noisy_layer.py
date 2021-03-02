@@ -48,7 +48,16 @@ class NoisyLayer(Layer):
         return config
 
     def get_std(self):
-        return tf.exp(self.log_std)
+        # From gSDE paper, it allows to keep variance
+        # above zero and prevent it from growing too fast
+        below_threshold = tf.exp(log_std) * (log_std <= 0)
+        # Avoid NaN: zeros values that are below zero
+        safe_log_std = log_std * (log_std > 0) + self.epsilon
+        above_threshold = (tf.math.log1p(safe_log_std) + 1.0) * (log_std > 0)
+        std = below_threshold + above_threshold
+
+        return std
+        #return tf.exp(self.log_std)
 
     def sample_weights(self):
         w_dist = tfp.distributions.Normal(tf.zeros_like(self.log_std), self.get_std())
