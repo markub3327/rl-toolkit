@@ -175,7 +175,7 @@ class OffPolicy(ABC):
                     # Get the noisy action
                     action = self._get_action(
                         self._last_obs, deterministic=False
-                    )
+                    ).numpy()
 
                 # Step in the environment
                 new_obs, reward, done, _ = self._env.step(action)
