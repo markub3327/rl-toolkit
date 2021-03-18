@@ -166,7 +166,6 @@ class SAC(OffPolicy):
         return tf.squeeze(a, axis=0)  # remove batch_size dim
 
     # ------------------------------------ update critic ----------------------------------- #
-    @tf.function
     def _update_critic(self, batch):
         next_action, next_log_pi = self._actor.predict(batch["obs2"])
 
@@ -213,7 +212,6 @@ class SAC(OffPolicy):
         return q1_loss, q2_loss
 
     # ------------------------------------ update actor ----------------------------------- #
-    @tf.function
     def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
@@ -238,7 +236,6 @@ class SAC(OffPolicy):
         return a_loss
 
     # ------------------------------------ update alpha ----------------------------------- #
-    @tf.function
     def _update_alpha(self, batch):
         y_pred, log_pi = self._actor.predict(batch["obs"])
         # tf.print(f'y_pred: {y_pred.shape}')
@@ -257,25 +254,6 @@ class SAC(OffPolicy):
 
         return alpha_loss
 
-    # ------------------------------------ update learning rate ----------------------------------- #
-    def _update_learning_rate(self, epoch):
-        tf.keras.backend.set_value(
-            self._critic_1.optimizer.learning_rate,
-            self._lr_scheduler(epoch, self._critic_learning_rate),
-        )
-        tf.keras.backend.set_value(
-            self._critic_2.optimizer.learning_rate,
-            self._lr_scheduler(epoch, self._critic_learning_rate),
-        )
-        tf.keras.backend.set_value(
-            self._actor.optimizer.learning_rate,
-            self._lr_scheduler(epoch, self._actor_learning_rate),
-        )
-        tf.keras.backend.set_value(
-            self._alpha_optimizer.learning_rate,
-            self._lr_scheduler(epoch, self._alpha_learning_rate),
-        )
-
     @tf.function
     def _do_updates(self, batch):
         # Alpha param update
@@ -288,13 +266,11 @@ class SAC(OffPolicy):
         # Actor model update
         self._loss_a.update_state(self._update_actor(batch))
 
-    def _update(self):
-        # Update learning rate by lr_scheduler
-        if self._lr_scheduler is not None:
-            self._update_learning_rate(
-                float(self._total_steps) / float(self._max_steps)
-            )
+        # ---------------------------- soft update target networks ---------------------------- #
+        self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
+        self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
+    def _update(self):
         for _ in range(self._gradient_steps):
             batch = self._rpm.sample(self._batch_size)
 
@@ -303,12 +279,6 @@ class SAC(OffPolicy):
 
             # do update weights
             self._do_updates(batch)
-
-            # ---------------------------- soft update target networks ---------------------------- #
-            self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
-            self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
-
-            # print(gradient_step, self.loss_a.result(), self.loss_c1.result(), self.loss_c2.result(), self.loss_alpha.result())
 
     def _logging_models(self):
         if self._logging_wandb:

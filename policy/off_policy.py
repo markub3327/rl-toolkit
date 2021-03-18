@@ -74,27 +74,15 @@ class OffPolicy(ABC):
             size=replay_size,
         )
 
-    def _prepare_state(self, state):
-        #  Min-max method
-        if self._norm_obs:
-            return state / self._env.observation_space.high
-        else:
-            return state
-
     @abstractmethod
     def _get_action(self, state, deterministic):
         ...
 
-    @tf.function
     def _update_target(self, net, net_targ, tau):
         for source_weight, target_weight in zip(
             net.model.trainable_variables, net_targ.model.trainable_variables
         ):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
-
-    @abstractmethod
-    def _update_learning_rate(self, epoch):
-        ...
 
     @abstractmethod
     def _update(self):
@@ -158,7 +146,6 @@ class OffPolicy(ABC):
 
         # init environment
         self._last_obs = self._env.reset()
-        self._last_obs = self._prepare_state(self._last_obs)
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
@@ -179,7 +166,6 @@ class OffPolicy(ABC):
 
                 # Step in the environment
                 new_obs, reward, done, _ = self._env.step(action)
-                new_obs = self._prepare_state(new_obs)
 
                 # update variables
                 self._episode_reward += reward
@@ -199,7 +185,6 @@ class OffPolicy(ABC):
 
                     # init environment
                     self._last_obs = self._env.reset()
-                    self._last_obs = self._prepare_state(self._last_obs)
 
                     # interrupt the rollout
                     break
@@ -226,7 +211,6 @@ class OffPolicy(ABC):
             done = False
 
             self._last_obs = self._env.reset()
-            self._last_obs = self._prepare_state(self._last_obs)
 
             # collect rollout
             while not done:
@@ -236,7 +220,6 @@ class OffPolicy(ABC):
 
                 # perform action
                 new_obs, reward, done, _ = self._env.step(action)
-                new_obs = self._prepare_state(new_obs)
 
                 # update variables
                 self._episode_reward += reward
