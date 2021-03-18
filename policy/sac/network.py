@@ -79,7 +79,7 @@ class Actor:
                 )
                 pi_distribution = tfp.distributions.TransformedDistribution(
                     distribution=tfp.distributions.Normal(
-                        mean, tf.sqrt(variance) + 1e-5
+                        mean, tf.sqrt(variance + 1e-6)
                     ),
                     bijector=self.bijector,
                 )
