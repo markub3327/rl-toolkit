@@ -65,10 +65,10 @@ python3 testing.py [-h] -alg td3 -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 
   | Environment              | gSDE<br>[(source)](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | gSDE<br>+ Huber loss |
   | ------------------------ | :---: | :-----------------: |
-  | MountainCarContinuous-v0 | ± | - |
-  | BipedalWalker-v3         | ± | - |
-  | BipedalWalkerHardcore-v3 | ± | - |
-  | LunarLanderContinuous-v2 | ± | - |
+  | MountainCarContinuous-v0 | - | - |
+  | BipedalWalker-v3         | - | - |
+  | BipedalWalkerHardcore-v3 | - | - |
+  | LunarLanderContinuous-v2 | - | - |
   | Walker2DBulletEnv-v0     | 2270 ± 28 | **2732 ± 96** |
   | AntBulletEnv-v0          | 3106 ± 61 | **3458 ± 120** |
   | HalfCheetahBulletEnv-v0  | 2945 ± 95 | 2915 ± 230 |
