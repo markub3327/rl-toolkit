@@ -59,10 +59,8 @@ python3 testing.py [-h] -alg td3 -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 
 ----------------------------------
 
-**Framework:** Tensorflow 2.4.0
+**Framework:** Tensorflow 2.4
 <br>
 **Languages:** Python 3.8
-<br>
-**Database**: Redis 6.0 (Rapsberry Pi 4, Ubuntu Server 20.04 LTS)
 <br>
 **Author**: Martin Kubovcik
