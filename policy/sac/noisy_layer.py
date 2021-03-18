@@ -48,7 +48,11 @@ class NoisyLayer(Layer):
         return config
 
     def get_std(self):
-        return tf.math.softplus(self.log_std)
+        return tf.where(
+            self.log_std <= 0,
+            tf.exp(self.log_std),
+            tf.math.log1p(self.log_std) + 1.0
+        )
 
     def sample_weights(self):
         w_dist = tfp.distributions.Normal(tf.zeros_like(self.log_std), self.get_std())

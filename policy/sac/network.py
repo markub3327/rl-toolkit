@@ -32,14 +32,12 @@ class Actor:
         if model_path == None:
             state_input = Input(shape=state_shape, name="state_input")
 
-            l1_mean = Dense(400, activation="relu", name="h1_mean")(state_input)
-            l2_mean = Dense(300, activation="relu", name="h2_mean")(l1_mean)
-
-            l1_sde = Dense(400, activation="relu", name="h1_sde")(state_input)
-            latent_sde = Dense(300, activation="relu", name="latent_sde")(l1_sde)
+            l1 = Dense(400, activation="relu", name="h1")(state_input)
+            l2 = Dense(300, activation="relu", name="h2")(l1)
+            latent_sde = Dense(300, activation="relu", name="latent_sde")(l1)
 
             # vystupna vrstva   -- 'mean' musi byt v intervale (-∞, ∞)
-            mean = Dense(action_shape[0], activation="linear", name="mean")(l2_mean)
+            mean = Dense(action_shape[0], activation="linear", name="mean")(l2)
             #mean = Lambda(lambda x: tf.clip_by_value(x, -clip_mean, clip_mean), name='clip_mean')(mean)
 
             self.noisy_l = NoisyLayer(action_shape[0], name="noise")
