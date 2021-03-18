@@ -1,5 +1,6 @@
 from policy.off_policy import OffPolicy
 from .network import Actor, Critic
+from utils.lr_scheduler import Linear as LinearScheduler
 
 import wandb
 import tensorflow as tf
@@ -68,16 +69,11 @@ class SAC(OffPolicy):
             learning_starts=learning_starts,
             buffer_size=buffer_size,
             batch_size=batch_size,
-            lr_scheduler=lr_scheduler,
             tau=tau,
             gamma=gamma,
             norm_obs=norm_obs,
             logging_wandb=logging_wandb,
         )
-
-        self._actor_learning_rate = tf.constant(actor_learning_rate)
-        self._critic_learning_rate = tf.constant(critic_learning_rate)
-        self._alpha_learning_rate = tf.constant(alpha_learning_rate)
 
         # logging metrics
         self._loss_a = tf.keras.metrics.Mean()
@@ -85,11 +81,24 @@ class SAC(OffPolicy):
         self._loss_c2 = tf.keras.metrics.Mean()
         self._loss_alpha = tf.keras.metrics.Mean()
 
+        # init LR scheduler
+        if lr_scheduler == "none":
+            self._actor_learning_rate = actor_learning_rate
+            self._critic_learning_rate = critic_learning_rate
+            self._alpha_learning_rate = alpha_learning_rate
+        elif lr_scheduler == "linear":
+            self._actor_learning_rate = LinearScheduler(initial_value=actor_learning_rate, max_step=max_steps)
+            self._critic_learning_rate = LinearScheduler(initial_value=critic_learning_rate, max_step=max_steps)
+            self._alpha_learning_rate = LinearScheduler(initial_value=alpha_learning_rate, max_step=max_steps)
+
+        else:
+            raise NameError(f"'{lr_scheduler}' learning rate scheduler is not defined")
+
         # init param 'alpha' - Lagrangian
         self._log_alpha = tf.Variable(0.0, trainable=True, name="log_alpha")
         self._alpha = tf.Variable(0.0, trainable=False, name="alpha")
         self._alpha_optimizer = tf.keras.optimizers.Adam(
-            learning_rate=alpha_learning_rate, name="alpha_optimizer"
+            learning_rate=self._alpha_learning_rate, name="alpha_optimizer"
         )
         self._target_entropy = tf.cast(
             -tf.reduce_prod(self._env.action_space.shape), dtype=tf.float32
@@ -101,7 +110,7 @@ class SAC(OffPolicy):
         self._actor = Actor(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=actor_learning_rate,
+            learning_rate=self._actor_learning_rate,
             model_path=model_a_path,
         )
 
@@ -109,13 +118,13 @@ class SAC(OffPolicy):
         self._critic_1 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=critic_learning_rate,
+            learning_rate=self._critic_learning_rate,
             model_path=model_c1_path,
         )
         self._critic_targ_1 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=critic_learning_rate,
+            learning_rate=self._critic_learning_rate,
             model_path=model_c1_path,
         )
 
@@ -123,13 +132,13 @@ class SAC(OffPolicy):
         self._critic_2 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=critic_learning_rate,
+            learning_rate=self._critic_learning_rate,
             model_path=model_c2_path,
         )
         self._critic_targ_2 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=critic_learning_rate,
+            learning_rate=self._critic_learning_rate,
             model_path=model_c2_path,
         )
 
@@ -290,9 +299,6 @@ class SAC(OffPolicy):
                     "loss_c2": self._loss_c2.result(),
                     "loss_alpha": self._loss_alpha.result(),
                     "alpha": self._alpha,
-                    "critic_learning_rate": self._critic_1.optimizer.learning_rate,
-                    "actor_learning_rate": self._actor.optimizer.learning_rate,
-                    "alpha_learning_rate": self._alpha_optimizer.learning_rate,
                 },
                 step=self._total_steps,
             )

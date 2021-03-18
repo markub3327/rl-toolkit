@@ -6,7 +6,6 @@ import tensorflow as tf
 
 # utilities
 from utils.replay_buffer import ReplayBuffer
-from utils.lr_scheduler import linear
 
 
 class OffPolicy(ABC):
@@ -41,7 +40,6 @@ class OffPolicy(ABC):
         # ---
         buffer_size: int,
         batch_size: int,
-        lr_scheduler: str,
         # ---
         tau: float,
         gamma: float,
@@ -59,13 +57,6 @@ class OffPolicy(ABC):
         self._tau = tf.constant(tau)
         self._logging_wandb = logging_wandb
         self._norm_obs = norm_obs
-
-        if lr_scheduler == "none":
-            self._lr_scheduler = None
-        elif lr_scheduler == "linear":
-            self._lr_scheduler = linear
-        else:
-            raise NameError(f"'{lr_scheduler}' learning rate scheduler is not defined")
 
         # init replay buffer
         self._rpm = ReplayBuffer(

@@ -1,6 +1,7 @@
 from .network import Actor, Critic
 from policy.off_policy import OffPolicy
 from utils.noise import OrnsteinUhlenbeckActionNoise, NormalActionNoise
+from utils.lr_scheduler import Linear as LinearScheduler
 
 import wandb
 import tensorflow as tf
@@ -78,7 +79,6 @@ class TD3(OffPolicy):
             learning_starts=learning_starts,
             buffer_size=buffer_size,
             batch_size=batch_size,
-            lr_scheduler=lr_scheduler,
             tau=tau,
             gamma=gamma,
             norm_obs=norm_obs,
@@ -103,6 +103,14 @@ class TD3(OffPolicy):
         else:
             raise NameError(f"'{noise_type}' noise is not defined")
 
+        # init LR scheduler
+        if lr_scheduler == "none":
+            self._actor_learning_rate = actor_learning_rate
+            self._critic_learning_rate = critic_learning_rate
+        elif lr_scheduler == "linear":
+            self._actor_learning_rate = LinearScheduler(initial_value=actor_learning_rate, max_step=max_steps)
+            self._critic_learning_rate = LinearScheduler(initial_value=critic_learning_rate, max_step=max_steps)
+
         # logging metrics
         self._loss_a = tf.keras.metrics.Mean()
         self._loss_c1 = tf.keras.metrics.Mean()
@@ -114,7 +122,7 @@ class TD3(OffPolicy):
             action_noise=action_noise,
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=actor_learning_rate,
+            learning_rate=self._actor_learning_rate,
             model_path=model_a_path,
         )
         self._actor_targ = Actor(
@@ -122,7 +130,7 @@ class TD3(OffPolicy):
             action_noise=action_noise,
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=actor_learning_rate,
+            learning_rate=self._actor_learning_rate,
             model_path=model_a_path,
         )
 
@@ -130,13 +138,13 @@ class TD3(OffPolicy):
         self._critic_1 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=critic_learning_rate,
+            learning_rate=self._critic_learning_rate,
             model_path=model_c1_path,
         )
         self._critic_targ_1 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=critic_learning_rate,
+            learning_rate=self._critic_learning_rate,
             model_path=model_c1_path,
         )
 
@@ -144,13 +152,13 @@ class TD3(OffPolicy):
         self._critic_2 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=critic_learning_rate,
+            learning_rate=self._critic_learning_rate,
             model_path=model_c2_path,
         )
         self._critic_targ_2 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=critic_learning_rate,
+            learning_rate=self._critic_learning_rate,
             model_path=model_c2_path,
         )
 
@@ -258,28 +266,7 @@ class TD3(OffPolicy):
 
         return a_loss
 
-    # ------------------------------------ update learning rate ----------------------------------- #
-    def _update_learning_rate(self, epoch):
-        tf.keras.backend.set_value(
-            self._critic_1.optimizer.learning_rate,
-            self._lr_scheduler(epoch, self._critic_learning_rate),
-        )
-        tf.keras.backend.set_value(
-            self._critic_2.optimizer.learning_rate,
-            self._lr_scheduler(epoch, self._critic_learning_rate),
-        )
-        tf.keras.backend.set_value(
-            self._actor.optimizer.learning_rate,
-            self._lr_scheduler(epoch, self._actor_learning_rate),
-        )
-
     def _update(self):
-        # Update learning rate by lr_scheduler
-        if self._lr_scheduler is not None:
-            self._update_learning_rate(
-                float(self._total_steps) / float(self._max_steps)
-            )
-
         for gradient_step in tf.range(1, self._gradient_steps + 1):
             batch = self._rpm.sample(self._batch_size)
 
@@ -307,8 +294,6 @@ class TD3(OffPolicy):
                     "loss_a": self._loss_a.result(),
                     "loss_c1": self._loss_c1.result(),
                     "loss_c2": self._loss_c2.result(),
-                    "critic_learning_rate": self._critic_1.optimizer.learning_rate,
-                    "actor_learning_rate": self._actor.optimizer.learning_rate,
                 },
                 step=self._total_steps,
             )
