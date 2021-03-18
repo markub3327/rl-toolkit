@@ -10,10 +10,9 @@
 ![Size](https://img.shields.io/github/repo-size/markub3327/rl-toolkit)
 
 ## Papers
-
-  * **Soft Actor-Critic** (https://arxiv.org/pdf/1812.05905.pdf)
-  * **Twin Delayed DDPG** (https://arxiv.org/pdf/1802.09477.pdf)
-  * **Generalized State-Dependent Exploration** (https://arxiv.org/pdf/2005.05719.pdf)
+  * [**Soft Actor-Critic**](https://arxiv.org/pdf/1812.05905.pdf)
+  * [**Twin Delayed DDPG**](https://arxiv.org/pdf/1802.09477.pdf)
+  * [**Generalized State-Dependent Exploration**](https://arxiv.org/pdf/2005.05719.pdf)
 
 ## Setting up container
 
