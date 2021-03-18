@@ -1,13 +1,13 @@
 # Twin Delayed DDPG
 
-## Topology
+## Actor
 
-<p align="center"><b>Actor (Twin Delayed DDPG)</b></p>
 <p align="center">
   <img src="../../img/model_A_TD3.png" alt="actor">
 </p>
 
-<p align="center"><b>Critic (Twin Delayed DDPG)</b></p>
+## Critic
+
 <p align="center">
   <img src="../../img/model_C_TD3.png" alt="critic">
 </p>
