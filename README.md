@@ -21,16 +21,16 @@
 ### Build the Docker image
 
 ```shell
-docker build -t markub/rl-toolkit:cpu .
+docker build -t markub/rl-toolkit .
 ```
 
 ### Run the container
 
 ```shell
-docker run -it --rm -v $PWD:/root/rl-toolkit markub/rl-toolkit:cpu python3 training.py
+docker run -it --rm -v $PWD:/root/rl-toolkit markub/rl-toolkit:latest python3 training.py
 ```
 
-## Using
+## Run
 
 ```shell
 # Run training
@@ -58,20 +58,21 @@ python3 testing.py [-h] -alg td3 -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 
 <p align="center"><b>Summary</b></p>
 <p align="center">
-  <img src="img/results.png" alt="results">
+  <a href="https://wandb.ai/markub/rl-toolkit?workspace=user-markub" target="_blank"><img src="img/results.png" alt="results"></a>
 </p>
-<p align="center"><a href="https://wandb.ai/markub/rl-toolkit?workspace=user-markub" target="_blank">For more charts click here.</a></p>
 
-  | Environment              | gSDE<br>Score |
-  | ------------------------ | :---: | 
-  | MountainCarContinuous-v0 | ± |
-  | BipedalWalker-v3         | ± |
-  | BipedalWalkerHardcore-v3 | ± |
-  | LunarLanderContinuous-v2 | ± |
-  | Walker2DBulletEnv-v0     | 2270 ± 28 |
-  | AntBulletEnv-v0          | 3106 ± 61 |
-  | HalfCheetahBulletEnv-v0  | 2945 ± 95 |
-  | HopperBulletEnv-v0       | 2515 ± 50 |
+<p align="center"><b>Return from game</b></p>
+
+  | Environment              | gSDE<br>[(source)](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | gSDE<br>+ Huber loss |
+  | ------------------------ | :---: | :-----------------: |
+  | MountainCarContinuous-v0 | ± | - |
+  | BipedalWalker-v3         | ± | - |
+  | BipedalWalkerHardcore-v3 | ± | - |
+  | LunarLanderContinuous-v2 | ± | - |
+  | Walker2DBulletEnv-v0     | 2270 ± 28 | **2732 ± 96** |
+  | AntBulletEnv-v0          | 3106 ± 61 | **3458 ± 120** |
+  | HalfCheetahBulletEnv-v0  | 2945 ± 95 | 2915 ± 230 |
+  | HopperBulletEnv-v0       | 2515 ± 50 | - |
 
 ----------------------------------
 
