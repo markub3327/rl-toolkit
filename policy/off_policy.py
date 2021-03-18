@@ -20,7 +20,7 @@ class OffPolicy(ABC):
         env_steps (int): maximum number of steps in each rollout
         gradient_steps (int): number of update steps after each rollout
         learning_starts (int): number of interactions before using policy network
-        replay_size (int): the maximum size of experiences replay buffer
+        buffer_size (int): the maximum size of experiences replay buffer
         batch_size (int): size of mini-batch used for training
         lr_scheduler (str): type of learning rate scheduler
         tau (float): the soft update coefficient for target networks
@@ -39,7 +39,7 @@ class OffPolicy(ABC):
         # ---
         learning_starts: int,
         # ---
-        replay_size: int,
+        buffer_size: int,
         batch_size: int,
         lr_scheduler: str,
         # ---
@@ -71,7 +71,7 @@ class OffPolicy(ABC):
         self._rpm = ReplayBuffer(
             obs_dim=self._env.observation_space.shape,
             act_dim=self._env.action_space.shape,
-            size=replay_size,
+            size=buffer_size,
         )
 
     @abstractmethod

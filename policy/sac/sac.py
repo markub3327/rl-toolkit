@@ -18,7 +18,7 @@ class SAC(OffPolicy):
         env_steps (int): maximum number of steps in each rollout
         gradient_steps (int): number of update steps after each rollout
         learning_starts (int): number of interactions before using policy network
-        replay_size (int): the maximum size of experiences replay buffer
+        buffer_size (int): the maximum size of experiences replay buffer
         batch_size (int): size of mini-batch used for training
         actor_learning_rate (float): learning rate for actor's optimizer
         critic_learning_rate (float): learning rate for critic's optimizer
@@ -43,7 +43,7 @@ class SAC(OffPolicy):
         # ---
         learning_starts: int = 10000,
         # ---
-        replay_size: int = 1000000,
+        buffer_size: int = 1000000,
         batch_size: int = 256,
         # ---
         actor_learning_rate: float = 3e-4,
@@ -66,7 +66,7 @@ class SAC(OffPolicy):
             env_steps=env_steps,
             gradient_steps=gradient_steps,
             learning_starts=learning_starts,
-            replay_size=replay_size,
+            buffer_size=buffer_size,
             batch_size=batch_size,
             lr_scheduler=lr_scheduler,
             tau=tau,
@@ -147,7 +147,7 @@ class SAC(OffPolicy):
             wandb.config.env_steps = env_steps
             wandb.config.gradient_steps = gradient_steps
             wandb.config.learning_starts = learning_starts
-            wandb.config.replay_size = replay_size
+            wandb.config.buffer_size = buffer_size
             wandb.config.batch_size = batch_size
             wandb.config.actor_learning_rate = actor_learning_rate
             wandb.config.critic_learning_rate = critic_learning_rate

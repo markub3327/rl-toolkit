@@ -62,7 +62,7 @@ if __name__ == "__main__":
         "--batch_size", type=int, help="Size of the batch", default=256
     )
     my_parser.add_argument(
-        "--replay_size", type=int, help="Size of the replay buffer", default=int(1e6)
+        "--buffer_size", type=int, help="Size of the replay buffer", default=int(1e6)
     )
     my_parser.add_argument(
         "--learning_starts",
@@ -125,7 +125,7 @@ if __name__ == "__main__":
             env_steps=args.env_steps,
             gradient_steps=args.gradient_steps,
             learning_starts=args.learning_starts,
-            replay_size=args.replay_size,
+            buffer_size=args.buffer_size,
             batch_size=args.batch_size,
             actor_learning_rate=args.learning_rate,
             critic_learning_rate=args.learning_rate,
@@ -150,7 +150,7 @@ if __name__ == "__main__":
             env_steps=args.env_steps,
             gradient_steps=args.gradient_steps,
             learning_starts=args.learning_starts,
-            replay_size=args.replay_size,
+            buffer_size=args.buffer_size,
             batch_size=args.batch_size,
             actor_learning_rate=args.learning_rate,
             critic_learning_rate=args.learning_rate,
