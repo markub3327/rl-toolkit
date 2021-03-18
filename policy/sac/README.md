@@ -1,12 +1,12 @@
 # Soft Actor-Critic
 
-## Topology
-
-### Actor
+## Actor
 
 <p align="center">
   <img src="../../img/model_A_SAC.png" alt="actor">
 </p>
+
+## Critic
 
 <p align="center">
   <img src="../../img/model_C_SAC.png" alt="critic">
