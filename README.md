@@ -21,13 +21,13 @@
 ### Build the Docker image
 
 ```shell
-docker build -t markub/rl-toolkit .
+docker build -t markub/rl-toolkit:latest .
 ```
 
 ### Run the container
 
 ```shell
-docker run -it --rm -v $PWD:/root/rl-toolkit markub/rl-toolkit:latest python3 training.py
+docker run -it --rm -v $PWD:/root/rl-toolkit markub/rl-toolkit python3 training.py
 ```
 
 ## Run
