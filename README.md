@@ -27,7 +27,7 @@ docker build -t markub/rl-toolkit:cpu .
 ### Run the container
 
 ```shell
-docker run -it --rm -v $PWD:/root/rl-toolkit markub/rl-toolkit:cpu python3 training.py / testing.py
+docker run -it --rm -v $PWD:/root/rl-toolkit markub/rl-toolkit:cpu python3 training.py
 ```
 
 ## Using
@@ -41,20 +41,37 @@ python3 testing.py [-h] -alg td3 -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 ```
 
 ## Tested environments
-  
-  * MountainCarContinuous-v0
-  * BipedalWalker-v3
-  * BipedalWalkerHardcore-v3
-  * LunarLanderContinuous-v2
-  * Walker2DBulletEnv-v0
-  * AntBulletEnv-v0
-  * HalfCheetahBulletEnv-v0
+
+  | Environment              | Observation space | Observation bounds | Action space | Action bounds |
+  | ------------------------ | :---------------: | :----------------: | :----------: | :-----------: |
+  | MountainCarContinuous-v0 | (2, ) | [-1.2 , 0.6] | (1, ) | [-1.0 , 1.0] |
+  | BipedalWalker-v3         | (24, ) | [-inf , inf] | (4, ) | [-1.0 , 1.0] | 
+  | BipedalWalkerHardcore-v3 | (24, ) | [-inf , inf] | (4, ) | [-1.0 , 1.0] |
+  | LunarLanderContinuous-v2 | (8, ) | [-inf , inf] | (2, ) | [-1.0 , 1.0] |
+  | Walker2DBulletEnv-v0     | (22, ) | [-inf , inf] | (6, ) | [-1.0 , 1.0] |
+  | AntBulletEnv-v0          | (28, ) | [-inf , inf] | (8, ) | [-1.0 , 1.0] |
+  | HalfCheetahBulletEnv-v0  | (26, ) | [-inf , inf] | (6, ) | [-1.0 , 1.0] |
+  | HopperBulletEnv-v0       | (15, ) | [-inf , inf] | (3, ) | [-1.0 , 1.0] |
+
+
+## Results
 
 <p align="center"><b>Summary</b></p>
 <p align="center">
   <img src="img/results.png" alt="results">
 </p>
 <p align="center"><a href="https://wandb.ai/markub/rl-toolkit?workspace=user-markub" target="_blank">For more charts click here.</a></p>
+
+  | Environment              | gSDE<br>Score |
+  | ------------------------ | :---: | 
+  | MountainCarContinuous-v0 | ± |
+  | BipedalWalker-v3         | ± |
+  | BipedalWalkerHardcore-v3 | ± |
+  | LunarLanderContinuous-v2 | ± |
+  | Walker2DBulletEnv-v0     | 2270 ± 28 |
+  | AntBulletEnv-v0          | 3106 ± 61 |
+  | HalfCheetahBulletEnv-v0  | 2945 ± 95 |
+  | HopperBulletEnv-v0       | 2515 ± 50 |
 
 ----------------------------------
 
