@@ -37,7 +37,7 @@ class Actor:
 
             # vystupna vrstva   -- 'mean' musi byt v intervale (-∞, ∞)
             mean = Dense(action_shape[0], activation="linear", name="mean")(latent_sde)
-            #mean = Lambda(lambda x: tf.clip_by_value(x, -clip_mean, clip_mean), name='clip_mean')(mean)
+            mean = Lambda(lambda x: tf.clip_by_value(x, -clip_mean, clip_mean), name='clip_mean')(mean)         # problem - nema derivaciu mimo interval ....
 
             self.noisy_l = NoisyLayer(action_shape[0], name="noise")
             noise = self.noisy_l(latent_sde)
