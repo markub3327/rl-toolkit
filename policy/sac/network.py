@@ -26,7 +26,7 @@ class Actor:
         action_shape=None,
         learning_rate=None,
         model_path=None,
-        clip_mean: float = 3.0,
+        clip_mean: float = 2.0,
     ):
 
         if model_path == None:
