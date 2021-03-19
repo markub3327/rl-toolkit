@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+
 class Linear(tf.keras.optimizers.schedules.LearningRateSchedule):
     """
     Linear learning rate scheduler
@@ -11,6 +12,7 @@ class Linear(tf.keras.optimizers.schedules.LearningRateSchedule):
     Returns:
         The return learning rate.
     """
+
     def __init__(self, initial_value, max_step):
         super(Linear, self).__init__()
 

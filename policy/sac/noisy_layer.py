@@ -52,7 +52,7 @@ class NoisyLayer(Layer):
         return tf.where(
             self.log_std <= 0,
             tf.exp(self.log_std),
-            tf.math.log1p(self.log_std) + 1.0
+            tf.math.log1p(self.log_std + 1e-6) + 1.0,
         )
 
     def sample_weights(self):

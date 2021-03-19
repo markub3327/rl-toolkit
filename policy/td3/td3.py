@@ -108,8 +108,12 @@ class TD3(OffPolicy):
             self._actor_learning_rate = actor_learning_rate
             self._critic_learning_rate = critic_learning_rate
         elif lr_scheduler == "linear":
-            self._actor_learning_rate = LinearScheduler(initial_value=actor_learning_rate, max_step=max_steps)
-            self._critic_learning_rate = LinearScheduler(initial_value=critic_learning_rate, max_step=max_steps)
+            self._actor_learning_rate = LinearScheduler(
+                initial_value=actor_learning_rate, max_step=max_steps
+            )
+            self._critic_learning_rate = LinearScheduler(
+                initial_value=critic_learning_rate, max_step=max_steps
+            )
 
         # logging metrics
         self._loss_a = tf.keras.metrics.Mean()
