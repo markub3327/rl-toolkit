@@ -206,7 +206,6 @@ class TD3(OffPolicy):
         return a
 
     # ------------------------------------ update critic ----------------------------------- #
-    @tf.function
     def _update_critic(self, batch):
         next_action = self._actor_targ.model(batch["obs2"])
 
@@ -254,7 +253,6 @@ class TD3(OffPolicy):
         return q1_loss, q2_loss
 
     # ------------------------------------ update actor ----------------------------------- #
-    @tf.function
     def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
@@ -272,25 +270,28 @@ class TD3(OffPolicy):
 
         return a_loss
 
+    @tf.function
+    def _do_updates(self, batch, step):
+        # Critic models update
+        l_c1, l_c2 = self._update_critic(batch)
+        self._loss_c1.update_state(l_c1)
+        self._loss_c2.update_state(l_c2)
+
+        # Delayed policy update
+        if step % self._policy_delay == 0:
+            self._loss_a.update_state(self._update_actor(batch))
+
+            # ---------------------------- soft update target networks ---------------------------- #
+            self._update_target(self._actor, self._actor_targ, tau=self._tau)
+            self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
+            self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
+
     def _update(self):
         for gradient_step in tf.range(1, self._gradient_steps + 1):
             batch = self._rpm.sample(self._batch_size)
 
-            # Critic models update
-            l_c1, l_c2 = self._update_critic(batch)
-            self._loss_c1.update_state(l_c1)
-            self._loss_c2.update_state(l_c2)
-
-            # Delayed policy update
-            if gradient_step % self._policy_delay == 0:
-                self._loss_a.update_state(self._update_actor(batch))
-
-                # ---------------------------- soft update target networks ---------------------------- #
-                self._update_target(self._actor, self._actor_targ, tau=self._tau)
-                self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
-                self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
-
-            # print(gradient_step, self.loss_a.result(), self.loss_c1.result(), self.loss_c2.result())
+            # do update weights
+            self._do_updates(batch, gradient_step)
 
     def _logging_models(self):
         if self._logging_wandb:
