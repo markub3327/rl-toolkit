@@ -59,7 +59,6 @@ class Actor:
 
         self.model.summary()
 
-    @tf.function
     def reset_noise(self):
         self.noisy_l.sample_weights()
 

@@ -170,7 +170,6 @@ class SAC(OffPolicy):
             wandb.config.gamma = gamma
             wandb.config.norm_obs = norm_obs
 
-    @tf.function
     def _get_action(self, state, deterministic):
         a, _ = self._actor.predict(
             tf.expand_dims(state, axis=0),
@@ -270,6 +269,9 @@ class SAC(OffPolicy):
 
     @tf.function
     def _do_updates(self, batch):
+        # re-new noise matrix every update of 'log_std' params
+        self._actor.reset_noise()
+
         # Alpha param update
         self._loss_alpha.update_state(self._update_alpha(batch))
 
@@ -287,9 +289,6 @@ class SAC(OffPolicy):
     def _update(self):
         for _ in range(self._gradient_steps):
             batch = self._rpm.sample(self._batch_size)
-
-            # re-new noise matrix every update of 'log_std' params
-            self._actor.reset_noise()
 
             # do update weights
             self._do_updates(batch)

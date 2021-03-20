@@ -50,14 +50,14 @@ class OffPolicy(ABC):
     ):
         self._env = env
         self._max_steps = max_steps
-        self._env_steps = env_steps
+        self._env_steps = tf.constant(env_steps)
         self._gradient_steps = tf.constant(gradient_steps)
-        self._learning_starts = learning_starts
+        self._learning_starts = tf.constant(learning_starts)
         self._batch_size = tf.constant(batch_size)
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
         self._logging_wandb = logging_wandb
-        self._norm_obs = norm_obs
+        self._norm_obs = tf.constant(norm_obs)
 
         # init replay buffer
         self._rpm = ReplayBuffer(
@@ -65,6 +65,13 @@ class OffPolicy(ABC):
             act_dim=self._env.action_space.shape,
             size=buffer_size,
         )
+
+        # init
+        self._last_obs = tf.Variable(tf.zeros(self._env.observation_space.shape), trainable=False, name="last_obs")
+        self._total_steps = tf.Variable(0, dtype=tf.int32, trainable=False, name="total_steps")
+        self._total_episodes = tf.Variable(0, dtype=tf.int32, trainable=False, name="total_episodes")
+        self._episode_reward = tf.Variable(0.0, trainable=False, name="episode_reward")
+        self._episode_steps = tf.Variable(0, dtype=tf.int32, trainable=False, name="episode_steps")
 
     @abstractmethod
     def _get_action(self, state, deterministic):
@@ -132,67 +139,86 @@ class OffPolicy(ABC):
 
     def _normalize_obs(self, obs):
         if self._norm_obs:
-            return (obs + self._env.observation_space.high) / (2 * self._env.observation_space.high),
+            return (obs - self._env.observation_space.low) / (self._env.observation_space.high - self._env.observation_space.low)
         else:
             return obs
- 
+
+    # Wrap OpenAI Gym's `env.step` call as an operation in a TensorFlow function.
+    # This would allow it to be included in a callable TensorFlow graph.
+    def _env_step(self, action: np.ndarray):
+        """Returns state, reward and done flag given an action."""
+        state, reward, done, _ = self._env.step(action)
+        return (state.astype(np.float32), np.array(reward, np.float32), np.array(done, np.bool))
+
+    def _tf_env_step(self, action: tf.Tensor):
+        return tf.numpy_function(self._env_step, [action], [tf.float32, tf.float32, tf.bool])
+
+    @tf.function
+    def _collect_rollout(self):
+        # re-new noise matrix before every rollouts
+        self._actor.reset_noise()
+
+        # collect rollouts
+        for _ in tf.range(self._env_steps):
+            # normalize
+            self._normalize_obs(self._last_obs)
+            print(self._last_obs)
+
+            # select action randomly or using policy network
+            if self._total_steps < self._learning_starts:
+                # warmup
+                action = self._env.action_space.sample()
+            else:
+                # Get the noisy action
+                action = self._get_action(
+                    self._last_obs, deterministic=False
+                )
+
+            # Step in the environment
+            new_obs, reward, done = self._tf_env_step(action)
+
+            # update variables
+            self._episode_reward.assign_add(reward)
+            self._episode_steps.assign_add(1)
+            self._total_steps.assign_add(1)
+
+            # Update the replay buffer
+            #self._rpm.store(self._last_obs, action, reward, new_obs, done)
+
+            # check the end of episode
+            if done:
+                # interrupt the rollout
+                break
+
+            # super critical !!!
+            self._last_obs.assign(new_obs)
+
+        return done
+
     def train(self):
-        self._total_steps = 0
-        self._total_episodes = 0
-        self._episode_reward = 0.0
-        self._episode_steps = 0
 
         # init environment
-        self._last_obs = self._env.reset()
+        self._last_obs.assign(self._env.reset())
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
-            # re-new noise matrix before every rollouts
-            self._actor.reset_noise()
+            # run agent
+            done = self._collect_rollout()
 
-            # collect rollouts
-            for _ in range(self._env_steps):
-                # normalize
-                self._last_obs = self._normalize_obs(self._last_obs)
-                print(self._last_obs)
+            # check the end of episode
+            if done:
+                self._logging_train()
 
-                # select action randomly or using policy network
-                if self._total_steps < self._learning_starts:
-                    # warmup
-                    action = self._env.action_space.sample()
-                else:
-                    # Get the noisy action
-                    action = self._get_action(
-                        self._last_obs, deterministic=False
-                    ).numpy()
+                self._episode_reward.assign(0.0)
+                self._episode_steps.assign(0)
+                self._total_episodes.assign_add(1)
 
-                # Step in the environment
-                new_obs, reward, done, _ = self._env.step(action)
+                # init environment
+                self._last_obs.assign(self._env.reset())
 
-                # update variables
-                self._episode_reward += reward
-                self._episode_steps += 1
-                self._total_steps += 1
+                # interrupt the rollout
+                break
 
-                # Update the replay buffer
-                self._rpm.store(self._last_obs, action, reward, new_obs, done)
-
-                # check the end of episode
-                if done:
-                    self._logging_train()
-
-                    self._episode_reward = 0
-                    self._episode_steps = 0
-                    self._total_episodes += 1
-
-                    # init environment
-                    self._last_obs = self._env.reset()
-
-                    # interrupt the rollout
-                    break
-
-                # super critical !!!
-                self._last_obs = new_obs
 
             # update models
             if (
@@ -202,55 +228,55 @@ class OffPolicy(ABC):
                 self._update()
                 self._logging_models()
 
-    def test(self):
-        self._total_steps = 0
-        self._total_episodes = 0
-        obs_log, act_log, rew_log = [], [], []
+#    def test(self):
+#        self._total_steps = 0
+#        self._total_episodes = 0
+#        obs_log, act_log, rew_log = [], [], []
 
         # hlavny cyklus hry
-        while self._total_steps < self._max_steps:
-            self._episode_reward = 0.0
-            self._episode_steps = 0
-            done = False
+#        while self._total_steps < self._max_steps:
+#            self._episode_reward = 0.0
+#            self._episode_steps = 0
+#            done = False
 
-            self._last_obs = self._env.reset()
+#            self._last_obs.assign(self._env.reset())
 
             # collect rollout
-            while not done:
+#            while not done:
                 # normalize
-                self._last_obs = self._normalize_obs(self._last_obs)
+#                self._normalize_obs(self._last_obs)
 
                 # Get the action
-                action = self._get_action(self._last_obs, deterministic=True).numpy()
+#                action = self._get_action(self._last_obs, deterministic=True).numpy()
 
                 # perform action
-                new_obs, reward, done, _ = self._env.step(action)
+#                new_obs, reward, done, _ = self._env.step(action)
 
                 # log
-                obs_log.append(self._last_obs)
-                act_log.append(action)
-                rew_log.append(reward)
+#                obs_log.append(self._last_obs)
+#                act_log.append(action)
+#                rew_log.append(reward)
 
                 # update variables
-                self._episode_reward += reward
-                self._episode_steps += 1
-                self._total_steps += 1
+#                self._episode_reward += reward
+#                self._episode_steps += 1
+#                self._total_steps += 1
 
                 # super critical !!!
-                self._last_obs = new_obs
+#                self._last_obs.assign(new_obs)
 
             # increment episode
-            self._total_episodes += 1
+#            self._total_episodes += 1
 
             # logovanie
-            self._logging_test()
+#            self._logging_test()
 
         # convert to numpy
-        obs_log = np.array(obs_log)
-        act_log = np.array(act_log)
-        rew_log = np.array(rew_log)
+#        obs_log = np.array(obs_log)
+#        act_log = np.array(act_log)
+#        rew_log = np.array(rew_log)
 
         # save to csv
-        np.savetxt('obs_log.csv', obs_log, delimiter=';')
-        np.savetxt('act_log.csv', act_log, delimiter=';')
-        np.savetxt('rew_log.csv', rew_log, delimiter=';')
+#        np.savetxt('obs_log.csv', obs_log, delimiter=';')
+#        np.savetxt('act_log.csv', act_log, delimiter=';')
+#       np.savetxt('rew_log.csv', rew_log, delimiter=';')
