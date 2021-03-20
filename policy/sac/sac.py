@@ -304,9 +304,9 @@ class SAC(OffPolicy):
                     "loss_c2": self._loss_c2.result(),
                     "loss_alpha": self._loss_alpha.result(),
                     "alpha": self._alpha,
-                    "critic_learning_rate": self._critic_1.optimizer.learning_rate(self._total_steps - 10000),
-                    "actor_learning_rate": self._actor.optimizer.learning_rate(self._total_steps - 10000),
-                    "alpha_learning_rate": self._alpha_optimizer.learning_rate(self._total_steps - 10000),
+                    #"critic_learning_rate": self._critic_1.optimizer.learning_rate(self._total_steps - 10000),
+                    #"actor_learning_rate": self._actor.optimizer.learning_rate(self._total_steps - 10000),
+                    #"alpha_learning_rate": self._alpha_optimizer.learning_rate(self._total_steps - 10000),
                 },
                 step=self._total_steps,
             )
