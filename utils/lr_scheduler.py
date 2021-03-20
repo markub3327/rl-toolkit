@@ -21,4 +21,5 @@ class Linear(tf.keras.optimizers.schedules.LearningRateSchedule):
 
     def __call__(self, step):
         tf.print(step)
+        tf.print()
         return (1.0 - (step / self.max_step)) * self.init_lr
