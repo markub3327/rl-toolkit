@@ -109,10 +109,10 @@ class TD3(OffPolicy):
             self._critic_learning_rate = critic_learning_rate
         elif lr_scheduler == "linear":
             self._actor_learning_rate = LinearScheduler(
-                initial_value=actor_learning_rate, max_step=max_steps, warmup_steps=learning_starts
+                initial_value=actor_learning_rate, max_steps=max_steps, warmup_steps=learning_starts
             )
             self._critic_learning_rate = LinearScheduler(
-                initial_value=critic_learning_rate, max_step=max_steps, warmup_steps=learning_starts
+                initial_value=critic_learning_rate, max_steps=max_steps, warmup_steps=learning_starts
             )
         else:
             raise NameError(f"'{lr_scheduler}' learning rate scheduler is not defined")
