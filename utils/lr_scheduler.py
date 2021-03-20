@@ -13,13 +13,12 @@ class Linear(tf.keras.optimizers.schedules.LearningRateSchedule):
         The return learning rate.
     """
 
-    def __init__(self, initial_value, max_step):
+    def __init__(self, initial_value, max_steps, warmup_steps):
         super(Linear, self).__init__()
 
-        self.max_step = max_step
+        self.max_steps = max_steps
         self.init_lr = initial_value
+        self.warmup_steps = warmup_steps
 
     def __call__(self, step):
-        tf.print(step)
-        tf.print()
-        return (1.0 - (step / self.max_step)) * self.init_lr
+        return (1.0 - ((step + self.warmup_steps) / self.max_steps)) * self.init_lr

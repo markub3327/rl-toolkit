@@ -88,13 +88,13 @@ class SAC(OffPolicy):
             self._alpha_learning_rate = alpha_learning_rate
         elif lr_scheduler == "linear":
             self._actor_learning_rate = LinearScheduler(
-                initial_value=actor_learning_rate, max_step=max_steps
+                initial_value=actor_learning_rate, max_step=max_steps, warmup_steps=learning_starts
             )
             self._critic_learning_rate = LinearScheduler(
-                initial_value=critic_learning_rate, max_step=max_steps
+                initial_value=critic_learning_rate, max_step=max_steps, warmup_steps=learning_starts
             )
             self._alpha_learning_rate = LinearScheduler(
-                initial_value=alpha_learning_rate, max_step=max_steps
+                initial_value=alpha_learning_rate, max_step=max_steps, warmup_steps=learning_starts
             )
         else:
             raise NameError(f"'{lr_scheduler}' learning rate scheduler is not defined")
@@ -308,9 +308,9 @@ class SAC(OffPolicy):
                     "loss_c2": self._loss_c2.result(),
                     "loss_alpha": self._loss_alpha.result(),
                     "alpha": self._alpha,
-                    "critic_learning_rate": self._critic_1.optimizer.learning_rate(self._total_steps),
-                    "actor_learning_rate": self._actor.optimizer.learning_rate(self._total_steps),
-                    "alpha_learning_rate": self._alpha_optimizer.learning_rate(self._total_steps),
+                    "critic_learning_rate": self._critic_1.optimizer.learning_rate(self._total_steps - 10000),
+                    "actor_learning_rate": self._actor.optimizer.learning_rate(self._total_steps - 10000),
+                    "alpha_learning_rate": self._alpha_optimizer.learning_rate(self._total_steps - 10000),
                 },
                 step=self._total_steps,
             )
