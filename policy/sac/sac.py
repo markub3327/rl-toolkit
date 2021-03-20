@@ -113,7 +113,7 @@ class SAC(OffPolicy):
 
         # Actor network
         self._actor = Actor(
-            state_shape=self._env.observation_space.shape,
+            state_shape=(self._env.observation_space.shape[0] * self._memory_size,),
             action_shape=self._env.action_space.shape,
             learning_rate=self._actor_learning_rate,
             model_path=model_a_path,
@@ -121,13 +121,13 @@ class SAC(OffPolicy):
 
         # Critic network & target network
         self._critic_1 = Critic(
-            state_shape=self._env.observation_space.shape,
+            state_shape=(self._env.observation_space.shape[0] * self._memory_size,),
             action_shape=self._env.action_space.shape,
             learning_rate=self._critic_learning_rate,
             model_path=model_c1_path,
         )
         self._critic_targ_1 = Critic(
-            state_shape=self._env.observation_space.shape,
+            state_shape=(self._env.observation_space.shape[0] * self._memory_size,),
             action_shape=self._env.action_space.shape,
             learning_rate=self._critic_learning_rate,
             model_path=model_c1_path,
@@ -135,13 +135,13 @@ class SAC(OffPolicy):
 
         # Critic network & target network
         self._critic_2 = Critic(
-            state_shape=self._env.observation_space.shape,
+            state_shape=(self._env.observation_space.shape[0] * self._memory_size,),
             action_shape=self._env.action_space.shape,
             learning_rate=self._critic_learning_rate,
             model_path=model_c2_path,
         )
         self._critic_targ_2 = Critic(
-            state_shape=self._env.observation_space.shape,
+            state_shape=(self._env.observation_space.shape[0] * self._memory_size,),
             action_shape=self._env.action_space.shape,
             learning_rate=self._critic_learning_rate,
             model_path=model_c2_path,

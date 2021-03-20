@@ -7,7 +7,7 @@ import numpy as np
 
 # utilities
 from utils.replay_buffer import ReplayBuffer
-
+from utils.wrapper import TimestepsWrapper
 
 class OffPolicy(ABC):
     """
@@ -48,7 +48,7 @@ class OffPolicy(ABC):
         # ---
         logging_wandb: bool,
     ):
-        self._env = env
+        self._env = TimestepsWrapper(env)
         self._max_steps = max_steps
         self._env_steps = env_steps
         self._gradient_steps = gradient_steps
@@ -58,10 +58,11 @@ class OffPolicy(ABC):
         self._tau = tf.constant(tau)
         self._logging_wandb = logging_wandb
         self._norm_obs = norm_obs
+        self._memory_size = 64
 
         # init replay buffer
         self._rpm = ReplayBuffer(
-            obs_dim=self._env.observation_space.shape,
+            obs_dim=(self._env.observation_space.shape[0] * self._memory_size,),
             act_dim=self._env.action_space.shape,
             size=buffer_size,
         )
