@@ -2,7 +2,7 @@ import gym
 import numpy as np
 
 class TimestepsWrapper(gym.Wrapper):
-    def __init__(self, env, memory_size=64):
+    def __init__(self, env, memory_size):
         super().__init__(env)
         self.env = env
         self.memory_size = memory_size

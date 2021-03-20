@@ -48,7 +48,8 @@ class OffPolicy(ABC):
         # ---
         logging_wandb: bool,
     ):
-        self._env = TimestepsWrapper(env)
+        self._memory_size = 128
+        self._env = TimestepsWrapper(env, memory_size=self._memory_size)
         self._max_steps = max_steps
         self._env_steps = env_steps
         self._gradient_steps = gradient_steps
@@ -58,7 +59,6 @@ class OffPolicy(ABC):
         self._tau = tf.constant(tau)
         self._logging_wandb = logging_wandb
         self._norm_obs = norm_obs
-        self._memory_size = 64
 
         # init replay buffer
         self._rpm = ReplayBuffer(
