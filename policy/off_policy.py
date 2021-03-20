@@ -132,7 +132,7 @@ class OffPolicy(ABC):
 
     def _normalize_obs(self, obs):
         if self._norm_obs:
-            return (obs + self._env.observation_space.high) / (2 * self._env.observation_space.high),
+            return (obs - self._env.observation_space.low) / (self._env.observation_space.high - self._env.observation_space.low)
         else:
             return obs
  
@@ -154,7 +154,7 @@ class OffPolicy(ABC):
             for _ in range(self._env_steps):
                 # normalize
                 self._last_obs = self._normalize_obs(self._last_obs)
-                print(self._last_obs)
+                #print(self._last_obs)
 
                 # select action randomly or using policy network
                 if self._total_steps < self._learning_starts:
