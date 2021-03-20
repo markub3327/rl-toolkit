@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 
-import math
 import wandb
 import tensorflow as tf
 import numpy as np
@@ -104,7 +103,7 @@ class OffPolicy(ABC):
         print(f"ReplayBuffer: {len(self._rpm)}")
         print("=============================================")
         print(
-            f"Training ... {math.floor(self._total_steps * 100.0 / self._max_steps)} %"
+            f"Training ... {self._total_steps * 100 / self._max_steps} %"
         )
         if self._logging_wandb:
             wandb.log(
@@ -125,7 +124,7 @@ class OffPolicy(ABC):
         print(f"TotalInteractions: {self._total_steps}")
         print("=============================================")
         print(
-            f"Testing ... {math.floor(self._total_steps * 100.0 / self._max_steps)} %"
+            f"Testing ... {self._total_steps * 100 / self._max_steps} %"
         )
         if self._logging_wandb:
             wandb.log(
@@ -153,7 +152,7 @@ class OffPolicy(ABC):
     def _tf_env_step(self, action: tf.Tensor):
         return tf.numpy_function(self._env_step, [action], [tf.float32, tf.float32, tf.bool])
 
-    @tf.function
+    #@tf.function
     def _collect_rollout(self):
         # re-new noise matrix before every rollouts
         self._actor.reset_noise()
@@ -161,8 +160,8 @@ class OffPolicy(ABC):
         # collect rollouts
         for _ in tf.range(self._env_steps):
             # normalize
-            self._normalize_obs(self._last_obs)
-            print(self._last_obs)
+            self._last_obs.assign(self._normalize_obs(self._last_obs))
+            #print(self._last_obs)
 
             # select action randomly or using policy network
             if self._total_steps < self._learning_starts:
@@ -183,27 +182,7 @@ class OffPolicy(ABC):
             self._total_steps.assign_add(1)
 
             # Update the replay buffer
-            #self._rpm.store(self._last_obs, action, reward, new_obs, done)
-
-            # check the end of episode
-            if done:
-                # interrupt the rollout
-                break
-
-            # super critical !!!
-            self._last_obs.assign(new_obs)
-
-        return done
-
-    def train(self):
-
-        # init environment
-        self._last_obs.assign(self._env.reset())
-
-        # hlavny cyklus hry
-        while self._total_steps < self._max_steps:
-            # run agent
-            done = self._collect_rollout()
+            self._rpm.store(self._last_obs.numpy(), action, reward, new_obs, done)
 
             # check the end of episode
             if done:
@@ -219,6 +198,17 @@ class OffPolicy(ABC):
                 # interrupt the rollout
                 break
 
+            # super critical !!!
+            self._last_obs.assign(new_obs)
+
+    def train(self):
+        # init environment
+        self._last_obs.assign(self._env.reset())
+
+        # hlavny cyklus hry
+        while self._total_steps < self._max_steps:
+            # run agent
+            self._collect_rollout()
 
             # update models
             if (
