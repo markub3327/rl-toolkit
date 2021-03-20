@@ -88,13 +88,13 @@ class SAC(OffPolicy):
             self._alpha_learning_rate = alpha_learning_rate
         elif lr_scheduler == "linear":
             self._actor_learning_rate = LinearScheduler(
-                initial_value=actor_learning_rate, max_step=max_steps
+                initial_value=actor_learning_rate, decay=actor_learning_rate / max_steps
             )
             self._critic_learning_rate = LinearScheduler(
-                initial_value=critic_learning_rate, max_step=max_steps
+                initial_value=critic_learning_rate, decay=critic_learning_rate / max_steps
             )
             self._alpha_learning_rate = LinearScheduler(
-                initial_value=alpha_learning_rate, max_step=max_steps
+                initial_value=alpha_learning_rate, decay=alpha_learning_rate / max_steps
             )
 
         else:
@@ -305,6 +305,9 @@ class SAC(OffPolicy):
                     "loss_c2": self._loss_c2.result(),
                     "loss_alpha": self._loss_alpha.result(),
                     "alpha": self._alpha,
+                    "critic_learning_rate": self._critic_1.optimizer.learning_rate(self._total_steps),
+                    "actor_learning_rate": self._actor.optimizer.learning_rate(self._total_steps),
+                    "alpha_learning_rate": self._alpha_optimizer.learning_rate(self._total_steps),
                 },
                 step=self._total_steps,
             )
