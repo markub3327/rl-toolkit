@@ -95,7 +95,7 @@ if __name__ == "__main__":
         default=2,
     )
     my_parser.add_argument(
-        "--normalize", action="store_true", help="Normalize every observation"
+        "--normalize", action="store_true", help="Normalize observation"
     )
     my_parser.add_argument("--wandb", action="store_true", help="Logging to wanDB")
     my_parser.add_argument("-s", "--save", type=str, help="Path for saving model files")

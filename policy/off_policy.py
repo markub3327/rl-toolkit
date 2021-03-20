@@ -25,7 +25,7 @@ class OffPolicy(ABC):
         lr_scheduler (str): type of learning rate scheduler
         tau (float): the soft update coefficient for target networks
         gamma (float): the discount factor
-        norm_obs (bool): normalize every observation
+        norm_obs (bool): normalize observation
         logging_wandb (bool): logging by WanDB
     """
 
@@ -130,6 +130,12 @@ class OffPolicy(ABC):
                 step=self._total_steps,
             )
 
+    def _normalize_obs(self, obs):
+        if self._norm_obs:
+            return (obs + self._env.observation_space.high) / (2 * self._env.observation_space.high),
+        else:
+            return obs
+ 
     def train(self):
         self._total_steps = 0
         self._total_episodes = 0
@@ -146,6 +152,10 @@ class OffPolicy(ABC):
 
             # collect rollouts
             for _ in range(self._env_steps):
+                # normalize
+                self._last_obs = self._normalize_obs(self._last_obs)
+                print(self._last_obs)
+
                 # select action randomly or using policy network
                 if self._total_steps < self._learning_starts:
                     # warmup
@@ -207,6 +217,8 @@ class OffPolicy(ABC):
 
             # collect rollout
             while not done:
+                # normalize
+                self._last_obs = self._normalize_obs(self._last_obs)
 
                 # Get the action
                 action = self._get_action(self._last_obs, deterministic=True).numpy()
