@@ -206,7 +206,6 @@ class SAC(OffPolicy):
         #    tf.print(f'q_val: {q_values.shape}')
 
         grads = tape.gradient(q1_loss, self._critic_1.model.trainable_variables)
-        tf.print('critic 1')
         self._critic_1.optimizer.apply_gradients(
             zip(grads, self._critic_1.model.trainable_variables)
         )
@@ -220,7 +219,6 @@ class SAC(OffPolicy):
             q2_loss = tf.nn.compute_average_loss(q_losses)
 
         grads = tape.gradient(q2_loss, self._critic_2.model.trainable_variables)
-        tf.print('critic 2')
         self._critic_2.optimizer.apply_gradients(
             zip(grads, self._critic_2.model.trainable_variables)
         )
@@ -245,7 +243,6 @@ class SAC(OffPolicy):
             # tf.print(f'a_losses: {a_losses}')
 
         grads = tape.gradient(a_loss, self._actor.model.trainable_variables)
-        tf.print('actor')
         self._actor.optimizer.apply_gradients(
             zip(grads, self._actor.model.trainable_variables)
         )
@@ -267,7 +264,6 @@ class SAC(OffPolicy):
         #    tf.print(f'alpha_losses: {alpha_losses.shape}')
 
         grads = tape.gradient(alpha_loss, [self._log_alpha])
-        tf.print('alpha')
         self._alpha_optimizer.apply_gradients(zip(grads, [self._log_alpha]))
 
         return alpha_loss
