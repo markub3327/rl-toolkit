@@ -197,6 +197,7 @@ class TD3(OffPolicy):
             wandb.config.noise_clip = noise_clip
             wandb.config.policy_delay = policy_delay
 
+    @tf.function
     def _get_action(self, state, deterministic):
         a = self._actor.model(tf.expand_dims(state, axis=0))
         a = tf.squeeze(a, axis=0)  # remove batch_size dim

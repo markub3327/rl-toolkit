@@ -170,6 +170,7 @@ class SAC(OffPolicy):
             wandb.config.gamma = gamma
             wandb.config.norm_obs = norm_obs
 
+    @tf.function
     def _get_action(self, state, deterministic):
         a, _ = self._actor.predict(
             tf.expand_dims(state, axis=0),
