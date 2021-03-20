@@ -13,11 +13,11 @@ class Linear(tf.keras.optimizers.schedules.LearningRateSchedule):
         The return learning rate.
     """
 
-    def __init__(self, initial_value, decay):
+    def __init__(self, initial_value, max_step):
         super(Linear, self).__init__()
 
-        self.decay = decay
+        self.max_step = max_step
         self.init_lr = initial_value
 
     def __call__(self, step):
-        return self.init_lr / (1.0 + self.decay * step)
+        return (1.0 - (step / self.max_step)) * self.initial_value
