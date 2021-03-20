@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 import math
 import wandb
 import tensorflow as tf
+import numpy as np
 
 # utilities
 from utils.replay_buffer import ReplayBuffer
@@ -194,6 +195,7 @@ class OffPolicy(ABC):
     def test(self):
         self._total_steps = 0
         self._total_episodes = 0
+        obs_log, act_log, rew_log = [], [], []
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
@@ -212,6 +214,11 @@ class OffPolicy(ABC):
                 # perform action
                 new_obs, reward, done, _ = self._env.step(action)
 
+                # log
+                obs_log.append(self._last_obs)
+                act_log.append(action)
+                rew_log.append(reward)
+
                 # update variables
                 self._episode_reward += reward
                 self._episode_steps += 1
@@ -225,3 +232,13 @@ class OffPolicy(ABC):
 
             # logovanie
             self._logging_test()
+
+        # convert to numpy
+        obs_log = np.array(obs_log)
+        act_log = np.array(act_log)
+        rew_log = np.array(rew_log)
+
+        # save to csv
+        np.savetxt('obs_log.csv', obs_log, delimiter=';')
+        np.savetxt('act_log.csv', act_log, delimiter=';')
+        np.savetxt('rew_log.csv', rew_log, delimiter=';')

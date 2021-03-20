@@ -114,6 +114,8 @@ class TD3(OffPolicy):
             self._critic_learning_rate = LinearScheduler(
                 initial_value=critic_learning_rate, decay=critic_learning_rate / max_steps
             )
+        else:
+            raise NameError(f"'{lr_scheduler}' learning rate scheduler is not defined")
 
         # logging metrics
         self._loss_a = tf.keras.metrics.Mean()

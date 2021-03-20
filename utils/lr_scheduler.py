@@ -20,4 +20,4 @@ class Linear(tf.keras.optimizers.schedules.LearningRateSchedule):
         self.init_lr = initial_value
 
     def __call__(self, step):
-        return self.init_lr * 1.0 / (1.0 + self.decay * step)
+        return self.init_lr / (1.0 + self.decay * step)

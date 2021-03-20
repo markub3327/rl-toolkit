@@ -96,7 +96,6 @@ class SAC(OffPolicy):
             self._alpha_learning_rate = LinearScheduler(
                 initial_value=alpha_learning_rate, decay=alpha_learning_rate / max_steps
             )
-
         else:
             raise NameError(f"'{lr_scheduler}' learning rate scheduler is not defined")
 
