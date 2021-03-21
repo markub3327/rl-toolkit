@@ -33,9 +33,9 @@ class Actor:
             state_input = Input(shape=state_shape, name="state_input")
 
             # process timesteps
-            l0 = tf.keras.layers.Conv1D(32, 5, activation='relu')(state_input)
+            l0 = tf.keras.layers.Conv1D(64, 5, activation='relu')(state_input)
             l0 = tf.keras.layers.MaxPooling1D(pool_size=5, strides=5)(l0)
-            l0 = tf.keras.layers.Conv1D(32, 5, activation='relu')(l0)
+            l0 = tf.keras.layers.Conv1D(64, 5, activation='relu')(l0)
             l0 = tf.keras.layers.MaxPooling1D(pool_size=5, strides=5)(l0)
             l0 = tf.keras.layers.Flatten()(l0)
 
@@ -119,9 +119,9 @@ class Critic:
             action_input = Input(shape=action_shape, name="action_input")
 
             # process timesteps
-            l0 = tf.keras.layers.Conv1D(32, 5, activation='relu')(state_input)
+            l0 = tf.keras.layers.Conv1D(64, 5, activation='relu')(state_input)
             l0 = tf.keras.layers.MaxPooling1D(pool_size=5, strides=5)(l0)
-            l0 = tf.keras.layers.Conv1D(32, 5, activation='relu')(l0)
+            l0 = tf.keras.layers.Conv1D(64, 5, activation='relu')(l0)
             l0 = tf.keras.layers.MaxPooling1D(pool_size=5, strides=5)(l0)
             l0 = tf.keras.layers.Flatten()(l0)
 
