@@ -47,7 +47,7 @@ class OffPolicy(ABC):
         # ---
         logging_wandb: bool,
     ):
-        self._memory_size = 64
+        self._memory_size = env_steps   # ???
         self._env = env
         self._max_steps = max_steps
         self._env_steps = env_steps
@@ -138,7 +138,51 @@ class OffPolicy(ABC):
             return (obs - self._env.observation_space.low) / (self._env.observation_space.high - self._env.observation_space.low)
         else:
             return obs
- 
+
+    def _collect_rollouts(self):
+        for i in range(self._env_steps):
+            # normalize
+            #self._last_obs = self._normalize_obs(self._last_obs)
+            #print(self._last_obs)
+
+            # select action randomly or using policy network
+            if self._total_steps < self._learning_starts:
+                # warmup
+                action = self._env.action_space.sample()
+            else:
+                # Get the noisy action
+                action = self._get_action(
+                    self._last_obs, deterministic=False
+                ).numpy()
+
+            # Step in the environment
+            new_obs, reward, done, _ = self._env.step(action)
+
+            # update variables
+            self._episode_reward += reward
+            self._episode_steps += 1
+            self._total_steps += 1
+
+            # Update the replay buffer
+            self._rpm.store(self._last_obs, action, reward, new_obs, done)
+
+            # check the end of episode
+            if done:
+                self._logging_train()
+
+                self._episode_reward = 0
+                self._episode_steps = 0
+                self._total_episodes += 1
+
+                # init environment
+                self._last_obs[0] = self._env.reset()
+
+                # interrupt the rollout
+                break
+
+            # super critical !!!
+            self._last_obs[i] = new_obs
+
     def train(self):
         self._total_steps = 0
         self._total_episodes = 0
@@ -153,53 +197,12 @@ class OffPolicy(ABC):
             # re-new noise matrix before every rollouts
             self._actor.reset_noise()
 
+            # clear memory
             self._last_obs.fill(0.0)
 
             # collect rollouts
-            for i in range(self._env_steps):
-                # normalize
-                #self._last_obs = self._normalize_obs(self._last_obs)
-                #print(self._last_obs)
-
-                # select action randomly or using policy network
-                if self._total_steps < self._learning_starts:
-                    # warmup
-                    action = self._env.action_space.sample()
-                else:
-                    # Get the noisy action
-                    action = self._get_action(
-                        self._last_obs, deterministic=False
-                    ).numpy()
-                    #print(self._last_obs)
-
-                # Step in the environment
-                new_obs, reward, done, _ = self._env.step(action)
-
-                # update variables
-                self._episode_reward += reward
-                self._episode_steps += 1
-                self._total_steps += 1
-
-                # Update the replay buffer
-                self._rpm.store(self._last_obs, action, reward, new_obs, done)
-
-                # check the end of episode
-                if done:
-                    self._logging_train()
-
-                    self._episode_reward = 0
-                    self._episode_steps = 0
-                    self._total_episodes += 1
-
-                    # init environment
-                    self._last_obs[0] = self._env.reset()
-
-                    # interrupt the rollout
-                    break
-
-                # super critical !!!
-                self._last_obs[i] = new_obs
-
+            self._collect_rollouts()
+            
             # update models
             if (
                 self._total_steps >= self._learning_starts
