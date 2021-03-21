@@ -48,7 +48,7 @@ class OffPolicy(ABC):
         # ---
         logging_wandb: bool,
     ):
-        self._memory_size = 64
+        self._memory_size = 50
         self._env = TimestepsWrapper(env, memory_size=self._memory_size)
         self._max_steps = max_steps
         self._env_steps = env_steps
