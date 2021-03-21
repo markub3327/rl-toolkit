@@ -48,7 +48,7 @@ class OffPolicy(ABC):
         # ---
         logging_wandb: bool,
     ):
-        self._memory_size = 128
+        self._memory_size = 64
         self._env = TimestepsWrapper(env, memory_size=self._memory_size)
         self._max_steps = max_steps
         self._env_steps = env_steps
@@ -62,7 +62,7 @@ class OffPolicy(ABC):
 
         # init replay buffer
         self._rpm = ReplayBuffer(
-            obs_dim=(self._env.observation_space.shape[0] * self._memory_size,),
+            obs_dim=(self._memory_size,) + self._env.observation_space.shape,
             act_dim=self._env.action_space.shape,
             size=buffer_size,
         )

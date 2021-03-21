@@ -19,7 +19,7 @@ class TimestepsWrapper(gym.Wrapper):
 
         #print(f'{self.obs_buf.shape}')
 
-        return self.obs_buf.flatten()
+        return self.obs_buf
 
     def step(self, action):
         next_state, reward, done, info = self.env.step(action)
@@ -28,4 +28,4 @@ class TimestepsWrapper(gym.Wrapper):
 
         #print(f'{self.obs_buf.flatten()}')
 
-        return self.obs_buf.flatten(), reward, done, info
+        return self.obs_buf, reward, done, info
