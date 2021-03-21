@@ -7,7 +7,6 @@ import numpy as np
 
 # utilities
 from utils.replay_buffer import ReplayBuffer
-from utils.wrapper import TimestepsWrapper
 
 class OffPolicy(ABC):
     """
@@ -48,8 +47,8 @@ class OffPolicy(ABC):
         # ---
         logging_wandb: bool,
     ):
-        self._memory_size = 128
-        self._env = TimestepsWrapper(env, memory_size=self._memory_size)
+        self._memory_size = 64
+        self._env = env
         self._max_steps = max_steps
         self._env_steps = env_steps
         self._gradient_steps = gradient_steps
@@ -66,6 +65,9 @@ class OffPolicy(ABC):
             act_dim=self._env.action_space.shape,
             size=buffer_size,
         )
+
+        # init observation buffer
+        self._last_obs = np.zeros((self._memory_size,) + self._env.observation_space.shape, dtype=np.float32)
 
     @abstractmethod
     def _get_action(self, state, deterministic):
@@ -144,17 +146,19 @@ class OffPolicy(ABC):
         self._episode_steps = 0
 
         # init environment
-        self._last_obs = self._env.reset()
+        self._last_obs[0] = self._env.reset()
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
             # re-new noise matrix before every rollouts
             self._actor.reset_noise()
 
+            self._last_obs.fill(0.0)
+
             # collect rollouts
-            for _ in range(self._env_steps):
+            for i in range(self._env_steps):
                 # normalize
-                self._last_obs = self._normalize_obs(self._last_obs)
+                #self._last_obs = self._normalize_obs(self._last_obs)
                 #print(self._last_obs)
 
                 # select action randomly or using policy network
@@ -166,6 +170,7 @@ class OffPolicy(ABC):
                     action = self._get_action(
                         self._last_obs, deterministic=False
                     ).numpy()
+                    print(self._last_obs)
 
                 # Step in the environment
                 new_obs, reward, done, _ = self._env.step(action)
@@ -187,13 +192,13 @@ class OffPolicy(ABC):
                     self._total_episodes += 1
 
                     # init environment
-                    self._last_obs = self._env.reset()
+                    self._last_obs[0] = self._env.reset()
 
                     # interrupt the rollout
                     break
 
                 # super critical !!!
-                self._last_obs = new_obs
+                self._last_obs[i] = new_obs
 
             # update models
             if (
