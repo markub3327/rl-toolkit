@@ -170,7 +170,7 @@ class OffPolicy(ABC):
                     action = self._get_action(
                         self._last_obs, deterministic=False
                     ).numpy()
-                    print(self._last_obs)
+                    #print(self._last_obs)
 
                 # Step in the environment
                 new_obs, reward, done, _ = self._env.step(action)
