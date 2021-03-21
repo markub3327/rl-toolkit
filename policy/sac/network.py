@@ -33,7 +33,11 @@ class Actor:
             state_input = Input(shape=state_shape, name="state_input")
 
             # process timesteps
-            l0 = tf.keras.layers.GRU(64)(state_input)
+            l0 = tf.keras.layers.Conv1D(32, 5, activation='relu')(state_input)
+            l0 = tf.keras.layers.MaxPooling1D(pool_size=5, strides=5)(l0)
+            l0 = tf.keras.layers.Conv1D(32, 5, activation='relu')(l0)
+            l0 = tf.keras.layers.MaxPooling1D(pool_size=5, strides=5)(l0)
+            l0 = tf.keras.layers.Flatten()(l0)
 
             l1 = Dense(400, activation="relu", name="h1")(l0)
             latent_sde = Dense(300, activation="relu", name="latent_sde")(l1)
@@ -115,7 +119,11 @@ class Critic:
             action_input = Input(shape=action_shape, name="action_input")
 
             # process timesteps
-            l0 = tf.keras.layers.GRU(64)(state_input)
+            l0 = tf.keras.layers.Conv1D(32, 5, activation='relu')(state_input)
+            l0 = tf.keras.layers.MaxPooling1D(pool_size=5, strides=5)(l0)
+            l0 = tf.keras.layers.Conv1D(32, 5, activation='relu')(l0)
+            l0 = tf.keras.layers.MaxPooling1D(pool_size=5, strides=5)(l0)
+            l0 = tf.keras.layers.Flatten()(l0)
 
             merged = Concatenate()([l0, action_input])
             l1 = Dense(400, activation="relu", name="h1")(merged)
