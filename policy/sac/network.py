@@ -33,7 +33,7 @@ class Actor:
             state_input = Input(shape=state_shape, name="state_input")
 
             # process timesteps
-            l0 = tf.keras.layers.LSTM(32)(state_input)
+            l0 = tf.keras.layers.GRU(64)(state_input)
 
             l1 = Dense(400, activation="relu", name="h1")(l0)
             latent_sde = Dense(300, activation="relu", name="latent_sde")(l1)
@@ -115,7 +115,7 @@ class Critic:
             action_input = Input(shape=action_shape, name="action_input")
 
             # process timesteps
-            l0 = tf.keras.layers.LSTM(32)(state_input)
+            l0 = tf.keras.layers.GRU(64)(state_input)
 
             merged = Concatenate()([l0, action_input])
             l1 = Dense(400, activation="relu", name="h1")(merged)
