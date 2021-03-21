@@ -37,6 +37,8 @@ class Actor:
             l0 = tf.keras.layers.MaxPooling1D(pool_size=5, strides=2)(l0)
             l0 = tf.keras.layers.Conv1D(64, 5, activation='relu')(l0)
             l0 = tf.keras.layers.MaxPooling1D(pool_size=5, strides=2)(l0)
+            l0 = tf.keras.layers.Conv1D(64, 5, activation='relu')(l0)
+            l0 = tf.keras.layers.MaxPooling1D(pool_size=5, strides=2)(l0)
             l0 = tf.keras.layers.Flatten()(l0)
 
             l1 = Dense(400, activation="relu", name="h1")(l0)
@@ -120,6 +122,8 @@ class Critic:
 
             # process timesteps
             l0 = tf.keras.layers.Conv1D(64, 5, activation='relu')(state_input)
+            l0 = tf.keras.layers.MaxPooling1D(pool_size=5, strides=2)(l0)
+            l0 = tf.keras.layers.Conv1D(64, 5, activation='relu')(l0)
             l0 = tf.keras.layers.MaxPooling1D(pool_size=5, strides=2)(l0)
             l0 = tf.keras.layers.Conv1D(64, 5, activation='relu')(l0)
             l0 = tf.keras.layers.MaxPooling1D(pool_size=5, strides=2)(l0)
