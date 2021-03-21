@@ -6,30 +6,26 @@ class TimestepsWrapper(gym.Wrapper):
         super().__init__(env)
         self.env = env
         self.memory_size = memory_size
-        self.t = 0   # init timestep
 
         # short memory (bad solution because data are not compressed)
         # Auto-Encoder may be better ????
-        self.obs_buf = np.zeros((memory_size,) + self.env.observation_space.shape, dtype=np.float32)
 
     def reset(self):
-        # clear memory at start of episode (Zeros initializer)
-        self.obs_buf.fill(0.0)
-        self.t = 0
-
         # init env
-        self.env.reset()
+        obs = self.env.reset()
 
-        #print(f'{self.t}: {self.obs_buf.flatten()}')
+        # clear memory at start of episode
+        self.obs_buf = np.full((self.memory_size,) + self.env.observation_space.shape, obs, dtype=np.float32)
+
+        #print(f'{self.obs_buf.shape}')
 
         return self.obs_buf.flatten()
 
     def step(self, action):
         next_state, reward, done, info = self.env.step(action)
+        next_state = np.expand_dims(next_state, axis=0)
+        self.obs_buf = np.concatenate((self.obs_buf[1:], next_state), axis=0)
 
-        self.obs_buf[self.t] = next_state
-        self.t = (self.t + 1) % self.memory_size
-
-        #print(f'{self.t}: {self.obs_buf.flatten()}')
+        #print(f'{self.obs_buf.flatten()}')
 
         return self.obs_buf.flatten(), reward, done, info
