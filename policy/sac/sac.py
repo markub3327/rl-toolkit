@@ -10,9 +10,7 @@ class SAC(OffPolicy):
     """
     Soft Actor-Critic
     =================
-
     Paper: https://arxiv.org/pdf/1812.05905.pdf
-
     Attributes:
         env: the instance of environment object
         max_steps (int): maximum number of interactions do in environment
@@ -113,7 +111,7 @@ class SAC(OffPolicy):
 
         # Actor network
         self._actor = Actor(
-            state_shape=(self._memory_size,) + self._env.observation_space.shape,
+            state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
             learning_rate=self._actor_learning_rate,
             model_path=model_a_path,
@@ -121,13 +119,13 @@ class SAC(OffPolicy):
 
         # Critic network & target network
         self._critic_1 = Critic(
-            state_shape=(self._memory_size,) + self._env.observation_space.shape,
+            state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
             learning_rate=self._critic_learning_rate,
             model_path=model_c1_path,
         )
         self._critic_targ_1 = Critic(
-            state_shape=(self._memory_size,) + self._env.observation_space.shape,
+            state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
             learning_rate=self._critic_learning_rate,
             model_path=model_c1_path,
@@ -135,13 +133,13 @@ class SAC(OffPolicy):
 
         # Critic network & target network
         self._critic_2 = Critic(
-            state_shape=(self._memory_size,) + self._env.observation_space.shape,
+            state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
             learning_rate=self._critic_learning_rate,
             model_path=model_c2_path,
         )
         self._critic_targ_2 = Critic(
-            state_shape=(self._memory_size,) + self._env.observation_space.shape,
+            state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
             learning_rate=self._critic_learning_rate,
             model_path=model_c2_path,

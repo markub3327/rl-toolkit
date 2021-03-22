@@ -47,7 +47,6 @@ class OffPolicy(ABC):
         # ---
         logging_wandb: bool,
     ):
-        self._memory_size = env_steps   # ???
         self._env = env
         self._max_steps = max_steps
         self._env_steps = env_steps
@@ -61,13 +60,10 @@ class OffPolicy(ABC):
 
         # init replay buffer
         self._rpm = ReplayBuffer(
-            obs_dim=(self._memory_size,) + self._env.observation_space.shape,
+            obs_dim=self._env.observation_space.shape,
             act_dim=self._env.action_space.shape,
             size=buffer_size,
         )
-
-        # init observation buffer
-        self._last_obs = np.zeros((self._memory_size,) + self._env.observation_space.shape, dtype=np.float32)
 
     @abstractmethod
     def _get_action(self, state, deterministic):
@@ -140,7 +136,7 @@ class OffPolicy(ABC):
             return obs
 
     def _collect_rollouts(self):
-        for i in range(self._env_steps):
+        for _ in range(self._env_steps):
             # normalize
             #self._last_obs = self._normalize_obs(self._last_obs)
             #print(self._last_obs)
@@ -175,13 +171,13 @@ class OffPolicy(ABC):
                 self._total_episodes += 1
 
                 # init environment
-                self._last_obs[0] = self._env.reset()
+                self._last_obs = self._env.reset()
 
                 # interrupt the rollout
                 break
 
             # super critical !!!
-            self._last_obs[i] = new_obs
+            self._last_obs = new_obs
 
     def train(self):
         self._total_steps = 0
@@ -190,15 +186,12 @@ class OffPolicy(ABC):
         self._episode_steps = 0
 
         # init environment
-        self._last_obs[0] = self._env.reset()
+        self._last_obs = self._env.reset()
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
             # re-new noise matrix before every rollouts
             self._actor.reset_noise()
-
-            # clear memory
-            self._last_obs.fill(0.0)
 
             # collect rollouts
             self._collect_rollouts()

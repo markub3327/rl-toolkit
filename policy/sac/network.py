@@ -12,7 +12,6 @@ class Actor:
     """
     Actor (for SAC)
     ===============
-
     Attributes:
         state_shape: the shape of state space
         action_shape: the shape of action space
@@ -32,11 +31,7 @@ class Actor:
         if model_path == None:
             state_input = Input(shape=state_shape, name="state_input")
 
-            # process timesteps
-            l0 = tf.keras.layers.Masking(mask_value=0.0)(state_input)
-            l0 = tf.keras.layers.GRU(64)(l0)
-
-            l1 = Dense(400, activation="relu", name="h1")(l0)
+            l1 = Dense(400, activation="relu", name="h1")(state_input)
             latent_sde = Dense(300, activation="relu", name="latent_sde")(l1)
 
             # vystupna vrstva   -- 'mean' musi byt v intervale (-∞, ∞)
@@ -63,6 +58,7 @@ class Actor:
 
         self.model.summary()
 
+    @tf.function
     def reset_noise(self):
         self.noisy_l.sample_weights()
 
@@ -98,7 +94,6 @@ class Critic:
     """
     Critic (for SAC)
     ===============
-
     Attributes:
         state_shape: the shape of state space
         action_shape: the shape of action space
@@ -115,11 +110,7 @@ class Critic:
             state_input = Input(shape=state_shape, name="state_input")
             action_input = Input(shape=action_shape, name="action_input")
 
-            # process timesteps
-            l0 = tf.keras.layers.Masking(mask_value=0.0)(state_input)
-            l0 = tf.keras.layers.GRU(64)(l0)
-
-            merged = Concatenate()([l0, action_input])
+            merged = Concatenate()([state_input, action_input])
             l1 = Dense(400, activation="relu", name="h1")(merged)
             l2 = Dense(300, activation="relu", name="h2")(l1)
 

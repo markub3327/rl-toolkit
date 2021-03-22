@@ -9,9 +9,7 @@ class NoisyLayer(Layer):
     """
     Noisy layer (gSDE)
     ===========
-
     Paper: https://arxiv.org/pdf/2005.05719.pdf
-
     Attributes:
         units (int): number of noisy neurons
         log_std_init (float): initialization value of weights
