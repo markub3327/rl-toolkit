@@ -44,10 +44,7 @@ python3 testing.py [-h] -alg td3 -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 
   | Environment              | Observation space | Observation bounds | Action space | Action bounds |
   | ------------------------ | :---------------: | :----------------: | :----------: | :-----------: |
-  | MountainCarContinuous-v0 | (2, ) | [-1.2 , 0.6] | (1, ) | [-1.0 , 1.0] |
-  | BipedalWalker-v3         | (24, ) | [-inf , inf] | (4, ) | [-1.0 , 1.0] | 
   | BipedalWalkerHardcore-v3 | (24, ) | [-inf , inf] | (4, ) | [-1.0 , 1.0] |
-  | LunarLanderContinuous-v2 | (8, ) | [-inf , inf] | (2, ) | [-1.0 , 1.0] |
   | Walker2DBulletEnv-v0     | (22, ) | [-inf , inf] | (6, ) | [-1.0 , 1.0] |
   | AntBulletEnv-v0          | (28, ) | [-inf , inf] | (8, ) | [-1.0 , 1.0] |
   | HalfCheetahBulletEnv-v0  | (26, ) | [-inf , inf] | (6, ) | [-1.0 , 1.0] |
@@ -63,16 +60,13 @@ python3 testing.py [-h] -alg td3 -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 
 <p align="center"><b>Return from game</b></p>
 
-  | Environment              | gSDE<br>[(source)](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | gSDE<br>+ Huber loss |
+  | Environment              | gSDE | gSDE<br>+ Huber loss |
   | ------------------------ | :---: | :-----------------: |
-  | MountainCarContinuous-v0 | - | - |
-  | BipedalWalker-v3         | - | - |
-  | BipedalWalkerHardcore-v3[<sup>(1)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | 13 ± 18 | - |
-  | LunarLanderContinuous-v2 | - | - |
-  | Walker2DBulletEnv-v0     | 2270 ± 28 | **2732 ± 96** |
-  | AntBulletEnv-v0          | 3106 ± 61 | **3458 ± 120** |
-  | HalfCheetahBulletEnv-v0  | 2945 ± 95 | 2915 ± 230 |
-  | HopperBulletEnv-v0       | 2515 ± 50 | - |
+  | BipedalWalkerHardcore-v3[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | 13 ± 18 | - |
+  | Walker2DBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)     | 2270 ± 28 | **2732 ± 96** |
+  | AntBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)          | 3106 ± 61 | **3458 ± 120** |
+  | HalfCheetahBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)  | 2945 ± 95 | 2915 ± 230 |
+  | HopperBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)       | 2515 ± 50 | - |
 
 ----------------------------------
 
