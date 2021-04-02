@@ -129,12 +129,6 @@ class OffPolicy(ABC):
                 step=self._total_steps,
             )
 
-    def _normalize_obs(self, obs):
-        if self._norm_obs:
-            return (obs - self._env.observation_space.low) / (self._env.observation_space.high - self._env.observation_space.low)
-        else:
-            return obs
-
     def _collect_rollouts(self):
         for _ in range(self._env_steps):
             # normalize
@@ -220,7 +214,7 @@ class OffPolicy(ABC):
             # collect rollout
             while not done:
                 # normalize
-                self._last_obs = self._normalize_obs(self._last_obs)
+                #self._last_obs = self._normalize_obs(self._last_obs)
 
                 # Get the action
                 action = self._get_action(self._last_obs, deterministic=True).numpy()
@@ -253,6 +247,6 @@ class OffPolicy(ABC):
         rew_log = np.array(rew_log)
 
         # save to csv
-        np.savetxt('obs_log.csv', obs_log, delimiter=';')
-        np.savetxt('act_log.csv', act_log, delimiter=';')
-        np.savetxt('rew_log.csv', rew_log, delimiter=';')
+        np.savetxt('log/obs_log.csv', obs_log, delimiter=';')
+        np.savetxt('log/act_log.csv', act_log, delimiter=';')
+        np.savetxt('log/rew_log.csv', rew_log, delimiter=';')
