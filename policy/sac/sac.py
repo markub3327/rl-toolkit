@@ -322,3 +322,11 @@ class SAC(OffPolicy):
         self._actor.model.save(f"{path}model_A.h5")
         self._critic_1.model.save(f"{path}model_C1.h5")
         self._critic_2.model.save(f"{path}model_C2.h5")
+
+        # Convert the model.
+        converter = tf.lite.TFLiteConverter.from_keras_model(self._actor.model)
+        tflite_model = converter.convert()
+
+        # Save the model.
+        with open('model_A.tflite', 'wb') as f:
+            f.write(tflite_model)
