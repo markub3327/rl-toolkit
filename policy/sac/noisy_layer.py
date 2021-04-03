@@ -12,10 +12,10 @@ class NoisyLayer(Layer):
     Paper: https://arxiv.org/pdf/2005.05719.pdf
     Attributes:
         units (int): number of noisy neurons
-        log_std_init (float): initialization value of weights
+        log_std_init (float): initialization value of standard deviation
     """
 
-    def __init__(self, units, log_std_init: float = -3.0, **kwargs):
+    def __init__(self, units, log_std_init: float = -2.0, **kwargs):
         super(NoisyLayer, self).__init__(**kwargs)
         self.units = units
         self.log_std_init = log_std_init
