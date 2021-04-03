@@ -1,6 +1,6 @@
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Input, Concatenate, Dense, Lambda
+from tensorflow.keras.layers import Input, Add, Dense, Lambda
 from tensorflow.keras.models import load_model
 from .noisy_layer import NoisyLayer
 
@@ -30,8 +30,8 @@ class Actor:
         if model_path == None:
             state_input = Input(shape=state_shape, name="state_input")
 
-            l1 = Dense(400, activation="relu", kernel_initializer="he_uniform", name="h1")(state_input)
-            latent_sde = Dense(300, activation="relu", kernel_initializer="he_uniform", name="latent_sde")(l1)
+            l1 = Dense(512, activation="relu", kernel_initializer="he_uniform", name="h1")(state_input)
+            latent_sde = Dense(512, activation="relu", kernel_initializer="he_uniform", name="latent_sde")(l1)
 
             # vystupna vrstva   -- 'mean' musi byt v intervale (-∞, ∞)
             mean = Dense(action_shape[0], activation="linear", name="mean")(latent_sde)
@@ -104,11 +104,13 @@ class Critic:
         if model_path == None:
             # vstupna vsrtva
             state_input = Input(shape=state_shape, name="state_input")
+            l1_s = Dense(256, activation="relu", kernel_initializer="he_uniform", name="h1_s")(state_input)
+            
             action_input = Input(shape=action_shape, name="action_input")
-
-            merged = Concatenate()([state_input, action_input])
-            l1 = Dense(400, activation="relu", kernel_initializer="he_uniform", name="h1")(merged)
-            l2 = Dense(300, activation="relu", kernel_initializer="he_uniform", name="h2")(l1)
+            l1_a = Dense(256, activation="relu", kernel_initializer="he_uniform", name="h1_a")(action_input)
+            
+            merged = Add()([l1_s, l1_a])
+            l2 = Dense(256, activation="relu", kernel_initializer="he_uniform", name="h2")(merged)
 
             # vystupna vrstva   -- Q hodnoty su v intervale (-∞, ∞)
             output = Dense(1, activation="linear", name="q_val")(l2)
