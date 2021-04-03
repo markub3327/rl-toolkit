@@ -104,13 +104,13 @@ class Critic:
         if model_path == None:
             # vstupna vsrtva
             state_input = Input(shape=state_shape, name="state_input")
-            l1_s = Dense(256, activation="relu", kernel_initializer="he_uniform", name="h1_s")(state_input)
+            l1_s = Dense(512, activation="relu", kernel_initializer="he_uniform", name="h1_s")(state_input)
             
             action_input = Input(shape=action_shape, name="action_input")
-            l1_a = Dense(256, activation="relu", kernel_initializer="he_uniform", name="h1_a")(action_input)
+            l1_a = Dense(512, activation="relu", kernel_initializer="he_uniform", name="h1_a")(action_input)
             
             merged = Add()([l1_s, l1_a])
-            l2 = Dense(256, activation="relu", kernel_initializer="he_uniform", name="h2")(merged)
+            l2 = Dense(512, activation="relu", kernel_initializer="he_uniform", name="h2")(merged)
 
             # vystupna vrstva   -- Q hodnoty su v intervale (-∞, ∞)
             output = Dense(1, activation="linear", name="q_val")(l2)
