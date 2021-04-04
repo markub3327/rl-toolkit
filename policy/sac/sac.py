@@ -86,28 +86,31 @@ class SAC(OffPolicy):
             self._alpha_learning_rate = alpha_learning_rate
         elif lr_scheduler == "linear":
             self._actor_learning_rate = LinearScheduler(
-                initial_value=actor_learning_rate, max_steps=max_steps, warmup_steps=learning_starts
+                initial_value=actor_learning_rate,
+                max_steps=max_steps,
+                warmup_steps=learning_starts,
             )
             self._critic_learning_rate = LinearScheduler(
-                initial_value=critic_learning_rate, max_steps=max_steps, warmup_steps=learning_starts
+                initial_value=critic_learning_rate,
+                max_steps=max_steps,
+                warmup_steps=learning_starts,
             )
             self._alpha_learning_rate = LinearScheduler(
-                initial_value=alpha_learning_rate, max_steps=max_steps, warmup_steps=learning_starts
+                initial_value=alpha_learning_rate,
+                max_steps=max_steps,
+                warmup_steps=learning_starts,
             )
         else:
             raise NameError(f"'{lr_scheduler}' learning rate scheduler is not defined")
 
         # init param 'alpha' - Lagrangian
         self._log_alpha = tf.Variable(0.0, trainable=True, name="log_alpha")
-        self._alpha = tf.Variable(0.0, trainable=False, name="alpha")
         self._alpha_optimizer = tf.keras.optimizers.Adam(
             learning_rate=self._alpha_learning_rate, name="alpha_optimizer"
         )
         self._target_entropy = tf.cast(
             -tf.reduce_prod(self._env.action_space.shape), dtype=tf.float32
         )
-        # print(self._target_entropy)
-        # print(self._alpha)
 
         # Actor network
         self._actor = Actor(
@@ -190,7 +193,9 @@ class SAC(OffPolicy):
         # Bellman Equation
         Q_targets = tf.stop_gradient(
             batch["rew"]
-            + (1 - batch["done"]) * self._gamma * (next_q - self._alpha * next_log_pi)
+            + (1 - batch["done"])
+            * self._gamma
+            * (next_q - tf.exp(self._log_alpha) * next_log_pi)
         )
         # tf.print(f'qTarget: {Q_targets.shape}')
 
@@ -236,7 +241,7 @@ class SAC(OffPolicy):
             q = tf.minimum(q_1, q_2)
             # tf.print(f'q: {q.shape}')
 
-            a_losses = self._alpha * log_pi - q
+            a_losses = tf.exp(self._log_alpha) * log_pi - q
             a_loss = tf.nn.compute_average_loss(a_losses)
             # tf.print(f'a_losses: {a_losses}')
 
@@ -253,7 +258,6 @@ class SAC(OffPolicy):
         # tf.print(f'y_pred: {y_pred.shape}')
         # tf.print(f'log_pi: {log_pi.shape}')
 
-        self._alpha.assign(tf.exp(self._log_alpha))
         with tf.GradientTape() as tape:
             alpha_losses = -1.0 * (
                 self._log_alpha * tf.stop_gradient(log_pi + self._target_entropy)
@@ -301,10 +305,10 @@ class SAC(OffPolicy):
                     "loss_c1": self._loss_c1.result(),
                     "loss_c2": self._loss_c2.result(),
                     "loss_alpha": self._loss_alpha.result(),
-                    "alpha": self._alpha,
-                    #"critic_learning_rate": self._critic_1.optimizer.learning_rate(self._total_steps - 10000),
-                    #"actor_learning_rate": self._actor.optimizer.learning_rate(self._total_steps - 10000),
-                    #"alpha_learning_rate": self._alpha_optimizer.learning_rate(self._total_steps - 10000),
+                    "log_alpha": self._log_alpha,
+                    # "critic_learning_rate": self._critic_1.optimizer.learning_rate(self._total_steps - 10000),
+                    # "actor_learning_rate": self._actor.optimizer.learning_rate(self._total_steps - 10000),
+                    # "alpha_learning_rate": self._alpha_optimizer.learning_rate(self._total_steps - 10000),
                 },
                 step=self._total_steps,
             )
@@ -328,5 +332,5 @@ class SAC(OffPolicy):
         tflite_model = converter.convert()
 
         # Save the model.
-        with open('model_A.tflite', 'wb') as f:
+        with open("model_A.tflite", "wb") as f:
             f.write(tflite_model)

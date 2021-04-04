@@ -8,6 +8,7 @@ import numpy as np
 # utilities
 from utils.replay_buffer import ReplayBuffer
 
+
 class OffPolicy(ABC):
     """
     The base for Off-Policy algorithms
@@ -132,8 +133,8 @@ class OffPolicy(ABC):
     def _collect_rollouts(self):
         for _ in range(self._env_steps):
             # normalize
-            #self._last_obs = self._normalize_obs(self._last_obs)
-            #print(self._last_obs)
+            # self._last_obs = self._normalize_obs(self._last_obs)
+            # print(self._last_obs)
 
             # select action randomly or using policy network
             if self._total_steps < self._learning_starts:
@@ -141,9 +142,7 @@ class OffPolicy(ABC):
                 action = self._env.action_space.sample()
             else:
                 # Get the noisy action
-                action = self._get_action(
-                    self._last_obs, deterministic=False
-                ).numpy()
+                action = self._get_action(self._last_obs, deterministic=False).numpy()
 
             # Step in the environment
             new_obs, reward, done, _ = self._env.step(action)
@@ -189,7 +188,7 @@ class OffPolicy(ABC):
 
             # collect rollouts
             self._collect_rollouts()
-            
+
             # update models
             if (
                 self._total_steps >= self._learning_starts
@@ -214,7 +213,7 @@ class OffPolicy(ABC):
             # collect rollout
             while not done:
                 # normalize
-                #self._last_obs = self._normalize_obs(self._last_obs)
+                # self._last_obs = self._normalize_obs(self._last_obs)
 
                 # Get the action
                 action = self._get_action(self._last_obs, deterministic=True).numpy()
@@ -247,6 +246,6 @@ class OffPolicy(ABC):
         rew_log = np.array(rew_log)
 
         # save to csv
-        np.savetxt('log/obs_log.csv', obs_log, delimiter=';')
-        np.savetxt('log/act_log.csv', act_log, delimiter=';')
-        np.savetxt('log/rew_log.csv', rew_log, delimiter=';')
+        np.savetxt("log/obs_log.csv", obs_log, delimiter=";")
+        np.savetxt("log/act_log.csv", act_log, delimiter=";")
+        np.savetxt("log/rew_log.csv", rew_log, delimiter=";")

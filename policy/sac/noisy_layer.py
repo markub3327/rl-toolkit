@@ -2,7 +2,6 @@ from tensorflow.keras.layers import Layer
 from tensorflow.keras import initializers
 
 import tensorflow as tf
-import tensorflow_probability as tfp
 
 
 class NoisyLayer(Layer):
@@ -54,5 +53,6 @@ class NoisyLayer(Layer):
         )
 
     def sample_weights(self):
-        w_dist = tfp.distributions.Normal(tf.zeros_like(self.log_std), self.get_std())
-        self.exploration_mat.assign(w_dist.sample())
+        self.exploration_mat.assign(
+            tf.random.normal(tf.shape(self.log_std)) * self.get_std()
+        )
