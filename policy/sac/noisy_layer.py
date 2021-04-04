@@ -15,7 +15,7 @@ class NoisyLayer(Layer):
         log_std_init (float): initialization value of standard deviation
     """
 
-    def __init__(self, units, log_std_init: float = -2.0, **kwargs):
+    def __init__(self, units, log_std_init: float = -3.0, **kwargs):
         super(NoisyLayer, self).__init__(**kwargs)
         self.units = units
         self.log_std_init = log_std_init
