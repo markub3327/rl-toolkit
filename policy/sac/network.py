@@ -89,7 +89,7 @@ class Actor:
                     bijector=self.bijector,
                 )
                 logp_pi = pi_distribution.log_prob(pi_action)
-                tf.print(tf.shape(logp_pi))
+                tf.print(f'logp_pi: {tf.shape(logp_pi)}')
             else:
                 logp_pi = None
 
