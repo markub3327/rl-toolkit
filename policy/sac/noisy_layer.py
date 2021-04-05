@@ -57,7 +57,6 @@ class NoisyLayer(Layer):
 
     def sample_weights(self):
         w_dist = tfp.distributions.MultivariateNormalDiag(
-            loc=tf.zeros_like(self.log_std),
-            scale_diag=self.get_std()
+            loc=tf.zeros_like(self.log_std), scale_diag=self.get_std()
         )
         self.exploration_mat.assign(w_dist.sample())

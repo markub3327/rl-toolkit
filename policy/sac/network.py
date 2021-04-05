@@ -84,8 +84,8 @@ class Actor:
                 )
                 pi_distribution = tfp.distributions.TransformedDistribution(
                     distribution=tfp.distributions.MultivariateNormalDiag(
-                        loc=mean,
-                        scale_diag=tf.sqrt(variance + 1e-6)),
+                        loc=mean, scale_diag=tf.sqrt(variance + 1e-6)
+                    ),
                     bijector=self.bijector,
                 )
                 logp_pi = pi_distribution.log_prob(pi_action)[:, tf.newaxis]
