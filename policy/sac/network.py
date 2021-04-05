@@ -25,7 +25,6 @@ class Actor:
         action_shape=None,
         model_path=None,
         learning_rate: float = 3e-4,
-#        clip_mean: float = 2.0,
     ):
 
         if model_path == None:
@@ -43,9 +42,6 @@ class Actor:
 
             # vystupna vrstva   -- 'mean' musi byt v intervale (-∞, ∞)
             mean = Dense(action_shape[0], activation="linear", name="mean")(latent_sde)
-#            mean = Lambda(
-#                lambda x: tf.clip_by_value(x, -clip_mean, clip_mean), name="clip_mean"
-#            )(mean)
 
             self.noisy_l = NoisyLayer(action_shape[0], name="noise")
             noise = self.noisy_l(latent_sde)
