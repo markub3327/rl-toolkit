@@ -35,9 +35,6 @@ if __name__ == "__main__":
         help="Maximum number of interactions doing in environment",
         default=int(1e6),
     )
-    my_parser.add_argument(
-        "--normalize", action="store_true", help="Normalize observation"
-    )
     my_parser.add_argument("--wandb", action="store_true", help="Logging to wanDB")
     my_parser.add_argument("-f", "--model", type=str, help="Actor's model file")
 
@@ -52,7 +49,6 @@ if __name__ == "__main__":
         agent = SAC(
             env=env,
             max_steps=args.max_steps,
-            norm_obs=args.normalize,
             model_a_path=args.model,
             logging_wandb=args.wandb,
         )

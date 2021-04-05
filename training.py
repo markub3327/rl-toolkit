@@ -51,12 +51,6 @@ if __name__ == "__main__":
     my_parser.add_argument(
         "-lr", "--learning_rate", type=float, help="Learning rate", default=7.3e-4
     )
-    my_parser.add_argument(
-        "--lr_scheduler",
-        type=str,
-        help="Learning rate scheduler (none, linear)",
-        default="none",
-    )
     my_parser.add_argument("--tau", type=float, help="Soft update rate", default=0.02)
     my_parser.add_argument(
         "--batch_size", type=int, help="Size of the batch", default=256
@@ -94,9 +88,6 @@ if __name__ == "__main__":
         help="Delay between critic and policy update",
         default=2,
     )
-    my_parser.add_argument(
-        "--normalize", action="store_true", help="Normalize observation"
-    )
     my_parser.add_argument("--wandb", action="store_true", help="Logging to wanDB")
     my_parser.add_argument("-s", "--save", type=str, help="Path for saving model files")
     my_parser.add_argument("--model_a", type=str, help="Actor's model file")
@@ -130,10 +121,8 @@ if __name__ == "__main__":
             actor_learning_rate=args.learning_rate,
             critic_learning_rate=args.learning_rate,
             alpha_learning_rate=args.learning_rate,
-            lr_scheduler=args.lr_scheduler,
             tau=args.tau,
             gamma=args.gamma,
-            norm_obs=args.normalize,
             model_a_path=args.model_a,
             model_c1_path=args.model_c1,
             model_c2_path=args.model_c2,
