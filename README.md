@@ -11,7 +11,6 @@
 
 ## Papers
   * [**Soft Actor-Critic**](https://arxiv.org/pdf/1812.05905.pdf)
-  * [**Twin Delayed DDPG**](https://arxiv.org/pdf/1802.09477.pdf)
   * [**Generalized State-Dependent Exploration**](https://arxiv.org/pdf/2005.05719.pdf)
 
 ## Setting up container
@@ -37,7 +36,7 @@ docker run -it --rm -v $PWD:/root/rl-toolkit markub/rl-toolkit python3 training.
 python3 training.py [-h] -alg sac -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
 
 # Run testing
-python3 testing.py [-h] -alg td3 -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
+python3 testing.py [-h] -alg sac -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 ```
 
 ## Tested environments

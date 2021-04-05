@@ -3,7 +3,7 @@ import gym
 import pybullet_envs
 
 # policy
-from policy import TD3, SAC
+from policy import SAC
 
 if __name__ == "__main__":
 
@@ -48,15 +48,7 @@ if __name__ == "__main__":
     env = gym.make(args.environment)
 
     # init policy
-    if args.policy == "td3":
-        agent = TD3(
-            env=env,
-            max_steps=args.max_steps,
-            norm_obs=args.normalize,
-            model_a_path=args.model,
-            logging_wandb=args.wandb,
-        )
-    elif args.policy == "sac":
+    if args.policy == "sac":
         agent = SAC(
             env=env,
             max_steps=args.max_steps,

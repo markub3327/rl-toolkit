@@ -3,7 +3,7 @@ import gym
 import pybullet_envs
 
 # policy
-from policy import TD3, SAC
+from policy import SAC
 
 if __name__ == "__main__":
 
@@ -118,32 +118,7 @@ if __name__ == "__main__":
     print(env.observation_space.low, env.observation_space.high)
 
     # init policy
-    if args.policy == "td3":
-        agent = TD3(
-            env=env,
-            max_steps=args.max_steps,
-            env_steps=args.env_steps,
-            gradient_steps=args.gradient_steps,
-            learning_starts=args.learning_starts,
-            buffer_size=args.buffer_size,
-            batch_size=args.batch_size,
-            actor_learning_rate=args.learning_rate,
-            critic_learning_rate=args.learning_rate,
-            lr_scheduler=args.lr_scheduler,
-            tau=args.tau,
-            gamma=args.gamma,
-            norm_obs=args.normalize,
-            noise_type=args.noise_type,
-            action_noise=args.action_noise,
-            target_noise=args.target_noise,
-            noise_clip=args.noise_clip,
-            policy_delay=args.policy_delay,
-            model_a_path=args.model_a,
-            model_c1_path=args.model_c1,
-            model_c2_path=args.model_c2,
-            logging_wandb=args.wandb,
-        )
-    elif args.policy == "sac":
+    if args.policy == "sac":
         agent = SAC(
             env=env,
             max_steps=args.max_steps,
