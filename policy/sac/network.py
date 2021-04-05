@@ -25,7 +25,7 @@ class Actor:
         action_shape=None,
         model_path=None,
         learning_rate: float = 3e-4,
-        clip_mean: float = 2.0,
+#        clip_mean: float = 2.0,
     ):
 
         if model_path == None:
@@ -43,9 +43,9 @@ class Actor:
 
             # vystupna vrstva   -- 'mean' musi byt v intervale (-∞, ∞)
             mean = Dense(action_shape[0], activation="linear", name="mean")(latent_sde)
-            mean = Lambda(
-                lambda x: tf.clip_by_value(x, -clip_mean, clip_mean), name="clip_mean"
-            )(mean)
+#            mean = Lambda(
+#                lambda x: tf.clip_by_value(x, -clip_mean, clip_mean), name="clip_mean"
+#            )(mean)
 
             self.noisy_l = NoisyLayer(action_shape[0], name="noise")
             noise = self.noisy_l(latent_sde)
@@ -83,14 +83,13 @@ class Actor:
                     tf.square(latent_sde), tf.square(self.noisy_l.get_std())
                 )
                 pi_distribution = tfp.distributions.TransformedDistribution(
-                    distribution=tfp.distributions.Normal(
-                        mean, tf.sqrt(variance + 1e-6)
-                    ),
+                    distribution=tfp.distributions.MultivariateNormalDiag(
+                        loc=mean,
+                        scale_diag=tf.sqrt(variance + 1e-6)),
                     bijector=self.bijector,
                 )
                 logp_pi = pi_distribution.log_prob(pi_action)
-                # sum independent log_probs
-                logp_pi = tf.reduce_sum(logp_pi, axis=1, keepdims=True)
+                tf.print(tf.shape(logp_pi))
             else:
                 logp_pi = None
 
