@@ -88,8 +88,7 @@ class Actor:
                         scale_diag=tf.sqrt(variance + 1e-6)),
                     bijector=self.bijector,
                 )
-                logp_pi = pi_distribution.log_prob(pi_action)
-                tf.print(f'logp_pi: {tf.shape(logp_pi)}')
+                logp_pi = pi_distribution.log_prob(pi_action)[:, tf.newaxis]
             else:
                 logp_pi = None
 

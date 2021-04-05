@@ -211,9 +211,6 @@ class SAC(OffPolicy):
             q = tf.minimum(q_1, q_2)
             # tf.print(f'q: {q.shape}')
 
-            tf.print(f'q: {tf.shape(q)}')
-
-
             a_losses = tf.exp(self._log_alpha) * log_pi - q
             a_loss = tf.nn.compute_average_loss(a_losses)
             # tf.print(f'a_losses: {a_losses}')
