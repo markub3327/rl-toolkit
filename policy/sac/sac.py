@@ -1,6 +1,5 @@
 from policy.off_policy import OffPolicy
 from .network import Actor, Critic
-from utils.lr_scheduler import Linear as LinearScheduler
 
 import wandb
 import tensorflow as tf
@@ -10,7 +9,9 @@ class SAC(OffPolicy):
     """
     Soft Actor-Critic
     =================
+
     Paper: https://arxiv.org/pdf/1812.05905.pdf
+
     Attributes:
         env: the instance of environment object
         max_steps (int): maximum number of interactions do in environment
@@ -22,10 +23,8 @@ class SAC(OffPolicy):
         actor_learning_rate (float): learning rate for actor's optimizer
         critic_learning_rate (float): learning rate for critic's optimizer
         alpha_learning_rate (float): learning rate for alpha's optimizer
-        lr_scheduler (str): type of learning rate scheduler
         tau (float): the soft update coefficient for target networks
         gamma (float): the discount factor
-        norm_obs (bool): normalize every observation
         model_a_path (str): path to the actor's model
         model_c1_path (str): path to the critic_1's model
         model_c2_path (str): path to the critic_2's model
@@ -48,11 +47,9 @@ class SAC(OffPolicy):
         actor_learning_rate: float = 3e-4,
         critic_learning_rate: float = 3e-4,
         alpha_learning_rate: float = 3e-4,
-        lr_scheduler: str = "none",
         # ---
         tau: float = 0.005,
         gamma: float = 0.99,
-        norm_obs: bool = False,
         # ---
         model_a_path: str = None,
         model_c1_path: str = None,
@@ -69,7 +66,6 @@ class SAC(OffPolicy):
             batch_size=batch_size,
             tau=tau,
             gamma=gamma,
-            norm_obs=norm_obs,
             logging_wandb=logging_wandb,
         )
 
@@ -79,34 +75,10 @@ class SAC(OffPolicy):
         self._loss_c2 = tf.keras.metrics.Mean()
         self._loss_alpha = tf.keras.metrics.Mean()
 
-        # init LR scheduler
-        if lr_scheduler == "none":
-            self._actor_learning_rate = actor_learning_rate
-            self._critic_learning_rate = critic_learning_rate
-            self._alpha_learning_rate = alpha_learning_rate
-        elif lr_scheduler == "linear":
-            self._actor_learning_rate = LinearScheduler(
-                initial_value=actor_learning_rate,
-                max_steps=max_steps,
-                warmup_steps=learning_starts,
-            )
-            self._critic_learning_rate = LinearScheduler(
-                initial_value=critic_learning_rate,
-                max_steps=max_steps,
-                warmup_steps=learning_starts,
-            )
-            self._alpha_learning_rate = LinearScheduler(
-                initial_value=alpha_learning_rate,
-                max_steps=max_steps,
-                warmup_steps=learning_starts,
-            )
-        else:
-            raise NameError(f"'{lr_scheduler}' learning rate scheduler is not defined")
-
-        # init param 'alpha' - Lagrangian
+        # init param 'alpha' - Lagrangian constraint
         self._log_alpha = tf.Variable(0.0, trainable=True, name="log_alpha")
         self._alpha_optimizer = tf.keras.optimizers.Adam(
-            learning_rate=self._alpha_learning_rate, name="alpha_optimizer"
+            learning_rate=alpha_learning_rate, name="alpha_optimizer"
         )
         self._target_entropy = tf.cast(
             -tf.reduce_prod(self._env.action_space.shape), dtype=tf.float32
@@ -116,7 +88,7 @@ class SAC(OffPolicy):
         self._actor = Actor(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=self._actor_learning_rate,
+            learning_rate=actor_learning_rate,
             model_path=model_a_path,
         )
 
@@ -124,13 +96,13 @@ class SAC(OffPolicy):
         self._critic_1 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=self._critic_learning_rate,
+            learning_rate=critic_learning_rate,
             model_path=model_c1_path,
         )
         self._critic_targ_1 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=self._critic_learning_rate,
+            learning_rate=critic_learning_rate,
             model_path=model_c1_path,
         )
 
@@ -138,13 +110,13 @@ class SAC(OffPolicy):
         self._critic_2 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=self._critic_learning_rate,
+            learning_rate=critic_learning_rate,
             model_path=model_c2_path,
         )
         self._critic_targ_2 = Critic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=self._critic_learning_rate,
+            learning_rate=critic_learning_rate,
             model_path=model_c2_path,
         )
 
@@ -166,10 +138,8 @@ class SAC(OffPolicy):
             wandb.config.batch_size = batch_size
             wandb.config.actor_learning_rate = actor_learning_rate
             wandb.config.critic_learning_rate = critic_learning_rate
-            wandb.config.lr_scheduler = lr_scheduler
             wandb.config.tau = tau
             wandb.config.gamma = gamma
-            wandb.config.norm_obs = norm_obs
 
     @tf.function
     def _get_action(self, state, deterministic):
@@ -306,9 +276,6 @@ class SAC(OffPolicy):
                     "loss_c2": self._loss_c2.result(),
                     "loss_alpha": self._loss_alpha.result(),
                     "log_alpha": self._log_alpha,
-                    # "critic_learning_rate": self._critic_1.optimizer.learning_rate(self._total_steps - 10000),
-                    # "actor_learning_rate": self._actor.optimizer.learning_rate(self._total_steps - 10000),
-                    # "alpha_learning_rate": self._alpha_optimizer.learning_rate(self._total_steps - 10000),
                 },
                 step=self._total_steps,
             )
@@ -327,6 +294,7 @@ class SAC(OffPolicy):
         self._critic_1.model.save(f"{path}model_C1.h5")
         self._critic_2.model.save(f"{path}model_C2.h5")
 
+    def convert(self):
         # Convert the model.
         converter = tf.lite.TFLiteConverter.from_keras_model(self._actor.model)
         tflite_model = converter.convert()

@@ -2,13 +2,16 @@ from tensorflow.keras.layers import Layer
 from tensorflow.keras import initializers
 
 import tensorflow as tf
+import tensorflow_probability as tfp
 
 
 class NoisyLayer(Layer):
     """
     Noisy layer (gSDE)
     ===========
+
     Paper: https://arxiv.org/pdf/2005.05719.pdf
+
     Attributes:
         units (int): number of noisy neurons
         log_std_init (float): initialization value of standard deviation
@@ -53,6 +56,5 @@ class NoisyLayer(Layer):
         )
 
     def sample_weights(self):
-        self.exploration_mat.assign(
-            tf.random.normal(tf.shape(self.log_std)) * self.get_std()
-        )
+        w_dist = tfp.distributions.Normal(tf.zeros_like(self.log_std), self.get_std())
+        self.exploration_mat.assign(w_dist.sample())

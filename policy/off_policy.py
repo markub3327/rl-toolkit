@@ -22,10 +22,8 @@ class OffPolicy(ABC):
         learning_starts (int): number of interactions before using policy network
         buffer_size (int): the maximum size of experiences replay buffer
         batch_size (int): size of mini-batch used for training
-        lr_scheduler (str): type of learning rate scheduler
         tau (float): the soft update coefficient for target networks
         gamma (float): the discount factor
-        norm_obs (bool): normalize observation
         logging_wandb (bool): logging by WanDB
     """
 
@@ -44,7 +42,6 @@ class OffPolicy(ABC):
         # ---
         tau: float,
         gamma: float,
-        norm_obs: bool,
         # ---
         logging_wandb: bool,
     ):
@@ -57,7 +54,6 @@ class OffPolicy(ABC):
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
         self._logging_wandb = logging_wandb
-        self._norm_obs = norm_obs
 
         # init replay buffer
         self._rpm = ReplayBuffer(
@@ -82,6 +78,10 @@ class OffPolicy(ABC):
 
     @abstractmethod
     def save(self, path):
+        ...
+
+    @abstractmethod
+    def convert(self, path):
         ...
 
     @abstractmethod
@@ -132,10 +132,6 @@ class OffPolicy(ABC):
 
     def _collect_rollouts(self):
         for _ in range(self._env_steps):
-            # normalize
-            # self._last_obs = self._normalize_obs(self._last_obs)
-            # print(self._last_obs)
-
             # select action randomly or using policy network
             if self._total_steps < self._learning_starts:
                 # warmup
@@ -196,11 +192,11 @@ class OffPolicy(ABC):
             ):
                 self._update()
                 self._logging_models()
+                self.convert()
 
     def test(self):
         self._total_steps = 0
         self._total_episodes = 0
-        obs_log, act_log, rew_log = [], [], []
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
@@ -212,19 +208,11 @@ class OffPolicy(ABC):
 
             # collect rollout
             while not done:
-                # normalize
-                # self._last_obs = self._normalize_obs(self._last_obs)
-
                 # Get the action
                 action = self._get_action(self._last_obs, deterministic=True).numpy()
 
                 # perform action
                 new_obs, reward, done, _ = self._env.step(action)
-
-                # log
-                obs_log.append(self._last_obs)
-                act_log.append(action)
-                rew_log.append(reward)
 
                 # update variables
                 self._episode_reward += reward
@@ -239,13 +227,3 @@ class OffPolicy(ABC):
 
             # logovanie
             self._logging_test()
-
-        # convert to numpy
-        obs_log = np.array(obs_log)
-        act_log = np.array(act_log)
-        rew_log = np.array(rew_log)
-
-        # save to csv
-        np.savetxt("log/obs_log.csv", obs_log, delimiter=";")
-        np.savetxt("log/act_log.csv", act_log, delimiter=";")
-        np.savetxt("log/rew_log.csv", rew_log, delimiter=";")

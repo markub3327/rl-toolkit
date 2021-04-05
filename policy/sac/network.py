@@ -1,6 +1,6 @@
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Input, Add, Dense, Lambda
+from tensorflow.keras.layers import Input, Concatenate, Dense, Lambda
 from tensorflow.keras.models import load_model
 from .noisy_layer import NoisyLayer
 
@@ -101,6 +101,7 @@ class Critic:
     """
     Critic (for SAC)
     ===============
+
     Attributes:
         state_shape: the shape of state space
         action_shape: the shape of action space
@@ -119,19 +120,15 @@ class Critic:
         if model_path == None:
             # vstupna vsrtva
             state_input = Input(shape=state_shape, name="state_input")
-            l1_s = Dense(
-                400, activation="relu", kernel_initializer="he_uniform", name="h1_s"
-            )(state_input)
-
             action_input = Input(shape=action_shape, name="action_input")
-            l1_a = Dense(
-                400, activation="relu", kernel_initializer="he_uniform", name="h1_a"
-            )(action_input)
 
-            merged = Add()([l1_s, l1_a])
+            merged = Concatenate()([state_input, action_input])
+            l1 = Dense(
+                400, activation="relu", kernel_initializer="he_uniform", name="h1"
+            )(merged)
             l2 = Dense(
                 300, activation="relu", kernel_initializer="he_uniform", name="h2"
-            )(merged)
+            )(l1)
 
             # vystupna vrstva   -- Q hodnoty su v intervale (-∞, ∞)
             output = Dense(1, activation="linear", name="q_val")(l2)
