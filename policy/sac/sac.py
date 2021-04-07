@@ -139,6 +139,7 @@ class SAC(OffPolicy):
             wandb.config.batch_size = batch_size
             wandb.config.actor_learning_rate = actor_learning_rate
             wandb.config.critic_learning_rate = critic_learning_rate
+            wandb.config.alpha_learning_rate = alpha_learning_rate
             wandb.config.tau = tau
             wandb.config.gamma = gamma
 
@@ -225,7 +226,7 @@ class SAC(OffPolicy):
 
     # ------------------------------------ update alpha ----------------------------------- #
     def _update_alpha(self, batch):
-        y_pred, log_pi = self._actor.predict(batch["obs"])
+        _, log_pi = self._actor.predict(batch["obs"])
         # tf.print(f'y_pred: {y_pred.shape}')
         # tf.print(f'log_pi: {log_pi.shape}')
 
