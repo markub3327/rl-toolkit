@@ -131,7 +131,7 @@ class OffPolicy(ABC):
             )
 
     def _collect_rollouts(self):
-        for _ in range(self._env_steps):
+        while True:
             # select action randomly or using policy network
             if self._total_steps < self._learning_starts:
                 # warmup
@@ -154,10 +154,6 @@ class OffPolicy(ABC):
             # check the end of episode
             if done:
                 self._logging_train()
-
-                self._episode_reward = 0
-                self._episode_steps = 0
-                self._total_episodes += 1
 
                 # init environment
                 self._last_obs = self._env.reset()
@@ -190,9 +186,13 @@ class OffPolicy(ABC):
                 self._total_steps >= self._learning_starts
                 and len(self._rpm) >= self._batch_size
             ):
-                self._update()
+                self._update(self._episode_steps)
                 self._logging_models()
                 # self.convert()
+
+            self._episode_reward = 0
+            self._episode_steps = 0
+            self._total_episodes += 1
 
     def test(self):
         self._total_steps = 0
