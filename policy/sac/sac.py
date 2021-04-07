@@ -77,6 +77,7 @@ class SAC(OffPolicy):
 
         # init param 'alpha' - Lagrangian constraint
         self._log_alpha = tf.Variable(0.0, trainable=True, name="log_alpha")
+        self._alpha = tf.Variable(0.0, trainable=False, name="alpha")
         self._alpha_optimizer = tf.keras.optimizers.Adam(
             learning_rate=alpha_learning_rate, name="alpha_optimizer"
         )
@@ -165,7 +166,7 @@ class SAC(OffPolicy):
             batch["rew"]
             + (1 - batch["done"])
             * self._gamma
-            * (next_q - tf.exp(self._log_alpha) * next_log_pi)
+            * (next_q - self._alpha * next_log_pi)
         )
         # tf.print(f'qTarget: {Q_targets.shape}')
 
@@ -211,7 +212,7 @@ class SAC(OffPolicy):
             q = tf.minimum(q_1, q_2)
             # tf.print(f'q: {q.shape}')
 
-            a_losses = tf.exp(self._log_alpha) * log_pi - q
+            a_losses = self._alpha * log_pi - q
             a_loss = tf.nn.compute_average_loss(a_losses)
             # tf.print(f'a_losses: {a_losses}')
 
@@ -228,6 +229,7 @@ class SAC(OffPolicy):
         # tf.print(f'y_pred: {y_pred.shape}')
         # tf.print(f'log_pi: {log_pi.shape}')
 
+        self._alpha.assign(tf.exp(self._log_alpha))
         with tf.GradientTape() as tape:
             alpha_losses = -1.0 * (
                 self._log_alpha * tf.stop_gradient(log_pi + self._target_entropy)
@@ -275,7 +277,7 @@ class SAC(OffPolicy):
                     "loss_c1": self._loss_c1.result(),
                     "loss_c2": self._loss_c2.result(),
                     "loss_alpha": self._loss_alpha.result(),
-                    "log_alpha": self._log_alpha,
+                    "alpha": self._alpha,
                 },
                 step=self._total_steps,
             )
