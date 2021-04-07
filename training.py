@@ -35,23 +35,11 @@ if __name__ == "__main__":
         help="Maximum number of interactions doing in environment",
         default=int(1e6),
     )
-    my_parser.add_argument(
-        "--noise_type",
-        type=str,
-        help="Type of used noise generator [normal, ornstein-uhlenbeck] (only for TD3)",
-        default="ornstein-uhlenbeck",
-    )
-    my_parser.add_argument(
-        "--action_noise",
-        type=float,
-        help="Standard deviation of action noise (only for TD3)",
-        default=0.5,
-    )
-    my_parser.add_argument("--gamma", type=float, help="Discount factor", default=0.98)
+    my_parser.add_argument("--gamma", type=float, help="Discount factor", default=0.99)
     my_parser.add_argument(
         "-lr", "--learning_rate", type=float, help="Learning rate", default=7.3e-4
     )
-    my_parser.add_argument("--tau", type=float, help="Soft update rate", default=0.02)
+    my_parser.add_argument("--tau", type=float, help="Soft update rate", default=0.01)
     my_parser.add_argument(
         "--batch_size", type=int, help="Size of the batch", default=256
     )
@@ -65,22 +53,10 @@ if __name__ == "__main__":
         default=10000,
     )
     my_parser.add_argument(
-        "--env_steps", type=int, help="Num. of environment steps", default=64
+        "--env_steps", type=int, help="Num. of environment steps", default=1
     )
     my_parser.add_argument(
-        "--gradient_steps", type=int, help="Num. of gradient steps", default=64
-    )
-    my_parser.add_argument(
-        "--target_noise",
-        type=float,
-        help="Standard deviation of target noise (only for TD3)",
-        default=0.2,
-    )
-    my_parser.add_argument(
-        "--noise_clip",
-        type=float,
-        help="Limit for target noise (only for TD3)",
-        default=0.5,
+        "--gradient_steps", type=int, help="Num. of gradient steps", default=1
     )
     my_parser.add_argument(
         "--policy_delay",

@@ -56,9 +56,7 @@ class Actor:
             self.model = Model(inputs=state_input, outputs=[mean, cov_matrix])
         else:
             # Nacitaj model
-            self.model = load_model(
-                model_path, custom_objects={"NoisyLayer": NoisyLayer}, compile=False
-            )
+            self.model = load_model(model_path, compile=False)
             print("Actor loaded from file succesful ...")
 
         # Optimalizator modelu
@@ -89,7 +87,7 @@ class Actor:
                     loc=mean,
                     scale_tril=scale_tril
                 ),
-               bijector=self.bijector,
+                bijector=self.bijector,
             )
             pi_action = pi_distribution.sample()
 
