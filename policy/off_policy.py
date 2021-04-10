@@ -151,6 +151,7 @@ class OffPolicy(ABC):
             # Update the replay buffer
             self._rpm.store(self._last_obs, action, reward, new_obs, done)
 
+            # check the end of episode
             if done:
                 self._logging_train()
 
