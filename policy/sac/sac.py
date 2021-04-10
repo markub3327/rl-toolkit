@@ -1,4 +1,3 @@
-from tensorflow.python.keras.backend import print_tensor
 from policy.off_policy import OffPolicy
 from .network import Actor, Critic
 
@@ -263,8 +262,8 @@ class SAC(OffPolicy):
         self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
         self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
-    def _update(self, steps):
-        for _ in range(steps):
+    def _update(self):
+        for _ in range(self._gradient_steps):
             batch = self._rpm.sample(self._batch_size)
 
             # do update weights

@@ -131,7 +131,7 @@ class OffPolicy(ABC):
             )
 
     def _collect_rollouts(self):
-        while True:
+        for _ in range(self._env_steps):
             # select action randomly or using policy network
             if self._total_steps < self._learning_starts:
                 # warmup
@@ -151,9 +151,12 @@ class OffPolicy(ABC):
             # Update the replay buffer
             self._rpm.store(self._last_obs, action, reward, new_obs, done)
 
-            # check the end of episode
             if done:
                 self._logging_train()
+
+                self._episode_reward = 0
+                self._episode_steps = 0
+                self._total_episodes += 1
 
                 # init environment
                 self._last_obs = self._env.reset()
@@ -186,13 +189,9 @@ class OffPolicy(ABC):
                 self._total_steps >= self._learning_starts
                 and len(self._rpm) >= self._batch_size
             ):
-                self._update(self._episode_steps)
+                self._update()
                 self._logging_models()
                 # self.convert()
-
-            self._episode_reward = 0
-            self._episode_steps = 0
-            self._total_episodes += 1
 
     def test(self):
         self._total_steps = 0
