@@ -13,14 +13,6 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
-    # init args
-    my_parser.add_argument(
-        "-alg",
-        "--policy",
-        type=str,
-        help="The policy of agent (SAC/TD3)",
-        default="sac",
-    )
     my_parser.add_argument(
         "-env",
         "--environment",
@@ -53,10 +45,10 @@ if __name__ == "__main__":
         default=10000,
     )
     my_parser.add_argument(
-        "--env_steps", type=int, help="Num. of environment steps", default=1
+        "--env_steps", type=int, help="Num. of environment steps", default=64
     )
     my_parser.add_argument(
-        "--gradient_steps", type=int, help="Num. of gradient steps", default=1
+        "--gradient_steps", type=int, help="Num. of gradient steps", default=64
     )
     my_parser.add_argument(
         "--policy_delay",
@@ -85,27 +77,24 @@ if __name__ == "__main__":
     print(env.observation_space.low, env.observation_space.high)
 
     # init policy
-    if args.policy == "sac":
-        agent = SAC(
-            env=env,
-            max_steps=args.max_steps,
-            env_steps=args.env_steps,
-            gradient_steps=args.gradient_steps,
-            learning_starts=args.learning_starts,
-            buffer_size=args.buffer_size,
-            batch_size=args.batch_size,
-            actor_learning_rate=args.learning_rate,
-            critic_learning_rate=args.learning_rate,
-            alpha_learning_rate=args.learning_rate,
-            tau=args.tau,
-            gamma=args.gamma,
-            model_a_path=args.model_a,
-            model_c1_path=args.model_c1,
-            model_c2_path=args.model_c2,
-            logging_wandb=args.wandb,
-        )
-    else:
-        raise NameError(f"Algorithm '{args.policy}' is not defined")
+    agent = SAC(
+        env=env,
+        max_steps=args.max_steps,
+        env_steps=args.env_steps,
+        gradient_steps=args.gradient_steps,
+        learning_starts=args.learning_starts,
+        buffer_size=args.buffer_size,
+        batch_size=args.batch_size,
+        actor_learning_rate=args.learning_rate,
+        critic_learning_rate=args.learning_rate,
+        alpha_learning_rate=args.learning_rate,
+        tau=args.tau,
+        gamma=args.gamma,
+        model_a_path=args.model_a,
+        model_c1_path=args.model_c1,
+        model_c2_path=args.model_c2,
+        logging_wandb=args.wandb,
+    )
 
     try:
         # run training process
