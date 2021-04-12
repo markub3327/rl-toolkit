@@ -88,7 +88,7 @@ class Actor:
                     ),
                     bijector=self.bijector,
                 )
-                logp_pi = pi_distribution.log_prob(pi_action)[:, tf.newaxis]
+                logp_pi = pi_distribution.log_prob(pi_action)[..., tf.newaxis]
             else:
                 logp_pi = None
 
