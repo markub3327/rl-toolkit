@@ -127,7 +127,10 @@ class Critic:
 
             action_input = Input(shape=action_shape, name="action_input")
             action_h1 = Dense(
-                256, activation="relu", kernel_initializer="he_uniform", name="action_h1"
+                256,
+                activation="relu",
+                kernel_initializer="he_uniform",
+                name="action_h1",
             )(action_input)
 
             merged = Add()([state_h2, action_h1])

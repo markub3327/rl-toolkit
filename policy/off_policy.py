@@ -63,12 +63,14 @@ class OffPolicy(ABC):
         )
 
         # check obseration's ranges
-        if np.all(np.isfinite(self._env.observation_space.low)) and np.all(np.isfinite(self._env.observation_space.high)):
-            self._normalize = self._normalize_fn        #  obs = F_n(obs)
-            
+        if np.all(np.isfinite(self._env.observation_space.low)) and np.all(
+            np.isfinite(self._env.observation_space.high)
+        ):
+            self._normalize = self._normalize_fn  #  obs = F_n(obs)
+
             print("Observation will be normalized !\n")
         else:
-            self._normalize = lambda a : a      #  obs = obs
+            self._normalize = lambda a: a  #  obs = obs
 
             print("Observation cannot be normalized !\n")
 
@@ -99,14 +101,16 @@ class OffPolicy(ABC):
         ...
 
     def _normalize_fn(self, obs):
-        #print(self._env.observation_space.low)
-        #print(self._env.observation_space.high)
-        #print(obs)
+        # print(self._env.observation_space.low)
+        # print(self._env.observation_space.high)
+        # print(obs)
 
         # Min-max method
-        obs = (obs - self._env.observation_space.low) * 2.0 / (self._env.observation_space.high - self._env.observation_space.low) - 1.0
+        obs = (obs - self._env.observation_space.low) * 2.0 / (
+            self._env.observation_space.high - self._env.observation_space.low
+        ) - 1.0
 
-        #print(obs)
+        # print(obs)
 
         return obs
 
