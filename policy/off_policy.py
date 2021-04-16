@@ -94,7 +94,7 @@ class OffPolicy(ABC):
         #print(obs)
 
         # Min-max method
-        obs = obs / self._env.observation_space.high
+        obs = (obs - self._env.observation_space.low) / (self._env.observation_space.high - self._env.observation_space.low)
 
         #print(obs)
 
