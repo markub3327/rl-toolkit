@@ -75,6 +75,7 @@ if __name__ == "__main__":
     print("Observation space:")
     print(env.observation_space)
     print(env.observation_space.low, env.observation_space.high)
+    print()
 
     # init policy
     agent = SAC(

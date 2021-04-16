@@ -62,6 +62,16 @@ class OffPolicy(ABC):
             size=buffer_size,
         )
 
+        # check obseration's ranges
+        if np.all(np.isfinite(self._env.observation_space.low)) and np.all(np.isfinite(self._env.observation_space.high)):
+            self._normalize = self._normalize_fn        #  obs = F_n(obs)
+            
+            print("Observation will be normalized !\n")
+        else:
+            self._normalize = lambda a : a      #  obs = obs
+
+            print("Observation cannot be normalized !\n")
+
     @abstractmethod
     def _get_action(self, state, deterministic):
         ...
@@ -88,13 +98,13 @@ class OffPolicy(ABC):
     def _logging_models(self):
         ...
 
-    def normalize(self, obs):
+    def _normalize_fn(self, obs):
         #print(self._env.observation_space.low)
         #print(self._env.observation_space.high)
         #print(obs)
 
         # Min-max method
-        obs = (obs - self._env.observation_space.low) / (self._env.observation_space.high - self._env.observation_space.low)
+        obs = (obs - self._env.observation_space.low) * 2.0 / (self._env.observation_space.high - self._env.observation_space.low) - 1.0
 
         #print(obs)
 
@@ -154,7 +164,7 @@ class OffPolicy(ABC):
 
             # Step in the environment
             new_obs, reward, done, _ = self._env.step(action)
-            new_obs = self.normalize(new_obs)
+            new_obs = self._normalize(new_obs)
 
             # update variables
             self._episode_reward += reward
@@ -174,7 +184,7 @@ class OffPolicy(ABC):
 
                 # init environment
                 self._last_obs = self._env.reset()
-                self._last_obs = self.normalize(self._last_obs)
+                self._last_obs = self._normalize(self._last_obs)
 
                 # interrupt the rollout
                 break
@@ -190,7 +200,7 @@ class OffPolicy(ABC):
 
         # init environment
         self._last_obs = self._env.reset()
-        self._last_obs = self.normalize(self._last_obs)
+        self._last_obs = self._normalize(self._last_obs)
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
@@ -220,7 +230,7 @@ class OffPolicy(ABC):
             done = False
 
             self._last_obs = self._env.reset()
-            self._last_obs = self.normalize(self._last_obs)
+            self._last_obs = self._normalize(self._last_obs)
 
             # collect rollout
             while not done:
@@ -229,7 +239,7 @@ class OffPolicy(ABC):
 
                 # perform action
                 new_obs, reward, done, _ = self._env.step(action)
-                new_obs = self.normalize(new_obs)
+                new_obs = self._normalize(new_obs)
 
                 # update variables
                 self._episode_reward += reward
