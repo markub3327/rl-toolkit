@@ -56,6 +56,12 @@ if __name__ == "__main__":
         help="Delay between critic and policy update",
         default=2,
     )
+    my_parser.add_argument(
+        "--num_step_returns",
+        type=int,
+        help="N-step returns",
+        default=11,
+    )
     my_parser.add_argument("--wandb", action="store_true", help="Logging to wanDB")
     my_parser.add_argument("-s", "--save", type=str, help="Path for saving model files")
     my_parser.add_argument("--model_a", type=str, help="Actor's model file")
@@ -91,6 +97,7 @@ if __name__ == "__main__":
         alpha_learning_rate=args.learning_rate,
         tau=args.tau,
         gamma=args.gamma,
+        num_step_returns=args.num_step_returns,
         model_a_path=args.model_a,
         model_c1_path=args.model_c1,
         model_c2_path=args.model_c2,

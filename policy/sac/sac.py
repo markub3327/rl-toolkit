@@ -50,6 +50,7 @@ class SAC(OffPolicy):
         # ---
         tau: float = 0.005,
         gamma: float = 0.99,
+        num_step_returns: int = 11,
         # ---
         model_a_path: str = None,
         model_c1_path: str = None,
@@ -66,6 +67,7 @@ class SAC(OffPolicy):
             batch_size=batch_size,
             tau=tau,
             gamma=gamma,
+            num_step_returns=num_step_returns,
             logging_wandb=logging_wandb,
         )
 
@@ -165,7 +167,9 @@ class SAC(OffPolicy):
         # Bellman Equation
         Q_targets = tf.stop_gradient(
             batch["rew"]
-            + (1 - batch["done"]) * self._gamma * (next_q - self._alpha * next_log_pi)
+            + (1 - batch["done"])
+            * batch["gamma"]
+            * (next_q - self._alpha * next_log_pi)
         )
         # tf.print(f'qTarget: {Q_targets.shape}')
 
