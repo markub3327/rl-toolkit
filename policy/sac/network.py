@@ -32,10 +32,10 @@ class Actor:
             state_input = Input(shape=state_shape, name="state_input")
 
             h1 = Dense(
-                400, activation="relu", kernel_initializer="he_uniform", name="h1"
+                512, activation="relu", kernel_initializer="he_uniform", name="h1"
             )(state_input)
             latent_sde = Dense(
-                300,
+                512,
                 activation="relu",
                 kernel_initializer="he_uniform",
                 name="latent_sde",
