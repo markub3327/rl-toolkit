@@ -208,10 +208,10 @@ class OffPolicy(ABC):
                 while len(self.exp_buffer) != 0:
                     state_0, action_0, reward_0 = self.exp_buffer.popleft()
                     discounted_reward = reward_0
-                    gamma = self._num_step_returns
+                    g = self._num_step_returns
                     for (_, _, r_i) in self.exp_buffer:
-                        discounted_reward += r_i * gamma
-                        gamma *= self._num_step_returns
+                        discounted_reward += r_i * g
+                        g *= self._num_step_returns
 
                     # Update the replay buffer
                     self._rpm.store(
