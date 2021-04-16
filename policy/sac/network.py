@@ -31,7 +31,7 @@ class Actor:
         if model_path == None:
             state_input = Input(shape=state_shape, name="state_input")
 
-            l1 = Dense(
+            h1 = Dense(
                 400, activation="relu", kernel_initializer="he_uniform", name="h1"
             )(state_input)
             latent_sde = Dense(
@@ -39,7 +39,7 @@ class Actor:
                 activation="relu",
                 kernel_initializer="he_uniform",
                 name="latent_sde",
-            )(l1)
+            )(h1)
 
             # vystupna vrstva   -- 'mean' musi byt v intervale (-∞, ∞)
             mean = Dense(action_shape[0], activation="linear", name="mean")(latent_sde)
@@ -119,24 +119,24 @@ class Critic:
             # vstupna vsrtva
             state_input = Input(shape=state_shape, name="state_input")
             state_h1 = Dense(
-                400, activation="relu", kernel_initializer="he_uniform", name="h1"
+                256, activation="relu", kernel_initializer="he_uniform", name="state_h1"
             )(state_input)
             state_h2 = Dense(
-                300, activation="relu", kernel_initializer="he_uniform", name="h2"
+                256, activation="relu", kernel_initializer="he_uniform", name="state_h2"
             )(state_h1)
 
             action_input = Input(shape=action_shape, name="action_input")
             action_h1 = Dense(
-                400, activation="relu", kernel_initializer="he_uniform", name="h1"
+                256, activation="relu", kernel_initializer="he_uniform", name="action_h1"
             )(action_input)
 
             merged = Add()([state_h2, action_h1])
-            l2 = Dense(
-                300, activation="relu", kernel_initializer="he_uniform", name="h2"
+            h2 = Dense(
+                256, activation="relu", kernel_initializer="he_uniform", name="h2"
             )(merged)
 
             # vystupna vrstva   -- Q hodnoty su v intervale (-∞, ∞)
-            output = Dense(1, activation="linear", name="q_val")(l2)
+            output = Dense(1, activation="linear", name="q_val")(h2)
 
             # Vytvor model
             self.model = Model(inputs=[state_input, action_input], outputs=output)
