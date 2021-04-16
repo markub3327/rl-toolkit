@@ -88,6 +88,18 @@ class OffPolicy(ABC):
     def _logging_models(self):
         ...
 
+    def normalize(self, obs):
+        #print(self._env.observation_space.low)
+        #print(self._env.observation_space.high)
+        #print(obs)
+
+        # Min-max method
+        obs = obs / self._env.observation_space.high
+
+        #print(obs)
+
+        return obs
+
     def _logging_train(self):
         print("=============================================")
         print(f"Epoch: {self._total_episodes}")
@@ -142,6 +154,7 @@ class OffPolicy(ABC):
 
             # Step in the environment
             new_obs, reward, done, _ = self._env.step(action)
+            new_obs = self.normalize(new_obs)
 
             # update variables
             self._episode_reward += reward
@@ -161,6 +174,7 @@ class OffPolicy(ABC):
 
                 # init environment
                 self._last_obs = self._env.reset()
+                self._last_obs = self.normalize(self._last_obs)
 
                 # interrupt the rollout
                 break
@@ -176,6 +190,7 @@ class OffPolicy(ABC):
 
         # init environment
         self._last_obs = self._env.reset()
+        self._last_obs = self.normalize(self._last_obs)
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
@@ -205,6 +220,7 @@ class OffPolicy(ABC):
             done = False
 
             self._last_obs = self._env.reset()
+            self._last_obs = self.normalize(self._last_obs)
 
             # collect rollout
             while not done:
@@ -213,6 +229,7 @@ class OffPolicy(ABC):
 
                 # perform action
                 new_obs, reward, done, _ = self._env.step(action)
+                new_obs = self.normalize(new_obs)
 
                 # update variables
                 self._episode_reward += reward
