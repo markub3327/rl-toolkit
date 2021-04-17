@@ -109,9 +109,9 @@ class OffPolicy(ABC):
         # print(obs)
 
         # Min-max method
-        obs = (obs - self._env.observation_space.low) * 2.0 / (
+        obs = (obs - self._env.observation_space.low) / (
             self._env.observation_space.high - self._env.observation_space.low
-        ) - 1.0
+        )
 
         # print(obs)
 
@@ -160,7 +160,10 @@ class OffPolicy(ABC):
             )
 
     def _collect_rollouts(self):
-        for _ in range(self._env_steps):
+        discounted_reward = 0
+        g = 1
+
+        for t in range(self._env_steps):
             # select action randomly or using policy network
             if self._total_steps < self._learning_starts:
                 # warmup
@@ -168,6 +171,10 @@ class OffPolicy(ABC):
             else:
                 # Get the noisy action
                 action = self._get_action(self._last_obs, deterministic=False).numpy()
+
+            if t == 0:
+                state_0 = self._last_obs
+                action_0 = action
 
             # Step in the environment
             new_obs, reward, done, _ = self._env.step(action)
@@ -177,20 +184,10 @@ class OffPolicy(ABC):
             self._episode_reward += reward
             self._episode_steps += 1
             self._total_steps += 1
-
-            self.exp_buffer.append((self._last_obs, action, reward))
-
-            # We need at least N steps in the experience buffer before we can compute Bellman rewards and add an N-step experience to replay memory
-            if len(self.exp_buffer) >= self._num_step_returns:
-                state_0, action_0, reward_0 = self.exp_buffer.popleft()
-                discounted_reward = reward_0
-                g = self._gamma
-                for (_, _, r_i) in self.exp_buffer:
-                    discounted_reward += r_i * g
-                    g *= self._gamma
-
-                # Update the replay buffer
-                self._rpm.store(state_0, action_0, discounted_reward, new_obs, done, g)
+            discounted_reward += reward * g
+            g *= self._gamma
+            # print(discounted_reward)
+            # print(g)
 
             # check the end of episode
             if done:
@@ -204,25 +201,15 @@ class OffPolicy(ABC):
                 self._last_obs = self._env.reset()
                 self._last_obs = self._normalize(self._last_obs)
 
-                # Compute Bellman rewards and add experiences to replay memory for the last N-1 experiences still remaining in the experience buffer
-                while len(self.exp_buffer) != 0:
-                    state_0, action_0, reward_0 = self.exp_buffer.popleft()
-                    discounted_reward = reward_0
-                    g = self._num_step_returns
-                    for (_, _, r_i) in self.exp_buffer:
-                        discounted_reward += r_i * g
-                        g *= self._num_step_returns
-
-                    # Update the replay buffer
-                    self._rpm.store(
-                        state_0, action_0, discounted_reward, new_obs, done, g
-                    )
-
                 # interrupt the rollout
                 break
 
             # super critical !!!
             self._last_obs = new_obs
+
+
+        # Update the replay buffer
+        self._rpm.store(state_0, action_0, discounted_reward, new_obs, done)
 
     def train(self):
         self._total_steps = 0
@@ -235,15 +222,11 @@ class OffPolicy(ABC):
         self._last_obs = self._normalize(self._last_obs)
 
         # Initialise deque buffer to store experiences for N-step returns
-        self.exp_buffer = deque()
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
             # re-new noise matrix before every rollouts
             self._actor.reset_noise()
-
-            # reset experience buffer
-            self.exp_buffer.clear()
 
             # collect rollouts
             self._collect_rollouts()

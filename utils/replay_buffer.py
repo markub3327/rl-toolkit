@@ -15,16 +15,14 @@ class ReplayBuffer:
         self.act_buf = np.zeros((size,) + act_dim, dtype=np.float32)
         self.rew_buf = np.zeros((size, 1), dtype=np.float32)
         self.done_buf = np.zeros((size, 1), dtype=np.float32)
-        self.gamma_buf = np.zeros((size, 1), dtype=np.float32)
         self.ptr, self.size, self.max_size = 0, 0, size
 
-    def store(self, obs, act, rew, next_obs, done, gamma):
+    def store(self, obs, act, rew, next_obs, done):
         self.obs_buf[self.ptr] = obs
         self.obs2_buf[self.ptr] = next_obs
         self.act_buf[self.ptr] = act
         self.rew_buf[self.ptr] = rew
         self.done_buf[self.ptr] = done
-        self.gamma_buf[self.ptr] = gamma
         self.ptr = (self.ptr + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
@@ -39,5 +37,4 @@ class ReplayBuffer:
             act=self.act_buf[idxs],
             rew=self.rew_buf[idxs],
             done=self.done_buf[idxs],
-            gamma=self.gamma_buf[idxs],
         )

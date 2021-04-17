@@ -168,7 +168,7 @@ class SAC(OffPolicy):
         Q_targets = tf.stop_gradient(
             batch["rew"]
             + (1 - batch["done"])
-            * batch["gamma"]
+            * self._gamma**self._env_steps
             * (next_q - self._alpha * next_log_pi)
         )
         # tf.print(f'qTarget: {Q_targets.shape}')
