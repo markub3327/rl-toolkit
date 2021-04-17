@@ -207,7 +207,6 @@ class OffPolicy(ABC):
             # super critical !!!
             self._last_obs = new_obs
 
-
         # Update the replay buffer
         self._rpm.store(state_0, action_0, discounted_reward, new_obs, done)
 
@@ -231,10 +230,10 @@ class OffPolicy(ABC):
             # collect rollouts
             self._collect_rollouts()
 
-            # update models
+            # update models (total_steps : rpm = 1 : 1)
             if (
                 self._total_steps >= self._learning_starts
-                and len(self._rpm) >= self._batch_size
+                and len(self._rpm) >= self._learning_starts  # self._batch_size
             ):
                 self._update()
                 self._logging_models()
