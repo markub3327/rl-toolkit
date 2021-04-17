@@ -160,8 +160,8 @@ class OffPolicy(ABC):
             )
 
     def _collect_rollouts(self):
-        discounted_reward = 0
-        g = 1
+        discounted_reward = 0.0
+        g = 1.0
 
         for t in range(self._env_steps):
             # select action randomly or using policy network
@@ -193,7 +193,7 @@ class OffPolicy(ABC):
             if done:
                 self._logging_train()
 
-                self._episode_reward = 0
+                self._episode_reward = 0.0
                 self._episode_steps = 0
                 self._total_episodes += 1
 
