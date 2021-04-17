@@ -165,7 +165,10 @@ class OffPolicy(ABC):
 
         for t in range(self._env_steps):
             # select action randomly or using policy network
-            if self._total_steps < self._learning_starts:
+            if (
+                self._total_steps < self._learning_starts 
+                or len(self._rpm) < self._learning_starts
+            ):
                 # warmup
                 action = self._env.action_space.sample()
             else:
