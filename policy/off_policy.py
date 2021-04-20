@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from collections import deque
 
 import math
 import wandb
@@ -43,7 +42,6 @@ class OffPolicy(ABC):
         # ---
         tau: float,
         gamma: float,
-        num_step_returns: int,
         # ---
         logging_wandb: bool,
     ):
@@ -55,7 +53,6 @@ class OffPolicy(ABC):
         self._batch_size = batch_size
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
-        self._num_step_returns = num_step_returns
         self._logging_wandb = logging_wandb
 
         # init replay buffer
@@ -222,8 +219,6 @@ class OffPolicy(ABC):
         # init environment
         self._last_obs = self._env.reset()
         self._last_obs = self._normalize(self._last_obs)
-
-        # Initialise deque buffer to store experiences for N-step returns
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
