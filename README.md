@@ -15,7 +15,6 @@
 
 ## Setting up container
 
-##### YOU MUST HAVE INSTALLED DOCKER !!!
 
 ### Build the Docker image
 
@@ -25,8 +24,14 @@ docker build -t markub/rl-toolkit:latest .
 
 ### Run the container
 
+On **Linux** or **MacOS**:
 ```shell
 docker run -it --rm -v $PWD:/root/rl-toolkit markub/rl-toolkit python3 training.py
+```
+
+On **Windows**:
+```powershell
+docker run -it --rm -v ${PWD}:/root/rl-toolkit markub/rl-toolkit python3 training.py
 ```
 
 ## Run
@@ -48,6 +53,7 @@ python3 testing.py [-h] -alg sac -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
   | AntBulletEnv-v0          | (28, ) | [-inf , inf] | (8, ) | [-1.0 , 1.0] |
   | HalfCheetahBulletEnv-v0  | (26, ) | [-inf , inf] | (6, ) | [-1.0 , 1.0] |
   | HopperBulletEnv-v0       | (15, ) | [-inf , inf] | (3, ) | [-1.0 , 1.0] |
+  | HumanoidBulletEnv-v0     | (44, ) | [-inf , inf] | (17, ) | [-1.0 , 1.0] |
 
 
 ## Results
@@ -66,11 +72,11 @@ python3 testing.py [-h] -alg sac -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
   | AntBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)          | 3106 ± 61 | **3460 ± 119** |
   | HalfCheetahBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)  | 2945 ± 95 | **3003 ± 226** |
   | HopperBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)       | 2515 ± 50 | **2555 ± 405** |
-
+  | HumanoidBulletEnv-v0 | - | ** ± ** |
 ----------------------------------
 
-**Framework:** Tensorflow 2.4
+**Framework:** Tensorflow 2.4.1
 <br>
-**Languages:** Python 3.8
+**Languages:** Python 3.8.5, Shell
 <br>
-**Author**: Martin Kubovcik
+**Author**: Martin Kubovčík

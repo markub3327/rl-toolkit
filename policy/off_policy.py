@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+import cv2
 import math
 import wandb
 import tensorflow as tf
@@ -157,24 +158,14 @@ class OffPolicy(ABC):
             )
 
     def _collect_rollouts(self):
-        discounted_reward = 0.0
-        g = 1.0
-
-        for t in range(self._env_steps):
+        for _ in range(self._env_steps):
             # select action randomly or using policy network
-            if (
-                self._total_steps < self._learning_starts 
-                or len(self._rpm) < self._learning_starts
-            ):
+            if self._total_steps < self._learning_starts:
                 # warmup
                 action = self._env.action_space.sample()
             else:
                 # Get the noisy action
                 action = self._get_action(self._last_obs, deterministic=False).numpy()
-
-            if t == 0:
-                state_0 = self._last_obs
-                action_0 = action
 
             # Step in the environment
             new_obs, reward, done, _ = self._env.step(action)
@@ -184,10 +175,9 @@ class OffPolicy(ABC):
             self._episode_reward += reward
             self._episode_steps += 1
             self._total_steps += 1
-            discounted_reward += reward * g
-            g *= self._gamma
-            # print(discounted_reward)
-            # print(g)
+
+            # Update the replay buffer
+            self._rpm.store(self._last_obs, action, reward, new_obs, done)
 
             # check the end of episode
             if done:
@@ -207,9 +197,6 @@ class OffPolicy(ABC):
             # super critical !!!
             self._last_obs = new_obs
 
-        # Update the replay buffer
-        self._rpm.store(state_0, action_0, discounted_reward, new_obs, done)
-
     def train(self):
         self._total_steps = 0
         self._total_episodes = 0
@@ -228,18 +215,24 @@ class OffPolicy(ABC):
             # collect rollouts
             self._collect_rollouts()
 
-            # update models (total_steps : rpm = 1 : 1)
+            # update models
             if (
                 self._total_steps >= self._learning_starts
-                and len(self._rpm) >= self._learning_starts  # self._batch_size
+                and len(self._rpm) >= self._batch_size
             ):
                 self._update()
                 self._logging_models()
                 # self.convert()
 
-    def test(self):
+    def test(self, render):
         self._total_steps = 0
         self._total_episodes = 0
+
+        # init video file
+        if render:
+            video_stream = cv2.VideoWriter(
+                "video/game.avi", cv2.VideoWriter_fourcc(*"MJPG"), 30, (640, 480)
+            )
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
@@ -252,6 +245,12 @@ class OffPolicy(ABC):
 
             # collect rollout
             while not done:
+                # write to stream
+                if render:
+                    img_array = self._env.render(mode="rgb_array")
+                    img_array = cv2.resize(img_array, (640, 480))
+                    video_stream.write(img_array)
+
                 # Get the action
                 action = self._get_action(self._last_obs, deterministic=True).numpy()
 
@@ -272,3 +271,7 @@ class OffPolicy(ABC):
 
             # logovanie
             self._logging_test()
+
+        # Release video file stream
+        if render:
+            video_stream.release()

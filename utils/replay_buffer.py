@@ -6,7 +6,7 @@ class ReplayBuffer:
     Experience replay buffer
 
 
-    Based on https://github.com/openai/spinningup/blob/master/spinup/algos/pytorch/ddpg/ddpg.py
+    Based on <https://github.com/openai/spinningup/blob/master/spinup/algos/pytorch/ddpg/ddpg.py>.
     """
 
     def __init__(self, obs_dim, act_dim, size):
