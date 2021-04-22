@@ -35,6 +35,9 @@ if __name__ == "__main__":
         help="Maximum number of interactions doing in environment",
         default=int(1e6),
     )
+    my_parser.add_argument(
+        "--render", action="store_true", help="Render the environment"
+    )
     my_parser.add_argument("--wandb", action="store_true", help="Logging to wanDB")
     my_parser.add_argument("-f", "--model", type=str, help="Actor's model file")
 
@@ -57,7 +60,7 @@ if __name__ == "__main__":
 
     try:
         # run testing process
-        agent.test()
+        agent.test(render=args.render)
     except KeyboardInterrupt:
         print("Terminated by user ... Bay bay")
     finally:

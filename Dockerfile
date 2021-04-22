@@ -35,11 +35,6 @@ RUN apt-get -y update && apt-get install -y \
         swig \
         && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /usr/local/
-RUN git clone https://github.com/openai/gym.git
-WORKDIR /usr/local/gym/
-RUN python3 -m pip install --no-cache-dir -e '.[nomujoco]'
-
 ###########################################
 # Tensorflow
 # Source: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/dockerfiles/dockerfiles/cpu.Dockerfile
@@ -47,22 +42,11 @@ RUN python3 -m pip install --no-cache-dir -e '.[nomujoco]'
 RUN python3 -m pip --no-cache-dir install --upgrade \
     "pip" \
     setuptools
-# Options:
-#   tensorflow
-#   tensorflow-gpu
-#   tf-nightly
-#   tf-nightly-gpu
-# Set --build-arg TF_PACKAGE_VERSION=1.11.0rc0 to install a specific version.
-# Installs the latest version by default.
-ARG TF_PACKAGE=tensorflow
-ARG TF_PACKAGE_VERSION=
-RUN python3 -m pip install --no-cache-dir ${TF_PACKAGE}${TF_PACKAGE_VERSION:+==${TF_PACKAGE_VERSION}}
 
 ###########################################
 # Dependencies
 ###########################################
 COPY requirements.txt /tmp/
-
 RUN python3 -m pip --no-cache-dir install -r /tmp/requirements.txt
 
 # vytvor pracovny priecinok pre RL nastroje

@@ -11,7 +11,12 @@ tensorflow>=2.4.0
 tensorflow_probability
 #
 #
-###### Logger ######
+###### OpenCV ######
+#
+opencv-python
+#
+#
+####### Logger ######
 #
 wandb
 #
