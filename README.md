@@ -12,34 +12,20 @@
   * [**Generalized State-Dependent Exploration**](https://arxiv.org/pdf/2005.05719.pdf)
 
 ## Setting up container
+```bash
+# Preview
+docker pull markub3327/rl-toolkit:latest
 
-
-### Build the Docker image
-
-```shell
-docker build --platform linux/amd64 -t markub/rl-toolkit:latest -f docker/Dockerfile .
+# Stable
+docker pull markub3327/rl-toolkit:release-2.0.1
 ```
-
-### Run the container
-
-On **Linux** or **MacOS**:
-```shell
-docker run -it --rm -v $PWD:/root/rl-toolkit markub/rl-toolkit python3 training.py
-```
-
-On **Windows**:
-```powershell
-docker run -it --rm -v ${PWD}:/root/rl-toolkit markub/rl-toolkit python3 training.py
-```
-
 ## Run
+```bash
+# Training container (learner)
+docker run -it --rm markub3327/rl-toolkit python3 learner.py [-h] -alg sac -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
 
-```shell
-# Run training
-python3 training.py [-h] -alg sac -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
-
-# Run testing
-python3 testing.py [-h] -alg sac -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
+# Simulation container (agent)
+docker run -it --rm markub3327/rl-toolkit python3 agent.py [-h] -alg sac -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 ```
 
 ## Tested environments
@@ -75,6 +61,6 @@ python3 testing.py [-h] -alg sac -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 
 **Framework:** Tensorflow 2.4.1
 <br>
-**Languages:** Python 3.8.5, Shell (PowerShell)
+**Languages:** Python 3.8.5, Shell
 <br>
 **Author**: Martin Kubovčík
