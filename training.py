@@ -1,6 +1,7 @@
 import argparse
 import gym
 import pybullet_envs
+import reverb
 
 # policy
 from policy import SAC
@@ -77,6 +78,23 @@ if __name__ == "__main__":
     print(env.observation_space.low, env.observation_space.high)
     print()
 
+    # Initialize the reverb server
+    db_server = reverb.Server(
+        tables=[
+            reverb.Table(
+                name='tab1',
+                sampler=reverb.selectors.Uniform(),
+                remover=reverb.selectors.Fifo(),
+                max_size=args.buffer_size,
+                rate_limiter=reverb.rate_limiters.MinSize(args.learning_starts)
+            )
+        ],
+        port=8000
+    )
+
+    while True:
+        pass
+
     # init policy
     agent = SAC(
         env=env,
@@ -84,7 +102,6 @@ if __name__ == "__main__":
         env_steps=args.env_steps,
         gradient_steps=args.gradient_steps,
         learning_starts=args.learning_starts,
-        buffer_size=args.buffer_size,
         batch_size=args.batch_size,
         actor_learning_rate=args.learning_rate,
         critic_learning_rate=args.learning_rate,

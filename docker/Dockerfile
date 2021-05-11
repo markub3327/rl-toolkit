@@ -20,8 +20,7 @@ RUN apt-get update && apt-get install -y \
 RUN ln -s $(which python3) /usr/local/bin/python
 
 ###########################################
-# OpenAI Gym
-# Source: https://github.com/openai/gym
+# Dependencies
 ###########################################
 RUN apt-get -y update && apt-get install -y \
         unzip \
@@ -36,24 +35,19 @@ RUN apt-get -y update && apt-get install -y \
         && rm -rf /var/lib/apt/lists/*
 
 ###########################################
-# Tensorflow
-# Source: https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/dockerfiles/dockerfiles/cpu.Dockerfile
+# RL Toolkit
+# Source: https://github.com/markub3327/rl-toolkit
 ###########################################
-RUN python3 -m pip --no-cache-dir install --upgrade \
-    "pip" \
-    setuptools
+WORKDIR /root/
+RUN git clone https://github.com/markub3327/rl-toolkit
+WORKDIR /root/rl-toolkit
 
-###########################################
-# Dependencies
-###########################################
 COPY requirements.txt /tmp/
 RUN python3 -m pip --no-cache-dir install -r /tmp/requirements.txt
 
-# vytvor pracovny priecinok pre RL nastroje
-RUN mkdir /root/rl-toolkit
-WORKDIR /root/rl-toolkit
-
-# nastav vychodiskovy bod pre kontajner
-COPY docker_entrypoint.sh /root
+###########################################
+# Entry point
+###########################################
+COPY docker/docker_entrypoint.sh /root
 RUN chmod +x /root/docker_entrypoint.sh
 ENTRYPOINT ["/root/docker_entrypoint.sh"]

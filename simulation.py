@@ -1,6 +1,7 @@
 import argparse
 import gym
 import pybullet_envs
+import reverb
 
 # policy
 from policy import SAC
@@ -46,6 +47,13 @@ if __name__ == "__main__":
 
     # Herne prostredie
     env = gym.make(args.environment)
+
+    # Initializes the reverb client
+    db_client = reverb.Client(f'localhost:8000')
+    print(db_client.server_info())
+
+    while True:
+        pass
 
     # init policy
     if args.policy == "sac":

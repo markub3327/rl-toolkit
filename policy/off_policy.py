@@ -6,10 +6,6 @@ import wandb
 import tensorflow as tf
 import numpy as np
 
-# utilities
-from utils.replay_buffer import ReplayBuffer
-
-
 class OffPolicy(ABC):
     """
     The base for Off-Policy algorithms
@@ -21,7 +17,6 @@ class OffPolicy(ABC):
         env_steps (int): maximum number of steps in each rollout
         gradient_steps (int): number of update steps after each rollout
         learning_starts (int): number of interactions before using policy network
-        buffer_size (int): the maximum size of experiences replay buffer
         batch_size (int): size of mini-batch used for training
         tau (float): the soft update coefficient for target networks
         gamma (float): the discount factor
@@ -38,7 +33,6 @@ class OffPolicy(ABC):
         # ---
         learning_starts: int,
         # ---
-        buffer_size: int,
         batch_size: int,
         # ---
         tau: float,
@@ -55,13 +49,6 @@ class OffPolicy(ABC):
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
         self._logging_wandb = logging_wandb
-
-        # init replay buffer
-        self._rpm = ReplayBuffer(
-            obs_dim=self._env.observation_space.shape,
-            act_dim=self._env.action_space.shape,
-            size=buffer_size,
-        )
 
         # check obseration's ranges
         if np.all(np.isfinite(self._env.observation_space.low)) and np.all(

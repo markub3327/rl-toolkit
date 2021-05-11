@@ -2,10 +2,8 @@
 
 [![Release](https://img.shields.io/github/release/markub3327/rl-toolkit)](https://github.com/markub3327/rl-toolkit/releases)
 ![Tag](https://img.shields.io/github/v/tag/markub3327/rl-toolkit)
-
 [![Issues](https://img.shields.io/github/issues/markub3327/rl-toolkit)](https://github.com/markub3327/rl-toolkit/issues)
 ![Commits](https://img.shields.io/github/commit-activity/w/markub3327/rl-toolkit)
-
 ![Languages](https://img.shields.io/github/languages/count/markub3327/rl-toolkit)
 ![Size](https://img.shields.io/github/repo-size/markub3327/rl-toolkit)
 
@@ -19,7 +17,7 @@
 ### Build the Docker image
 
 ```shell
-docker build -t markub/rl-toolkit:latest .
+docker build --platform linux/amd64 -t markub/rl-toolkit:latest -f docker/Dockerfile .
 ```
 
 ### Run the container
@@ -77,6 +75,6 @@ python3 testing.py [-h] -alg sac -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 
 **Framework:** Tensorflow 2.4.1
 <br>
-**Languages:** Python 3.8.5, Shell
+**Languages:** Python 3.8.5, Shell (PowerShell)
 <br>
 **Author**: Martin Kubovčík
