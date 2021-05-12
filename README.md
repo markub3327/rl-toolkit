@@ -14,34 +14,17 @@
   * [**Generalized State-Dependent Exploration**](https://arxiv.org/pdf/2005.05719.pdf)
 
 ## Setting up container
-
-
-### Build the Docker image
-
-```shell
-docker build -t markub/rl-toolkit:latest .
-```
-
-### Run the container
-
-On **Linux** or **MacOS**:
-```shell
-docker run -it --rm -v $PWD:/root/rl-toolkit markub/rl-toolkit python3 training.py
-```
-
-On **Windows**:
-```powershell
-docker run -it --rm -v ${PWD}:/root/rl-toolkit markub/rl-toolkit python3 training.py
+```bash
+docker pull markub3327/rl-toolkit:release-2.0.1
 ```
 
 ## Run
+```bash
+# Training container (learner)
+docker run -it --rm markub3327/rl-toolkit python3 training.py [-h] -alg sac -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
 
-```shell
-# Run training
-python3 training.py [-h] -alg sac -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
-
-# Run testing
-python3 testing.py [-h] -alg sac -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
+# Simulation container (agent)
+docker run -it --rm markub3327/rl-toolkit python3 testing.py [-h] -alg sac -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 ```
 
 ## Tested environments
