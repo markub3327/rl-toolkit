@@ -9,18 +9,9 @@ from policy import SAC
 if __name__ == "__main__":
 
     my_parser = argparse.ArgumentParser(
-        prog="python3 training.py",
-        description="RL training toolkit",
+        prog="python3 actor.py",
+        description="RL Toolkit",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-
-    # init args
-    my_parser.add_argument(
-        "-alg",
-        "--policy",
-        type=str,
-        help="The policy of agent (SAC/TD3)",
-        default="sac",
     )
     my_parser.add_argument(
         "-env",
@@ -28,6 +19,13 @@ if __name__ == "__main__":
         type=str,
         help="Only OpenAI Gym/PyBullet environments are available!",
         default="BipedalWalker-v3",
+    )
+    my_parser.add_argument(
+        "-db",
+        "--db_address",
+        type=str,
+        help="IP address or hostname of the Reverb server",
+        default="localhost",
     )
     my_parser.add_argument(
         "-t",
@@ -49,16 +47,14 @@ if __name__ == "__main__":
     env = gym.make(args.environment)
 
     # Initializes the reverb client
-    db_client = reverb.Client(f'localhost:8000')
+    db_client = reverb.Client(f'{args.db_address}:8000')
     print(db_client.server_info())
-
-    while True:
-        pass
 
     # init policy
     if args.policy == "sac":
         agent = SAC(
             env=env,
+            db=db_client,
             max_steps=args.max_steps,
             model_a_path=args.model,
             logging_wandb=args.wandb,

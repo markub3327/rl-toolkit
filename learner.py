@@ -9,11 +9,10 @@ from policy import SAC
 if __name__ == "__main__":
 
     my_parser = argparse.ArgumentParser(
-        prog="python3 training.py",
-        description="RL training toolkit",
+        prog="python3 learner.py",
+        description="RL Toolkit",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-
     my_parser.add_argument(
         "-env",
         "--environment",
@@ -51,12 +50,6 @@ if __name__ == "__main__":
     my_parser.add_argument(
         "--gradient_steps", type=int, help="Num. of gradient steps", default=64
     )
-    my_parser.add_argument(
-        "--policy_delay",
-        type=int,
-        help="Delay between critic and policy update",
-        default=2,
-    )
     my_parser.add_argument("--wandb", action="store_true", help="Logging to wanDB")
     my_parser.add_argument("-s", "--save", type=str, help="Path for saving model files")
     my_parser.add_argument("--model_a", type=str, help="Actor's model file")
@@ -78,7 +71,7 @@ if __name__ == "__main__":
     print(env.observation_space.low, env.observation_space.high)
     print()
 
-    # Initialize the reverb server
+    # Initialize the Reverb server
     db_server = reverb.Server(
         tables=[
             reverb.Table(
@@ -92,12 +85,10 @@ if __name__ == "__main__":
         port=8000
     )
 
-    while True:
-        pass
-
     # init policy
     agent = SAC(
         env=env,
+        db=db_server,
         max_steps=args.max_steps,
         env_steps=args.env_steps,
         gradient_steps=args.gradient_steps,
