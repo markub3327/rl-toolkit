@@ -2,10 +2,8 @@
 
 [![Release](https://img.shields.io/github/release/markub3327/rl-toolkit)](https://github.com/markub3327/rl-toolkit/releases)
 ![Tag](https://img.shields.io/github/v/tag/markub3327/rl-toolkit)
-
 [![Issues](https://img.shields.io/github/issues/markub3327/rl-toolkit)](https://github.com/markub3327/rl-toolkit/issues)
 ![Commits](https://img.shields.io/github/commit-activity/w/markub3327/rl-toolkit)
-
 ![Languages](https://img.shields.io/github/languages/count/markub3327/rl-toolkit)
 ![Size](https://img.shields.io/github/repo-size/markub3327/rl-toolkit)
 
