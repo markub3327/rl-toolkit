@@ -22,10 +22,10 @@ docker pull markub3327/rl-toolkit:release-2.0.1
 ## Run
 ```bash
 # Training container (learner)
-docker run -it -p 8000:8000 --rm markub3327/rl-toolkit python3 learner.py [-h] -alg sac -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
+docker run -p 8000:8000 -it --rm markub3327/rl-toolkit python3 learner.py [-h] -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
 
 # Simulation container (actor)
-docker run -it --rm markub3327/rl-toolkit python3 actor.py [-h] -alg sac -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
+docker run -it --rm markub3327/rl-toolkit python3 actor.py [-h] -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 ```
 
 ## Tested environments

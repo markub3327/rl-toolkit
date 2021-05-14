@@ -28,7 +28,7 @@ class Actor:
         clip_mean: float = 2.0,
     ):
 
-        if model_path == None:
+        if model_path is None:
             state_input = Input(shape=state_shape, name="state_input")
 
             h1 = Dense(
@@ -115,7 +115,7 @@ class Critic:
         learning_rate: float = 3e-4,
     ):
 
-        if model_path == None:
+        if model_path is None:
             # vstupna vsrtva
             state_input = Input(shape=state_shape, name="state_input")
             action_input = Input(shape=action_shape, name="action_input")

@@ -1,2 +1,2 @@
-from .off_policy import OffPolicy
-from .sac import SAC
+from .agent import Agent
+from .learner import Learner

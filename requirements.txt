@@ -7,7 +7,7 @@ pybullet
 #
 ###### Tensorflow ######
 #
-tensorflow>=2.4.0
+tensorflow
 tensorflow_probability
 #
 #

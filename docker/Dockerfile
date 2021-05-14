@@ -9,45 +9,39 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 # nainstaluj python3 a vycisti balicky
 RUN apt-get update && apt-get install -y \
-    curl \
+    git \
     python3 \
     python3-pip \
     python3-numpy \
-    git \
     && rm -rf /var/lib/apt/lists/*
-
-# Some TF tools expect a "python" binary
-RUN ln -s $(which python3) /usr/local/bin/python
 
 ###########################################
 # Dependencies
 ###########################################
 RUN apt-get -y update && apt-get install -y \
-        unzip \
         libglu1-mesa-dev \
         libgl1-mesa-dev \
         libosmesa6-dev \
         xvfb \
         patchelf \
         ffmpeg \
-        cmake \
         swig \
         && rm -rf /var/lib/apt/lists/*
 
 ###########################################
 # RL Toolkit
-# Source: https://github.com/markub3327/rl-toolkit
 ###########################################
-WORKDIR /root/
-RUN git clone https://github.com/markub3327/rl-toolkit
+RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
+
+RUN mkdir /root/rl-toolkit
+COPY . /root/rl-toolkit/
 WORKDIR /root/rl-toolkit
 
-COPY requirements.txt /tmp/
-RUN python3 -m pip --no-cache-dir install -r /tmp/requirements.txt
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
 
 ###########################################
 # Entry point
 ###########################################
-COPY docker/docker_entrypoint.sh /root
-RUN chmod +x /root/docker_entrypoint.sh
-ENTRYPOINT ["/root/docker_entrypoint.sh"]
+COPY docker/entrypoint.sh /root/
+RUN chmod +x /root/entrypoint.sh
+ENTRYPOINT ["/root/entrypoint.sh"]
