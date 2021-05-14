@@ -1,4 +1,4 @@
-from policy import Agent, agent
+from policy import Agent
 
 agent = Agent()
 
