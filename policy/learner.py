@@ -19,20 +19,22 @@ class Learner:
 
     def __init__(
         self,
+        env,
         # ---
         max_steps: int,
         # ---
         buffer_size: int = int(1e6),
         batch_size: int = 256,
         # ---
-        actor_learning_rate: float = 3e-4,
-        critic_learning_rate: float = 3e-4,
-        alpha_learning_rate: float = 3e-4,
+        actor_learning_rate: float = 7.3e-4,
+        critic_learning_rate: float = 7.3e-4,
+        alpha_learning_rate: float = 7.3e-4,
         # ---
         learning_starts: int = int(1e4),
     ):
         self._max_steps = max_steps
         self._batch_size = batch_size
+        self._env = env
 
         # logging metrics
         self._loss_a = tf.keras.metrics.Mean()
