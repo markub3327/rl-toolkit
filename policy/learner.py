@@ -25,6 +25,10 @@ class Learner:
         buffer_size: int = int(1e6),
         batch_size: int = 256,
         # ---
+        actor_learning_rate: float = 3e-4,
+        critic_learning_rate: float = 3e-4,
+        alpha_learning_rate: float = 3e-4,
+        # ---
         learning_starts: int = int(1e4),
     ):
         self._max_steps = max_steps
@@ -54,7 +58,8 @@ class Learner:
                     #        OBSERVATION_SPEC.dtype),
                     # },
                 ),
-            ]
+            ],
+            port=8000
         )
 
         # ---------------- Init param 'alpha' (Lagrangian constraint) ---------------- #
@@ -68,21 +73,20 @@ class Learner:
         )
 
         # init Weights & Biases
-        if self._logging_wandb:
-            wandb.init(project="rl-toolkit")
+        wandb.init(project="rl-toolkit")
 
-            # Settings
-            wandb.config.max_steps = max_steps
-            wandb.config.env_steps = env_steps
-            wandb.config.gradient_steps = gradient_steps
-            wandb.config.learning_starts = learning_starts
-            wandb.config.buffer_size = buffer_size
-            wandb.config.batch_size = batch_size
-            wandb.config.actor_learning_rate = actor_learning_rate
-            wandb.config.critic_learning_rate = critic_learning_rate
-            wandb.config.alpha_learning_rate = alpha_learning_rate
-            wandb.config.tau = tau
-            wandb.config.gamma = gamma
+        # Settings
+        wandb.config.max_steps = max_steps
+        #wandb.config.env_steps = env_steps
+        #wandb.config.gradient_steps = gradient_steps
+        wandb.config.learning_starts = learning_starts
+        wandb.config.buffer_size = buffer_size
+        wandb.config.batch_size = batch_size
+        wandb.config.actor_learning_rate = actor_learning_rate
+        wandb.config.critic_learning_rate = critic_learning_rate
+        wandb.config.alpha_learning_rate = alpha_learning_rate
+        #wandb.config.tau = tau
+        #wandb.config.gamma = gamma
 
     @tf.function
     def run(self):
