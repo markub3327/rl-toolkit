@@ -30,7 +30,8 @@ learner = Learner(
     max_steps=1000000
 )
 
-#learner.run()
-agent = Agent()
+agent = Agent(
+    env=env
+)
 
 agent.run(1000000)

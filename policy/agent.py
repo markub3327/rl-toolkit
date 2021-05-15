@@ -10,13 +10,15 @@ class Agent:
     =================
 
     Attributes:
-        max_steps (int): maximum number of interactions do in environment
+        env: the instance of environment object
     """
 
     def __init__(
         self,
+        env,
         # ---
     ):
+        self._env = env
 
         # Initializes the Reverb client
         self._db = reverb.Client("localhost:8000")

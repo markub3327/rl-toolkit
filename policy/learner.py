@@ -10,11 +10,14 @@ class Learner:
     =================
 
     Attributes:
+        env: the instance of environment object
         max_steps (int): maximum number of interactions do in environment
-
         buffer_size (int): maximum size of the replay buffer
         batch_size (int): size of mini-batch used for training
-
+        actor_learning_rate (float): learning rate for actor's optimizer
+        critic_learning_rate (float): learning rate for critic's optimizer
+        alpha_learning_rate (float): learning rate for alpha's optimizer
+        learning_starts (int): number of interactions before using policy network
     """
 
     def __init__(
