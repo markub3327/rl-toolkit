@@ -2,7 +2,7 @@ import reverb
 import wandb
 
 import tensorflow as tf
-
+import numpy as np
 
 class Agent:
     """
@@ -105,11 +105,14 @@ class Agent:
 
     # Wrap OpenAI Gym's `env.step` call as an operation in a TensorFlow function.
     # This would allow it to be included in a callable TensorFlow graph.
-    def _env_step(self, action):
-        state, reward, done, _ = self._env.step(action)
-        return (state, reward, done)
+    def env_step(action: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Returns state, reward and done flag given an action."""
 
-    def _tf_env_step(self, action):
-        return tf.numpy_function(
-            self._env_step, [action], [tf.float32, tf.float32, tf.float32]
-        )
+        state, reward, done, _ = env.step(action)
+        return (state.astype(np.float32), 
+            np.array(reward, np.float32), 
+            np.array(done, np.float32))
+
+
+    def tf_env_step(action: tf.Tensor) -> List[tf.Tensor]:
+        return tf.numpy_function(env_step, [action], [tf.float32, tf.float32, tf.float32])
