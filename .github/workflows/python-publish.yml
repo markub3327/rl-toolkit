@@ -20,10 +20,9 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           context: ./
           file: ./docker/Dockerfile
-          push: true
           repository: markub3327/rl-toolkit
           tag_with_ref: true
-      
+
       - name: Push to GitHub Packages
         uses: docker/build-push-action@v1
         with:
