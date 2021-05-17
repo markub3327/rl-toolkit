@@ -128,9 +128,8 @@ class SAC(OffPolicy):
         # init Weights & Biases
         if self._logging_wandb:
             wandb.init(project="rl-toolkit")
-            ###
-            ### Settings
-            ###
+
+            # Settings
             wandb.config.max_steps = max_steps
             wandb.config.env_steps = env_steps
             wandb.config.gradient_steps = gradient_steps
@@ -152,7 +151,7 @@ class SAC(OffPolicy):
         )
         return tf.squeeze(a, axis=0)  # remove batch_size dim
 
-    # ------------------------------------ update critic ----------------------------------- #
+    # -------------------------------- update critic ------------------------------- #
     def _update_critic(self, batch):
         next_action, next_log_pi = self._actor.predict(batch["obs2"])
 
@@ -198,7 +197,7 @@ class SAC(OffPolicy):
 
         return q1_loss, q2_loss
 
-    # ------------------------------------ update actor ----------------------------------- #
+    # -------------------------------- update actor ------------------------------- #
     def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
@@ -222,7 +221,7 @@ class SAC(OffPolicy):
 
         return a_loss
 
-    # ------------------------------------ update alpha ----------------------------------- #
+    # -------------------------------- update alpha ------------------------------- #
     def _update_alpha(self, batch):
         _, log_pi = self._actor.predict(batch["obs"])
         # tf.print(f'y_pred: {y_pred.shape}')
@@ -256,7 +255,7 @@ class SAC(OffPolicy):
         # Actor model update
         self._loss_a.update_state(self._update_actor(batch))
 
-        # ---------------------------- soft update target networks ---------------------------- #
+        # -------------------- soft update target networks -------------------- #
         self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
         self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
