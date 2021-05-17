@@ -67,11 +67,11 @@ class OffPolicy(ABC):
         if np.all(np.isfinite(self._env.observation_space.low)) and np.all(
             np.isfinite(self._env.observation_space.high)
         ):
-            self._normalize = self._normalize_fn  #  obs = F_n(obs)
+            self._normalize = self._normalize_fn
 
             print("Observation will be normalized !\n")
         else:
-            self._normalize = lambda a: a  #  obs = obs
+            self._normalize = lambda a: a
 
             print("Observation cannot be normalized !\n")
 
