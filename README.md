@@ -13,7 +13,7 @@
 
 ## Setting up container
 ```bash
-docker pull markub3327/rl-toolkit:release-2.0.1
+docker pull markub3327/rl-toolkit:2.0.1
 ```
 
 ## Run
