@@ -1,6 +1,6 @@
 import argparse
 import gym
-import pybullet_envs
+import pybullet_envs  # noqa
 
 # policy
 from policy import SAC
