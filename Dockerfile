@@ -42,6 +42,6 @@ RUN python3 -m pip install --no-cache-dir -r requirements.txt
 ###########################################
 # Entry point
 ###########################################
-COPY docker/entrypoint.sh /root/
-RUN chmod +x /root/entrypoint.sh
-ENTRYPOINT ["/root/entrypoint.sh"]
+COPY docker_entrypoint.sh /root/
+RUN chmod +x /root/docker_entrypoint.sh
+ENTRYPOINT ["/root/docker_entrypoint.sh"]
