@@ -13,16 +13,16 @@
 
 ## Setting up container
 ```bash
-docker pull markub3327/rl-toolkit:2.0.1
+docker pull markub3327/rl-toolkit:2.0.2
 ```
 
 ## Run
 ```bash
 # Training container (learner)
-docker run -it --rm markub3327/rl-toolkit python3 training.py [-h] -alg sac -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
+docker run -it --rm markub3327/rl-toolkit:2.0.2 python3 training.py [-h] -alg sac -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
 
 # Simulation container (agent)
-docker run -it --rm markub3327/rl-toolkit python3 testing.py [-h] -alg sac -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
+docker run -it --rm markub3327/rl-toolkit:2.0.2 python3 testing.py [-h] -alg sac -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
 ```
 
 ## Tested environments
