@@ -1,8 +1,9 @@
 name: Publish on Docker Hub & GitHub Packages
 
-on:
-  release:
-    types: [published]
+#on:
+#  release:
+#    types: [published]
+on: [push]
 
 jobs:
 
