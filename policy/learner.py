@@ -73,20 +73,20 @@ class Learner:
             model_path=model_a_path,
         )
 
-        train_step = tf.Variable(
+        self._train_step = tf.Variable(
             0,
             trainable=False,
             dtype=tf.uint64,
             aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
             shape=()
         )
-        variables = {
-            'train_step': train_step,
+        self._my_vars = {
+            'train_step': self._train_step,
             'actor_variables': self._actor.model.variables
         }
         variable_container_signature = tf.nest.map_structure(
             lambda variable: tf.TensorSpec(variable.shape, dtype=variable.dtype),
-            variables
+            self._my_vars
         )
         print(f'Signature of variables: \n{variable_container_signature}')
 
@@ -168,6 +168,12 @@ class Learner:
             max_in_flight_samples_per_worker=10,
         ).batch(batch_size)
 
+        # Push variables
+        self._tf_client = reverb.TFClient(
+            server_address="localhost:8000"
+        )
+        self._sync_vars(self._my_vars)
+
         # init Weights & Biases
         # wandb.init(project="rl-toolkit")
 
@@ -187,6 +193,8 @@ class Learner:
     @tf.function
     def run(self):
         for step in tf.range(self._max_steps):
+            self._train_step.aasign(step)
+
             # iterate over dataset
             for sample in self._dataset:
                 # re-new noise matrix every update of 'log_std' params
@@ -229,12 +237,20 @@ class Learner:
             #                )
 
             # save params to table
+            self._sync_vars(self._my_vars)
 
             # reset logger
             self._loss_a.reset_states()
             self._loss_c1.reset_states()
             self._loss_c2.reset_states()
             self._loss_alpha.reset_states()
+
+    def _sync_vars(self, values):
+        self._tf_client.insert(
+            data=tf.nest.flatten(values),
+            tables=tf.constant(["model_vars"]),
+            priorities=tf.constant([1.0], dtype=tf.float32)
+        )
 
     def save(self, path):
         # Save model to local drive
