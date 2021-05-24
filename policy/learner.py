@@ -55,45 +55,6 @@ class Learner:
         self._loss_c2 = tf.keras.metrics.Mean("loss_c2", dtype=tf.float32)
         self._loss_alpha = tf.keras.metrics.Mean("loss_alpha", dtype=tf.float32)
 
-        # Initialize the Reverb server
-        self._db = reverb.Server(
-            tables=[
-                reverb.Table(
-                    name="uniform_table",
-                    sampler=reverb.selectors.Uniform(),
-                    remover=reverb.selectors.Fifo(),
-                    max_size=buffer_size,
-                    rate_limiter=reverb.rate_limiters.MinSize(learning_starts),
-                    signature={
-                        "obs": tf.TensorSpec(
-                            [*env.observation_space.shape], env.observation_space.dtype
-                        ),
-                        "action": tf.TensorSpec(
-                            [*env.action_space.shape], env.action_space.dtype
-                        ),
-                        "reward": tf.TensorSpec([1], tf.float32),
-                        "obs2": tf.TensorSpec(
-                            [*env.observation_space.shape], env.observation_space.dtype
-                        ),
-                        "done": tf.TensorSpec([1], tf.float32),
-                    },
-                ),
-            ],
-            port=8000,
-        )
-
-        print("DB started")
-
-        # Dataset samples sequences of length 3 and streams the timesteps one by one.
-        # This allows streaming large sequences that do not necessarily fit in memory.
-        self._dataset = reverb.TrajectoryDataset.from_table_signature(
-            server_address="localhost:8000",
-            table="uniform_table",
-            max_in_flight_samples_per_worker=10,
-        ).batch(batch_size)
-
-        print("Dataset created")
-
         # ---------------- Init param 'alpha' (Lagrangian constraint) ---------------- #
         self._log_alpha = tf.Variable(0.0, trainable=True, name="log_alpha")
         self._alpha = tf.Variable(0.0, trainable=False, name="alpha")
@@ -111,6 +72,8 @@ class Learner:
             learning_rate=actor_learning_rate,
             model_path=model_a_path,
         )
+        print("Actor:")
+        print(self._actor.variables)
 
         # Critic network & target network
         self._critic_1 = Critic(
@@ -143,6 +106,59 @@ class Learner:
         # first make a hard copy
         self._update_target(self._critic_1, self._critic_targ_1, tau=tf.constant(1.0))
         self._update_target(self._critic_2, self._critic_targ_2, tau=tf.constant(1.0))
+
+        # Initialize the Reverb server
+        self._db = reverb.Server(
+            tables=[
+                reverb.Table(  # Replay buffer
+                    name="uniform_table",
+                    sampler=reverb.selectors.Uniform(),
+                    remover=reverb.selectors.Fifo(),
+                    rate_limiter=reverb.rate_limiters.MinSize(learning_starts),
+                    max_size=buffer_size,
+                    signature={
+                        "obs": tf.TensorSpec(
+                            [*env.observation_space.shape],
+                            dtype=env.observation_space.dtype,
+                        ),
+                        "action": tf.TensorSpec(
+                            [*env.action_space.shape], dtype=env.action_space.dtype
+                        ),
+                        "reward": tf.TensorSpec([1], dtype=tf.float32),
+                        "obs2": tf.TensorSpec(
+                            [*env.observation_space.shape],
+                            dtype=env.observation_space.dtype,
+                        ),
+                        "done": tf.TensorSpec([1], dtype=tf.float32),
+                    },
+                ),
+                reverb.Table(  # Actor's variables
+                    name="model_vars",
+                    sampler=reverb.selectors.Uniform(),
+                    remover=reverb.selectors.Fifo(),
+                    rate_limiter=reverb.rate_limiters.MinSize(1),
+                    max_size=1,
+                    max_times_sampled=0,
+                    signature={
+                        "train_step": tf.TensorSpec(
+                            [*env.observation_space.shape], dtype=tf.uint64
+                        ),
+                        "actor_variables": tf.TensorSpec(
+                            [*env.observation_space.shape], dtype=tf.float32
+                        ),
+                    },
+                ),
+            ],
+            port=8000,
+        )
+
+        # Dataset samples sequences of length 3 and streams the timesteps one by one.
+        # This allows streaming large sequences that do not necessarily fit in memory.
+        self._dataset = reverb.TrajectoryDataset.from_table_signature(
+            server_address="localhost:8000",
+            table="uniform_table",
+            max_in_flight_samples_per_worker=10,
+        ).batch(batch_size)
 
         # init Weights & Biases
         # wandb.init(project="rl-toolkit")
