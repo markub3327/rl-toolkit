@@ -90,8 +90,8 @@ class Agent:
                     # Update the replay buffer
                     writer.append(
                         {
-                            "obs": self._last_obs,
-                            "action": action,
+                            "obs": np.array(self._last_obs, dtype=np.float32),
+                            "action": np.array(action, dtype=np.float32),
                             "reward": np.array([reward], dtype=np.float32),
                             "done": np.array([done], dtype=np.float32),
                         }
