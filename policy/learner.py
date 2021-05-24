@@ -193,7 +193,7 @@ class Learner:
     @tf.function
     def run(self):
         for step in tf.range(self._max_steps):
-            self._train_step.aasign(step)
+            self._train_step.assign(step)
 
             # iterate over dataset
             for sample in self._dataset:
