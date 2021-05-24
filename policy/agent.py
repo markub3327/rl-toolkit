@@ -62,8 +62,9 @@ class Agent:
             # re-new noise matrix before every rollouts
             self._actor.reset_noise()
 
-            # collect rollouts
+            # init writer
             with self._db.trajectory_writer(num_keep_alive_refs=2) as writer:
+                # collect rollouts
                 for step in range(self._env_steps):
                     # select action randomly or using policy network
                     if self._total_steps < self._learning_starts:
@@ -145,5 +146,5 @@ class Agent:
                     # super critical !!!
                     self._last_obs = obs2
 
-                # Block until the item has been inserted and confirmed by the server.
+                # Block until the item has been inserted and confirmed by the server (after each rollout)
                 writer.flush()

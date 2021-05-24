@@ -204,6 +204,9 @@ class Learner:
             #                    step=step,
             #                )
 
+            # save params to table
+            
+
             # reset logger
             self._loss_a.reset_states()
             self._loss_c1.reset_states()
