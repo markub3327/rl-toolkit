@@ -1,10 +1,6 @@
 # nainstaluj Ubuntu 20.04 LTS
 FROM ubuntu:20.04
 
-# Maintainer
-LABEL org.opencontainers.image.source="https://github.com/markub3327/rl-toolkit"
-LABEL org.opencontainers.image.authors="markub3327@gmail.com"
-
 # nastav jazyk
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 
