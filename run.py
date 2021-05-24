@@ -24,7 +24,7 @@ args = my_parser.parse_args()
 # Herne prostredie
 env = gym.make(args.environment)
 
-
+# init agent
 agent = Agent(env=env, max_steps=1000000)
 
 try:

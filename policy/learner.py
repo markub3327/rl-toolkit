@@ -73,7 +73,9 @@ class Learner:
             model_path=model_a_path,
         )
         print("Actor:")
-        print(self._actor.variables)
+        print(self._actor.model.variables)
+        print(self._actor.model.variables.shape)
+        print(self._actor.model.variables.dtype)
 
         # Critic network & target network
         self._critic_1 = Critic(
@@ -140,11 +142,10 @@ class Learner:
                     max_size=1,
                     max_times_sampled=0,
                     signature={
-                        "train_step": tf.TensorSpec(
-                            [*env.observation_space.shape], dtype=tf.uint64
-                        ),
+                        "train_step": tf.TensorSpec([1], dtype=tf.uint64),
                         "actor_variables": tf.TensorSpec(
-                            [*env.observation_space.shape], dtype=tf.float32
+                            [*self._actor.model.variables.shape],
+                            dtype=self._actor.model.variables.dtype,
                         ),
                     },
                 ),
@@ -163,7 +164,7 @@ class Learner:
         # init Weights & Biases
         # wandb.init(project="rl-toolkit")
 
-        # Settings
+        # set Weights & Biases
         # wandb.config.max_steps = max_steps
         # wandb.config.env_steps = env_steps
         # wandb.config.gradient_steps = gradient_steps
