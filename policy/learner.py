@@ -205,7 +205,6 @@ class Learner:
             #                )
 
             # save params to table
-            
 
             # reset logger
             self._loss_a.reset_states()

@@ -146,5 +146,5 @@ class Agent:
                     # super critical !!!
                     self._last_obs = obs2
 
-                # Block until the item has been inserted and confirmed by the server (after each rollout)
+                # send to db (after each rollout)
                 writer.flush()
