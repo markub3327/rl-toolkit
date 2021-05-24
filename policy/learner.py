@@ -72,12 +72,23 @@ class Learner:
             learning_rate=actor_learning_rate,
             model_path=model_a_path,
         )
-        actor_vars = tf.nest.flatten(self._actor.model.variables)
 
-        print("Actor:")
-        print(actor_vars)
-        print(actor_vars.shape)
-        print(actor_vars.dtype)
+        train_step = tf.Variable(
+            0,
+            trainable=False,
+            dtype=tf.uint64,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            shape=()
+        )
+        variables = {
+            'train_step': train_step,
+            'actor_variables': self._actor.model.variables
+        }
+        variable_container_signature = tf.nest.map_structure(
+            lambda variable: tf.TensorSpec(variable.shape, dtype=variable.dtype),
+            variables
+        )
+        print(f'Signature of variables: \n{variable_container_signature}')
 
         # Critic network & target network
         self._critic_1 = Critic(
@@ -143,13 +154,7 @@ class Learner:
                     rate_limiter=reverb.rate_limiters.MinSize(1),
                     max_size=1,
                     max_times_sampled=0,
-                    signature={
-                        "train_step": tf.TensorSpec([1], dtype=tf.uint64),
-                        "actor_variables": tf.TensorSpec(
-                            [*actor_vars.shape],
-                            dtype=actor_vars.dtype,
-                        ),
-                    },
+                    signature=variable_container_signature,
                 ),
             ],
             port=8000,
