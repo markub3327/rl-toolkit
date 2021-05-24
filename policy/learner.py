@@ -72,10 +72,12 @@ class Learner:
             learning_rate=actor_learning_rate,
             model_path=model_a_path,
         )
+        actor_vars = tf.nest.flatten(self._actor.model.variables)
+
         print("Actor:")
-        print(self._actor.model.variables)
-        print(self._actor.model.variables.shape)
-        print(self._actor.model.variables.dtype)
+        print(actor_vars)
+        print(actor_vars.shape)
+        print(actor_vars.dtype)
 
         # Critic network & target network
         self._critic_1 = Critic(
@@ -144,8 +146,8 @@ class Learner:
                     signature={
                         "train_step": tf.TensorSpec([1], dtype=tf.uint64),
                         "actor_variables": tf.TensorSpec(
-                            [*self._actor.model.variables.shape],
-                            dtype=self._actor.model.variables.dtype,
+                            [*actor_vars.shape],
+                            dtype=actor_vars.dtype,
                         ),
                     },
                 ),
