@@ -33,8 +33,8 @@ RUN apt-get -y update && apt-get install -y \
 ###########################################
 RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
-RUN mkdir /root/rl-toolkit
-COPY . /root/rl-toolkit/
+WORKDIR /root/
+RUN git clone https://github.com/markub3327/rl-toolkit.git
 WORKDIR /root/rl-toolkit
 
 RUN python3 -m pip install --no-cache-dir -r requirements.txt
