@@ -249,7 +249,7 @@ class Learner:
         self._tf_client.insert(
             data=tf.nest.flatten(values),
             tables=tf.constant(["model_vars"]),
-            priorities=tf.constant([1.0], dtype=tf.float32)
+            priorities=tf.constant([1.0], dtype=tf.float64)
         )
 
     def save(self, path):
