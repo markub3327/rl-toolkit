@@ -1,2 +1,2 @@
-from .agent import Agent
-from .learner import Learner
+from .agent import Agent  # noqe
+from .learner import Learner  # noqe

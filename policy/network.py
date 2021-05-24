@@ -1,8 +1,8 @@
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Input, Concatenate, Dense, Lambda
+from tensorflow.keras.layers import Input, Concatenate, Dense, Lambda, Minimum
 from tensorflow.keras.models import load_model
-from .noisy_layer import NoisyLayer
+from .layers import NoisyLayer
 
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -10,7 +10,7 @@ import tensorflow_probability as tfp
 
 class Actor:
     """
-    Actor (for SAC)
+    Actor
     ===============
     Attributes:
         state_shape: the shape of state space
@@ -97,7 +97,7 @@ class Actor:
 
 class Critic:
     """
-    Critic (for SAC)
+    Critic
     ===============
 
     Attributes:
@@ -130,6 +130,66 @@ class Critic:
 
             # vystupna vrstva   -- Q hodnoty su v intervale (-∞, ∞)
             output = Dense(1, activation="linear", name="q_val")(h2)
+
+            # Vytvor model
+            self.model = Model(inputs=[state_input, action_input], outputs=output)
+        else:
+            # Nacitaj model
+            self.model = load_model(model_path)
+            print("Critic loaded from file succesful ...")
+
+        # Optimalizator modelu
+        self.optimizer = Adam(learning_rate=learning_rate)
+
+        self.model.summary()
+
+
+class TwinCritic:
+    """
+    TwinCritic
+    ===============
+
+    Attributes:
+        state_shape: the shape of state space
+        action_shape: the shape of action space
+        learning_rate (float): learning rate for optimizer
+        model_path (str): path to the model
+    """
+
+    def __init__(
+        self,
+        state_shape=None,
+        action_shape=None,
+        model_path=None,
+        learning_rate: float = 3e-4,
+    ):
+
+        if model_path is None:
+            # vstupna vsrtva
+            state_input = Input(shape=state_shape, name="state_input")
+            action_input = Input(shape=action_shape, name="action_input")
+
+            merged = Concatenate()([state_input, action_input])
+
+            c1_h1 = Dense(
+                400, activation="relu", kernel_initializer="he_uniform", name="c1_h1"
+            )(merged)
+            c1_h2 = Dense(
+                300, activation="relu", kernel_initializer="he_uniform", name="c1_h2"
+            )(c1_h1)
+
+            c2_h1 = Dense(
+                400, activation="relu", kernel_initializer="he_uniform", name="c2_h1"
+            )(merged)
+            c2_h2 = Dense(
+                300, activation="relu", kernel_initializer="he_uniform", name="c2_h2"
+            )(c2_h1)
+
+            # vystupna vrstva   -- Q hodnoty su v intervale (-∞, ∞)
+            c1_output = Dense(1, activation="linear", name="q1_val")(c1_h2)
+            c2_output = Dense(1, activation="linear", name="q2_val")(c2_h2)
+
+            output = Minimum()([c1_output, c2_output])
 
             # Vytvor model
             self.model = Model(inputs=[state_input, action_input], outputs=output)

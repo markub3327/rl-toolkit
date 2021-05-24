@@ -1,7 +1,10 @@
 import reverb
-import wandb
+
+# import wandb
 
 import tensorflow as tf
+
+from .network import Actor, Critic
 
 
 class Learner:
@@ -26,6 +29,8 @@ class Learner:
         # ---
         max_steps: int,
         # ---
+        learning_starts: int = int(1e4),
+        # ---
         buffer_size: int = int(1e6),
         batch_size: int = 256,
         # ---
@@ -33,39 +38,61 @@ class Learner:
         critic_learning_rate: float = 7.3e-4,
         alpha_learning_rate: float = 7.3e-4,
         # ---
-        learning_starts: int = int(1e4),
+        tau: float = 0.01,
+        gamma: float = 0.99,
+        # ---
+        model_a_path: str = None,
+        model_c1_path: str = None,
+        model_c2_path: str = None,
     ):
         self._max_steps = max_steps
-        self._batch_size = batch_size
-        self._env = env
+        self._gamma = tf.constant(gamma)
+        self._tau = tf.constant(tau)
 
         # logging metrics
-        self._loss_a = tf.keras.metrics.Mean()
-        self._loss_c1 = tf.keras.metrics.Mean()
-        self._loss_c2 = tf.keras.metrics.Mean()
-        self._loss_alpha = tf.keras.metrics.Mean()
+        self._loss_a = tf.keras.metrics.Mean("loss_a", dtype=tf.float32)
+        self._loss_c1 = tf.keras.metrics.Mean("loss_c1", dtype=tf.float32)
+        self._loss_c2 = tf.keras.metrics.Mean("loss_c2", dtype=tf.float32)
+        self._loss_alpha = tf.keras.metrics.Mean("loss_alpha", dtype=tf.float32)
 
         # Initialize the Reverb server
         self._db = reverb.Server(
             tables=[
                 reverb.Table(
-                    name="my_uniform_experience_replay_buffer",
+                    name="uniform_table",
                     sampler=reverb.selectors.Uniform(),
                     remover=reverb.selectors.Fifo(),
                     max_size=buffer_size,
                     rate_limiter=reverb.rate_limiters.MinSize(learning_starts),
-                    # signature={
-                    #    'actions': tf.TensorSpec(
-                    #        [EPISODE_LENGTH, *ACTION_SPEC.shape],
-                    #        ACTION_SPEC.dtype),
-                    #    'observations': tf.TensorSpec(
-                    #        [EPISODE_LENGTH + 1, *OBSERVATION_SPEC.shape],
-                    #        OBSERVATION_SPEC.dtype),
-                    # },
+                    signature={
+                        "obs": tf.TensorSpec(
+                            [*env.observation_space.shape], env.observation_space.dtype
+                        ),
+                        "action": tf.TensorSpec(
+                            [*env.action_space.shape], env.action_space.dtype
+                        ),
+                        "reward": tf.TensorSpec([1], tf.float32),
+                        "obs2": tf.TensorSpec(
+                            [*env.observation_space.shape], env.observation_space.dtype
+                        ),
+                        "done": tf.TensorSpec([1], tf.float32),
+                    },
                 ),
             ],
-            port=8000
+            port=8000,
         )
+
+        print("DB started")
+
+        # Dataset samples sequences of length 3 and streams the timesteps one by one.
+        # This allows streaming large sequences that do not necessarily fit in memory.
+        self._dataset = reverb.TrajectoryDataset.from_table_signature(
+            server_address="localhost:8000",
+            table="uniform_table",
+            max_in_flight_samples_per_worker=10,
+        ).batch(batch_size)
+
+        print("Dataset created")
 
         # ---------------- Init param 'alpha' (Lagrangian constraint) ---------------- #
         self._log_alpha = tf.Variable(0.0, trainable=True, name="log_alpha")
@@ -74,60 +101,108 @@ class Learner:
             learning_rate=alpha_learning_rate, name="alpha_optimizer"
         )
         self._target_entropy = tf.cast(
-            -tf.reduce_prod(self._env.action_space.shape), dtype=tf.float32
+            -tf.reduce_prod(env.action_space.shape), dtype=tf.float32
         )
 
+        # Actor network
+        self._actor = Actor(
+            state_shape=env.observation_space.shape,
+            action_shape=env.action_space.shape,
+            learning_rate=actor_learning_rate,
+            model_path=model_a_path,
+        )
+
+        # Critic network & target network
+        self._critic_1 = Critic(
+            state_shape=env.observation_space.shape,
+            action_shape=env.action_space.shape,
+            learning_rate=critic_learning_rate,
+            model_path=model_c1_path,
+        )
+        self._critic_targ_1 = Critic(
+            state_shape=env.observation_space.shape,
+            action_shape=env.action_space.shape,
+            learning_rate=critic_learning_rate,
+            model_path=model_c1_path,
+        )
+
+        # Critic network & target network
+        self._critic_2 = Critic(
+            state_shape=env.observation_space.shape,
+            action_shape=env.action_space.shape,
+            learning_rate=critic_learning_rate,
+            model_path=model_c2_path,
+        )
+        self._critic_targ_2 = Critic(
+            state_shape=env.observation_space.shape,
+            action_shape=env.action_space.shape,
+            learning_rate=critic_learning_rate,
+            model_path=model_c2_path,
+        )
+
+        # first make a hard copy
+        self._update_target(self._critic_1, self._critic_targ_1, tau=tf.constant(1.0))
+        self._update_target(self._critic_2, self._critic_targ_2, tau=tf.constant(1.0))
+
         # init Weights & Biases
-        wandb.init(project="rl-toolkit")
+        # wandb.init(project="rl-toolkit")
 
         # Settings
-        wandb.config.max_steps = max_steps
-        #wandb.config.env_steps = env_steps
-        #wandb.config.gradient_steps = gradient_steps
-        wandb.config.learning_starts = learning_starts
-        wandb.config.buffer_size = buffer_size
-        wandb.config.batch_size = batch_size
-        wandb.config.actor_learning_rate = actor_learning_rate
-        wandb.config.critic_learning_rate = critic_learning_rate
-        wandb.config.alpha_learning_rate = alpha_learning_rate
-        #wandb.config.tau = tau
-        #wandb.config.gamma = gamma
+        # wandb.config.max_steps = max_steps
+        # wandb.config.env_steps = env_steps
+        # wandb.config.gradient_steps = gradient_steps
+        # wandb.config.learning_starts = learning_starts
+        # wandb.config.buffer_size = buffer_size
+        # wandb.config.batch_size = batch_size
+        # wandb.config.actor_learning_rate = actor_learning_rate
+        # wandb.config.critic_learning_rate = critic_learning_rate
+        # wandb.config.alpha_learning_rate = alpha_learning_rate
+        # wandb.config.tau = tau
+        # wandb.config.gamma = gamma
 
     @tf.function
     def run(self):
-        # hlavny cyklus ucenia
-        for _ in range(self._max_steps):
-            # get mini-batch from db
-            batch = self._rpm.sample(self._batch_size)
+        for step in tf.range(self._max_steps):
+            # iterate over dataset
+            for sample in self._dataset:
+                # re-new noise matrix every update of 'log_std' params
+                self._actor.reset_noise()
 
-            # re-new noise matrix every update of 'log_std' params
-            self._actor.reset_noise()
+                # Alpha param update
+                self._loss_alpha.update_state(self._update_alpha(sample))
 
-            # Alpha param update
-            self._loss_alpha.update_state(self._update_alpha(batch))
+                l_c1, l_c2 = self._update_critic(sample)
+                self._loss_c1.update_state(l_c1)
+                self._loss_c2.update_state(l_c2)
 
-            l_c1, l_c2 = self._update_critic(batch)
-            self._loss_c1.update_state(l_c1)
-            self._loss_c2.update_state(l_c2)
+                # Actor model update
+                self._loss_a.update_state(self._update_actor(sample))
 
-            # Actor model update
-            self._loss_a.update_state(self._update_actor(batch))
+                # ------------------- soft update target networks ------------------- #
+                self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
+                self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
-            # -------------------- soft update target networks -------------------- #
-            self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
-            self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
+                tf.print("=============================================")
+                tf.print(f"Step: {step}")
+                tf.print(f"Alpha: {self._alpha}")
+                tf.print(f"Actor's loss: {self._loss_a.result()}")
+                tf.print(f"Critic 1's loss: {self._loss_c1.result()}")
+                tf.print(f"Critic 2's loss: {self._loss_c2.result()}")
+                tf.print(f"Alpha's loss: {self._loss_alpha.result()}")
+                tf.print("=============================================")
+                tf.print(f"Training ... {(step * 100) / self._max_steps} %")
 
-            # log to W&B
-            wandb.log(
-                {
-                    "loss_a": self._loss_a.result(),
-                    "loss_c1": self._loss_c1.result(),
-                    "loss_c2": self._loss_c2.result(),
-                    "loss_alpha": self._loss_alpha.result(),
-                    "alpha": self._alpha,
-                },
-                step=self._total_steps,
-            )
+                # log to W&B
+            #                wandb.log(
+            #                    {
+            #                        "loss_a": self._loss_a.result(),
+            #                        "loss_c1": self._loss_c1.result(),
+            #                        "loss_c2": self._loss_c2.result(),
+            #                        "loss_alpha": self._loss_alpha.result(),
+            #                        "alpha": self._alpha,
+            #                    },
+            #                    step=step,
+            #                )
 
             # reset logger
             self._loss_a.reset_states()
@@ -135,9 +210,15 @@ class Learner:
             self._loss_c2.reset_states()
             self._loss_alpha.reset_states()
 
+    def save(self, path):
+        # Save model to local drive
+        self._actor.model.save(f"{path}model_A.h5")
+        self._critic_1.model.save(f"{path}model_C1.h5")
+        self._critic_2.model.save(f"{path}model_C2.h5")
+
     # -------------------------------- update alpha ------------------------------- #
     def _update_alpha(self, batch):
-        _, log_pi = self._actor.predict(batch["obs"])
+        _, log_pi = self._actor.predict(batch.data["obs"])
 
         self._alpha.assign(tf.exp(self._log_alpha))
         with tf.GradientTape() as tape:
@@ -153,22 +234,24 @@ class Learner:
 
     # -------------------------------- update critic ------------------------------- #
     def _update_critic(self, batch):
-        next_action, next_log_pi = self._actor.predict(batch["obs2"])
+        next_action, next_log_pi = self._actor.predict(batch.data["obs2"])
 
         # target Q-values
-        next_q_1 = self._critic_targ_1.model([batch["obs2"], next_action])
-        next_q_2 = self._critic_targ_2.model([batch["obs2"], next_action])
+        next_q_1 = self._critic_targ_1.model([batch.data["obs2"], next_action])
+        next_q_2 = self._critic_targ_2.model([batch.data["obs2"], next_action])
         next_q = tf.minimum(next_q_1, next_q_2)
 
         # Bellman Equation
         Q_targets = tf.stop_gradient(
-            batch["rew"]
-            + (1 - batch["done"]) * self._gamma * (next_q - self._alpha * next_log_pi)
+            batch.data["reward"]
+            + (1 - batch.data["done"])
+            * self._gamma
+            * (next_q - self._alpha * next_log_pi)
         )
 
         # update critic '1'
         with tf.GradientTape() as tape:
-            q_values = self._critic_1.model([batch["obs"], batch["act"]])
+            q_values = self._critic_1.model([batch.data["obs"], batch.data["action"]])
             q_losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_targets, y_pred=q_values
             )
@@ -181,7 +264,7 @@ class Learner:
 
         # update critic '2'
         with tf.GradientTape() as tape:
-            q_values = self._critic_2.model([batch["obs"], batch["act"]])
+            q_values = self._critic_2.model([batch.data["obs"], batch.data["action"]])
             q_losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_targets, y_pred=q_values
             )
@@ -198,11 +281,11 @@ class Learner:
     def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
-            y_pred, log_pi = self._actor.predict(batch["obs"])
+            y_pred, log_pi = self._actor.predict(batch.data["obs"])
 
             # predict q value
-            q_1 = self._critic_1.model([batch["obs"], y_pred])
-            q_2 = self._critic_2.model([batch["obs"], y_pred])
+            q_1 = self._critic_1.model([batch.data["obs"], y_pred])
+            q_2 = self._critic_2.model([batch.data["obs"], y_pred])
             q = tf.minimum(q_1, q_2)
 
             a_losses = self._alpha * log_pi - q
@@ -214,3 +297,9 @@ class Learner:
         )
 
         return a_loss
+
+    def _update_target(self, net, net_targ, tau):
+        for source_weight, target_weight in zip(
+            net.model.trainable_variables, net_targ.model.trainable_variables
+        ):
+            target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
