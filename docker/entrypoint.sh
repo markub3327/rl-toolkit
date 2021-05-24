@@ -23,7 +23,4 @@ if ! [ -e "$file" ]; then
     exit 1
 fi
 
-# update repo
-git pull
-
 exec "$@"
