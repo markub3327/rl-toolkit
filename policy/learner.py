@@ -5,6 +5,7 @@ import reverb
 import tensorflow as tf
 
 from .network import Actor, Critic
+from .reverb_utils import ReverbSyncPolicy
 
 
 class Learner:
@@ -73,23 +74,6 @@ class Learner:
             model_path=model_a_path,
         )
 
-        self._train_step = tf.Variable(
-            0,
-            trainable=False,
-            dtype=tf.int32,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            shape=()
-        )
-        self._my_vars = {
-            'train_step': self._train_step,
-            'actor_variables': self._actor.model.variables
-        }
-        variable_container_signature = tf.nest.map_structure(
-            lambda variable: tf.TensorSpec(variable.shape, dtype=variable.dtype),
-            self._my_vars
-        )
-        print(f'Signature of variables: \n{variable_container_signature}')
-
         # Critic network & target network
         self._critic_1 = Critic(
             state_shape=env.observation_space.shape,
@@ -154,7 +138,18 @@ class Learner:
                     rate_limiter=reverb.rate_limiters.MinSize(1),
                     max_size=1,
                     max_times_sampled=0,
-                    signature=variable_container_signature,
+                    signature={
+                        "train_step": tf.TensorSpec(
+                            [],
+                            dtype=tf.int32,
+                        ),
+                        "actor_variables": tf.nest.map_structure(
+                            lambda variable: tf.TensorSpec(
+                                variable.shape, dtype=variable.dtype
+                            ),
+                            self._actor.model.variables,
+                        ),
+                    },
                 ),
             ],
             port=8000,
@@ -168,11 +163,8 @@ class Learner:
             max_in_flight_samples_per_worker=10,
         ).batch(batch_size)
 
-        # Push variables
-        self._tf_client = reverb.TFClient(
-            server_address="localhost:8000"
-        )
-        self._sync_vars(self._my_vars)
+        self.reverb_sync_policy = ReverbSyncPolicy(self._actor.model)
+        self.reverb_sync_policy.update(0)
 
         # init Weights & Biases
         # wandb.init(project="rl-toolkit")
@@ -193,8 +185,6 @@ class Learner:
     @tf.function
     def run(self):
         for step in tf.range(self._max_steps):
-            self._train_step.assign(step)
-
             # iterate over dataset
             for sample in self._dataset:
                 # re-new noise matrix every update of 'log_std' params
@@ -237,20 +227,13 @@ class Learner:
             #                )
 
             # save params to table
-            self._sync_vars(self._my_vars)
+            self.reverb_sync_policy.update(step)
 
             # reset logger
             self._loss_a.reset_states()
             self._loss_c1.reset_states()
             self._loss_c2.reset_states()
             self._loss_alpha.reset_states()
-
-    def _sync_vars(self, values):
-        self._tf_client.insert(
-            data=tf.nest.flatten(values),
-            tables=tf.constant(["model_vars"]),
-            priorities=tf.constant([1.0], dtype=tf.float64)
-        )
 
     def save(self, path):
         # Save model to local drive

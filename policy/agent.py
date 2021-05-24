@@ -5,6 +5,7 @@ import tensorflow as tf
 import numpy as np
 
 from .network import Actor
+from .reverb_utils import ReverbSyncPolicy
 
 
 class Agent:
@@ -40,6 +41,9 @@ class Agent:
             action_shape=self._env.action_space.shape,
         )
 
+        self.reverb_sync_policy = ReverbSyncPolicy(self._actor)
+        self.reverb_sync_policy.sync()
+
         # init Weights & Biases
         wandb.init(project="rl-toolkit")
 
@@ -61,6 +65,7 @@ class Agent:
         while self._total_steps < self._max_steps:
             # re-new noise matrix before every rollouts
             self._actor.reset_noise()
+            self.reverb_sync_policy.sync()
 
             # init writer
             with self._db.trajectory_writer(num_keep_alive_refs=2) as writer:
@@ -128,7 +133,7 @@ class Agent:
                                 "epoch": self._total_episodes,
                                 "score": self._episode_reward,
                                 "steps": self._episode_steps,
-                                "replayBuffer": len(self._rpm),
+                                #        "replayBuffer": len(self._rpm),
                             },
                             step=self._total_steps,
                         )
