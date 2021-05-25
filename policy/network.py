@@ -24,7 +24,7 @@ class Actor:
         self,
         state_shape=None,
         action_shape=None,
-        model_path=None,
+        model_path: str = None,
         learning_rate: float = None,
         clip_mean: float = 2.0,
     ):
@@ -126,7 +126,7 @@ class Critic:
         self,
         state_shape=None,
         action_shape=None,
-        model_path=None,
+        model_path: str = None,
         learning_rate: float = 3e-4,
     ):
 
