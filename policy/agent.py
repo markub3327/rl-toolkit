@@ -77,13 +77,7 @@ class Agent:
                         # warmup
                         action = self._env.action_space.sample()
                     else:
-                        # Get the noisy action
-                        action, _ = self._actor.predict(
-                            tf.expand_dims(self._last_obs, axis=0),
-                            with_logprob=False,
-                            deterministic=False,
-                        )
-                        action = tf.squeeze(action, axis=0)
+                        action = self._get_action(self._last_obs, deterministic=False)
 
                     # Step in the environment
                     obs2, reward, done, _ = self._env.step(action)
@@ -153,5 +147,11 @@ class Agent:
                     # super critical !!!
                     self._last_obs = obs2
 
-                # send to db (after each rollout)
-                writer.flush()
+    @tf.function
+    def _get_action(self, state, deterministic):
+        a, _ = self._actor.predict(
+            tf.expand_dims(state, axis=0),
+            with_logprob=False,
+            deterministic=deterministic,
+        )
+        return tf.squeeze(a, axis=0)  # remove batch_size dim

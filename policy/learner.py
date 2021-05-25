@@ -28,7 +28,6 @@ class Learner:
         env,
         # ---
         max_steps: int,
-        gradient_steps: int = 64,
         # ---
         learning_starts: int = int(1e4),
         # ---
@@ -47,9 +46,8 @@ class Learner:
         model_c2_path: str = None,
     ):
         self._max_steps = max_steps
-        self._gradient_steps = gradient_steps
-        self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
+        self._gamma = tf.constant(gamma)
 
         # logging metrics
         self._loss_a = tf.keras.metrics.Mean("loss_a", dtype=tf.float32)
@@ -172,7 +170,6 @@ class Learner:
 
         # set Weights & Biases
         wandb.config.max_steps = max_steps
-        wandb.config.gradient_steps = gradient_steps
         wandb.config.learning_starts = learning_starts
         wandb.config.buffer_size = buffer_size
         wandb.config.batch_size = batch_size
@@ -183,42 +180,43 @@ class Learner:
         wandb.config.gamma = gamma
 
     @tf.function
-    def do_update(self, step):
-        # iterate over dataset
-        for sample in self._dataset.take(self._gradient_steps):
-            # re-new noise matrix every update of 'log_std' params
-            self._actor.reset_noise()
+    def do_update(self, sample):
+        # re-new noise matrix every update of 'log_std' params
+        self._actor.reset_noise()
 
-            # Alpha param update
-            self._loss_alpha.update_state(self._update_alpha(sample))
+        # Alpha param update
+        self._loss_alpha.update_state(self._update_alpha(sample))
 
-            l_c1, l_c2 = self._update_critic(sample)
-            self._loss_c1.update_state(l_c1)
-            self._loss_c2.update_state(l_c2)
+        l_c1, l_c2 = self._update_critic(sample)
+        self._loss_c1.update_state(l_c1)
+        self._loss_c2.update_state(l_c2)
 
-            # Actor model update
-            self._loss_a.update_state(self._update_actor(sample))
+        # Actor model update
+        self._loss_a.update_state(self._update_actor(sample))
 
-            # ------------------- soft update target networks ------------------- #
-            self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
-            self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
+        # ------------------- soft update target networks ------------------- #
+        self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
+        self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
-            # save params to table
-            self.reverb_sync_policy.update(step)
+        # save params to table
+        self.reverb_sync_policy.update(self._total_steps)
 
     def run(self):
-        for step in range(self._max_steps):
-            self.do_update(step)
-            
+        self._total_steps = 0
+
+        # iterating over dataset
+        for sample in self._dataset:
+            self.do_update(sample)
+
             print("=============================================")
-            print(f"Step: {step}")
+            print(f"Step: {self._total_steps}")
             print(f"Alpha: {self._alpha}")
             print(f"Actor's loss: {self._loss_a.result()}")
             print(f"Critic 1's loss: {self._loss_c1.result()}")
             print(f"Critic 2's loss: {self._loss_c2.result()}")
             print(f"Alpha's loss: {self._loss_alpha.result()}")
             print("=============================================")
-            print(f"Training ... {(step * 100) / self._max_steps} %")
+            print(f"Training ... {(self._total_steps * 100) / self._max_steps} %")
 
             # log to W&B
             wandb.log(
@@ -229,8 +227,15 @@ class Learner:
                     "loss_alpha": self._loss_alpha.result(),
                     "alpha": self._alpha,
                 },
-                step=step,
+                step=self._total_steps,
             )
+
+            # update variables
+            self._total_steps += 1
+
+            # The maximal training epoch was reached
+            if self._total_steps >= self._max_steps:
+                break
 
             # reset logger
             self._loss_a.reset_states()
