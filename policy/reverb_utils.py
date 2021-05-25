@@ -46,5 +46,3 @@ class ReverbSyncPolicy:
             tf.nest.flatten(self.vars), tf.nest.flatten(sample.data[0])
         ):
             variable.assign(value)
-
-        print(sample.data[0])
