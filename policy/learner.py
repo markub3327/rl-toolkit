@@ -182,7 +182,7 @@ class Learner:
         # wandb.config.tau = tau
         # wandb.config.gamma = gamma
 
-    @tf.function
+    #@tf.function
     def run(self):
         for step in tf.range(self._max_steps):
             # iterate over dataset

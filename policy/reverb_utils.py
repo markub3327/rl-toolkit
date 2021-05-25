@@ -36,6 +36,7 @@ class ReverbSyncPolicy:
             tables=tf.constant(["model_vars"]),
             priorities=tf.constant([1.0], dtype=tf.float64),
         )
+        print(self.vars)
 
     def sync(self):
         sample = self._tf_client.sample("model_vars", data_dtypes=[self._dtypes])
