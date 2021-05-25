@@ -4,7 +4,7 @@ import tensorflow as tf
 
 
 class ReverbSyncPolicy:
-    def __init__(self, actor):
+    def __init__(self, server_name, actor):
 
         # actual training step
         self._train_step = tf.Variable(
@@ -27,7 +27,7 @@ class ReverbSyncPolicy:
 
         self._dtypes = tf.nest.map_structure(lambda spec: spec.dtype, self.vars)
 
-        self._tf_client = reverb.TFClient(server_address="localhost:8000")
+        self._tf_client = reverb.TFClient(server_address=f"{server_name}:8000")
 
     def update(self, train_step):
         self._train_step.assign(train_step)

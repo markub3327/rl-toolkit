@@ -41,7 +41,7 @@ class Agent:
             action_shape=self._env.action_space.shape,
         )
 
-        self.reverb_sync_policy = ReverbSyncPolicy(self._actor.model)
+        self.reverb_sync_policy = ReverbSyncPolicy("192.168.1.38", self._actor.model)
 
         # init Weights & Biases
         wandb.init(project="rl-toolkit")

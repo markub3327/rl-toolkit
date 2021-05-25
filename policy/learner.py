@@ -163,7 +163,7 @@ class Learner:
             max_in_flight_samples_per_worker=10,
         ).batch(batch_size)
 
-        self.reverb_sync_policy = ReverbSyncPolicy(self._actor.model)
+        self.reverb_sync_policy = ReverbSyncPolicy("localhost", self._actor.model)
         self.reverb_sync_policy.update(0)
 
         # init Weights & Biases
