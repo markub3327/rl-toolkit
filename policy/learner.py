@@ -168,20 +168,19 @@ class Learner:
         self.reverb_sync_policy.update(0)
 
         # init Weights & Biases
-        # wandb.init(project="rl-toolkit")
+        wandb.init(project="rl-toolkit")
 
         # set Weights & Biases
-        # wandb.config.max_steps = max_steps
-        # wandb.config.env_steps = env_steps
-        # wandb.config.gradient_steps = gradient_steps
-        # wandb.config.learning_starts = learning_starts
-        # wandb.config.buffer_size = buffer_size
-        # wandb.config.batch_size = batch_size
-        # wandb.config.actor_learning_rate = actor_learning_rate
-        # wandb.config.critic_learning_rate = critic_learning_rate
-        # wandb.config.alpha_learning_rate = alpha_learning_rate
-        # wandb.config.tau = tau
-        # wandb.config.gamma = gamma
+        wandb.config.max_steps = max_steps
+        wandb.config.gradient_steps = gradient_steps
+        wandb.config.learning_starts = learning_starts
+        wandb.config.buffer_size = buffer_size
+        wandb.config.batch_size = batch_size
+        wandb.config.actor_learning_rate = actor_learning_rate
+        wandb.config.critic_learning_rate = critic_learning_rate
+        wandb.config.alpha_learning_rate = alpha_learning_rate
+        wandb.config.tau = tau
+        wandb.config.gamma = gamma
 
     @tf.function
     def do_update(self):
