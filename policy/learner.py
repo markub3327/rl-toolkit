@@ -29,6 +29,7 @@ class Learner:
         env,
         # ---
         max_steps: int,
+        gradient_steps: int = 64,
         # ---
         learning_starts: int = int(1e4),
         # ---
@@ -47,6 +48,7 @@ class Learner:
         model_c2_path: str = None,
     ):
         self._max_steps = max_steps
+        self._gradient_steps = gradient_steps
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
 
@@ -186,7 +188,7 @@ class Learner:
     def run(self):
         for step in range(self._max_steps):
             # iterate over dataset
-            for sample in self._dataset:
+            for sample in self._dataset.take(self._gradient_steps):
                 # re-new noise matrix every update of 'log_std' params
                 self._actor.reset_noise()
 
