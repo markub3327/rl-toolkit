@@ -17,6 +17,13 @@ my_parser.add_argument(
     help="Only OpenAI Gym/PyBullet environments are available!",
     default="BipedalWalker-v3",
 )
+my_parser.add_argument(
+    "-t",
+    "--max_steps",
+    type=int,
+    help="Maximum number of interactions doing in environment",
+    default=int(1e6),
+)
 
 # nacitaj zadane argumenty programu
 args = my_parser.parse_args()
@@ -25,7 +32,7 @@ args = my_parser.parse_args()
 env = gym.make(args.environment)
 
 # init agent
-agent = Agent(env=env, max_steps=1000000)
+agent = Agent(env=env, max_steps=args.max_steps)
 
 try:
     # run training process
