@@ -42,7 +42,6 @@ class Agent:
         )
 
         self.reverb_sync_policy = ReverbSyncPolicy(self._actor)
-        self.reverb_sync_policy.sync()
 
         # init Weights & Biases
         wandb.init(project="rl-toolkit")
@@ -63,9 +62,11 @@ class Agent:
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
+            # Sync actor's params with db
+            self.reverb_sync_policy.sync()
+
             # re-new noise matrix before every rollouts
             self._actor.reset_noise()
-            self.reverb_sync_policy.sync()
 
             # init writer
             with self._db.trajectory_writer(num_keep_alive_refs=2) as writer:
@@ -123,6 +124,7 @@ class Agent:
                         print(f"Score: {self._episode_reward}")
                         print(f"Steps: {self._episode_steps}")
                         print(f"TotalInteractions: {self._total_steps}")
+                        print(f"Train step: {self.reverb_sync_policy._train_step}")
                         print("=============================================")
                         print(
                             f"Running ... {(self._total_steps*100)/self._max_steps} %"
