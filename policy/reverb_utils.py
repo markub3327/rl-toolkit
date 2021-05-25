@@ -33,7 +33,7 @@ class ReverbSyncPolicy:
         self._train_step.assign(train_step)
         self._tf_client.insert(
             data=tf.nest.flatten(self.vars),
-            tables="model_vars",
+            tables=tf.constant(["model_vars"]),
             priorities=tf.constant([1.0], dtype=tf.float64),
         )
 
