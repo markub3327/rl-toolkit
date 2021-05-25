@@ -165,7 +165,6 @@ class Learner:
 
         self.reverb_sync_policy = ReverbSyncPolicy("localhost", self._actor.model)
         self.reverb_sync_policy.update(0)
-        print(self.reverb_sync_policy._train_step)
 
         # init Weights & Biases
         # wandb.init(project="rl-toolkit")
@@ -185,7 +184,7 @@ class Learner:
 
     #@tf.function
     def run(self):
-        for step in tf.range(self._max_steps):
+        for step in range(self._max_steps):
             # iterate over dataset
             for sample in self._dataset:
                 # re-new noise matrix every update of 'log_std' params
@@ -230,7 +229,6 @@ class Learner:
 
             # save params to table
             self.reverb_sync_policy.update(step)
-            print(self.reverb_sync_policy._train_step)
 
             # reset logger
             self._loss_a.reset_states()
