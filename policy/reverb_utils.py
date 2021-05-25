@@ -17,7 +17,7 @@ class ReverbSyncPolicy:
 
         self.vars = {
             "train_step": self._train_step,
-            "actor_variables": actor.model.variables,
+            "actor_variables": actor.variables,
         }
         variable_container_signature = tf.nest.map_structure(
             lambda variable: tf.TensorSpec(variable.shape, dtype=variable.dtype),
