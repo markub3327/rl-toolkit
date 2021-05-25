@@ -183,7 +183,7 @@ class Learner:
         wandb.config.gamma = gamma
 
     @tf.function
-    def do_update(self):
+    def do_update(self, step):
         # iterate over dataset
         for sample in self._dataset.take(self._gradient_steps):
             # re-new noise matrix every update of 'log_std' params
@@ -203,9 +203,22 @@ class Learner:
             self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
             self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
+            # save params to table
+            self.reverb_sync_policy.update(step)
+
     def run(self):
         for step in range(self._max_steps):
-            self.do_update()
+            self.do_update(step)
+            
+            print("=============================================")
+            print(f"Step: {step}")
+            print(f"Alpha: {self._alpha}")
+            print(f"Actor's loss: {self._loss_a.result()}")
+            print(f"Critic 1's loss: {self._loss_c1.result()}")
+            print(f"Critic 2's loss: {self._loss_c2.result()}")
+            print(f"Alpha's loss: {self._loss_alpha.result()}")
+            print("=============================================")
+            print(f"Training ... {(step * 100) / self._max_steps} %")
 
             # log to W&B
             wandb.log(
@@ -218,9 +231,6 @@ class Learner:
                 },
                 step=step,
             )
-
-            # save params to table
-            self.reverb_sync_policy.update(step)
 
             # reset logger
             self._loss_a.reset_states()
