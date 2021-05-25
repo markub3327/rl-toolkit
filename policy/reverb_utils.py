@@ -31,12 +31,14 @@ class ReverbSyncPolicy:
 
     def update(self, train_step):
         self._train_step.assign(train_step)
+
+        print(self.vars)
+
         self._tf_client.insert(
             data=tf.nest.flatten(self.vars),
             tables=tf.constant(["model_vars"]),
             priorities=tf.constant([1.0], dtype=tf.float64),
         )
-        print(self.vars)
 
     def sync(self):
         sample = self._tf_client.sample("model_vars", data_dtypes=[self._dtypes])
@@ -44,3 +46,5 @@ class ReverbSyncPolicy:
             tf.nest.flatten(self.vars), tf.nest.flatten(sample.data[0])
         ):
             variable.assign(value)
+
+        print(sample.data[0])

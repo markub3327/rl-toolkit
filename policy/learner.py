@@ -165,6 +165,7 @@ class Learner:
 
         self.reverb_sync_policy = ReverbSyncPolicy("localhost", self._actor.model)
         self.reverb_sync_policy.update(0)
+        print(self.reverb_sync_policy._train_step)
 
         # init Weights & Biases
         # wandb.init(project="rl-toolkit")
@@ -228,6 +229,7 @@ class Learner:
 
             # save params to table
             self.reverb_sync_policy.update(step)
+            print(self.reverb_sync_policy._train_step)
 
             # reset logger
             self._loss_a.reset_states()
