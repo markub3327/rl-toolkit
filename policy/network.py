@@ -1,6 +1,6 @@
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Input, Concatenate, Dense, Lambda, Minimum
+from tensorflow.keras.layers import Input, Concatenate, Dense, Lambda
 from tensorflow.keras.models import load_model
 from tensorflow.keras import initializers
 from .layers import NoisyLayer

@@ -37,11 +37,11 @@ env = gym.make(args.environment)
 
 # init learner
 learner = Learner(
-    env=env, 
+    env=env,
     max_steps=args.max_steps,
     model_a_path=args.model_a,
     model_c1_path=args.model_c1,
-    model_c2_path=args.model_c2
+    model_c2_path=args.model_c2,
 )
 
 try:
