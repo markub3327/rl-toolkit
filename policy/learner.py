@@ -184,9 +184,9 @@ class Learner:
         # wandb.config.tau = tau
         # wandb.config.gamma = gamma
 
-    #@tf.function
+    @tf.function
     def run(self):
-        for step in range(self._max_steps):
+        for step in tf.range(self._max_steps):
             # iterate over dataset
             for sample in self._dataset.take(self._gradient_steps):
                 # re-new noise matrix every update of 'log_std' params
