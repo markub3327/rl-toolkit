@@ -1,6 +1,5 @@
 import reverb
-
-# import wandb
+import wandb
 
 import tensorflow as tf
 
@@ -185,48 +184,41 @@ class Learner:
         # wandb.config.gamma = gamma
 
     @tf.function
+    def do_update(self):
+        # iterate over dataset
+        for sample in self._dataset.take(self._gradient_steps):
+            # re-new noise matrix every update of 'log_std' params
+            self._actor.reset_noise()
+
+            # Alpha param update
+            self._loss_alpha.update_state(self._update_alpha(sample))
+
+            l_c1, l_c2 = self._update_critic(sample)
+            self._loss_c1.update_state(l_c1)
+            self._loss_c2.update_state(l_c2)
+
+            # Actor model update
+            self._loss_a.update_state(self._update_actor(sample))
+
+            # ------------------- soft update target networks ------------------- #
+            self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
+            self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
+
     def run(self):
-        for step in tf.range(self._max_steps):
-            # iterate over dataset
-            for sample in self._dataset.take(self._gradient_steps):
-                # re-new noise matrix every update of 'log_std' params
-                self._actor.reset_noise()
+        for step in range(self._max_steps):
+            self.do_update()
 
-                # Alpha param update
-                self._loss_alpha.update_state(self._update_alpha(sample))
-
-                l_c1, l_c2 = self._update_critic(sample)
-                self._loss_c1.update_state(l_c1)
-                self._loss_c2.update_state(l_c2)
-
-                # Actor model update
-                self._loss_a.update_state(self._update_actor(sample))
-
-                # ------------------- soft update target networks ------------------- #
-                self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
-                self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
-
-                tf.print("=============================================")
-                tf.print(f"Step: {step}")
-                tf.print(f"Alpha: {self._alpha}")
-                tf.print(f"Actor's loss: {self._loss_a.result()}")
-                tf.print(f"Critic 1's loss: {self._loss_c1.result()}")
-                tf.print(f"Critic 2's loss: {self._loss_c2.result()}")
-                tf.print(f"Alpha's loss: {self._loss_alpha.result()}")
-                tf.print("=============================================")
-                tf.print(f"Training ... {(step * 100) / self._max_steps} %")
-
-                # log to W&B
-            #                wandb.log(
-            #                    {
-            #                        "loss_a": self._loss_a.result(),
-            #                        "loss_c1": self._loss_c1.result(),
-            #                        "loss_c2": self._loss_c2.result(),
-            #                        "loss_alpha": self._loss_alpha.result(),
-            #                        "alpha": self._alpha,
-            #                    },
-            #                    step=step,
-            #                )
+            # log to W&B
+            wandb.log(
+                {
+                    "loss_a": self._loss_a.result(),
+                    "loss_c1": self._loss_c1.result(),
+                    "loss_c2": self._loss_c2.result(),
+                    "loss_alpha": self._loss_alpha.result(),
+                    "alpha": self._alpha,
+                },
+                step=step,
+            )
 
             # save params to table
             self.reverb_sync_policy.update(step)
