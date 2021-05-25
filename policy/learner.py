@@ -215,7 +215,6 @@ class Learner:
                 tf.print(f"Alpha's loss: {self._loss_alpha.result()}")
                 tf.print("=============================================")
                 tf.print(f"Training ... {(step * 100) / self._max_steps} %")
-                tf.print(self.reverb_sync_policy.vars)
 
                 # log to W&B
             #                wandb.log(
