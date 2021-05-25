@@ -4,7 +4,6 @@ import wandb
 import tensorflow as tf
 
 from .network import Actor, Critic
-from .reverb_utils import ReverbSyncPolicy
 
 
 class Learner:
@@ -72,6 +71,9 @@ class Learner:
             learning_rate=actor_learning_rate,
             model_path=model_a_path,
         )
+        self._policy_params = {
+            "actor_variables": self._actor.model.variables,
+        }
 
         # Critic network & target network
         self._critic_1 = Critic(
@@ -127,7 +129,7 @@ class Learner:
                             [*env.observation_space.shape],
                             dtype=env.observation_space.dtype,
                         ),
-                        "done": tf.TensorSpec([1], dtype=tf.float32),
+                        "terminal": tf.TensorSpec([1], dtype=tf.float32),
                     },
                 ),
                 reverb.Table(  # Actor's variables
@@ -138,10 +140,6 @@ class Learner:
                     max_size=1,
                     max_times_sampled=0,
                     signature={
-                        "train_step": tf.TensorSpec(
-                            [],
-                            dtype=tf.int32,
-                        ),
                         "actor_variables": tf.nest.map_structure(
                             lambda variable: tf.TensorSpec(
                                 variable.shape, dtype=variable.dtype
@@ -154,16 +152,15 @@ class Learner:
             port=8000,
         )
 
-        # Dataset samples sequences of length 3 and streams the timesteps one by one.
-        # This allows streaming large sequences that do not necessarily fit in memory.
+        # init dataset
         self._dataset = reverb.TrajectoryDataset.from_table_signature(
             server_address="localhost:8000",
             table="uniform_table",
             max_in_flight_samples_per_worker=10,
         ).batch(batch_size)
 
-        self.reverb_sync_policy = ReverbSyncPolicy("localhost", self._actor.model)
-        self.reverb_sync_policy.update(0)
+        # init TF client
+        self._tf_client = reverb.TFClient(server_address="localhost:8000")
 
         # init Weights & Biases
         wandb.init(project="rl-toolkit")
@@ -199,7 +196,11 @@ class Learner:
         self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
         # save params to table
-        self.reverb_sync_policy.update(self._total_steps)
+        self._tf_client.insert(
+            data=tf.nest.flatten(self._policy_params),
+            tables=tf.constant(["model_vars"]),
+            priorities=tf.constant([1.0], dtype=tf.float64),
+        )
 
     def run(self):
         self._total_steps = 0
@@ -277,7 +278,7 @@ class Learner:
         # Bellman Equation
         Q_targets = tf.stop_gradient(
             batch.data["reward"]
-            + (1 - batch.data["done"])
+            + (1 - batch.data["terminal"])
             * self._gamma
             * (next_q - self._alpha * next_log_pi)
         )

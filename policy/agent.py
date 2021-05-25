@@ -5,7 +5,6 @@ import tensorflow as tf
 import numpy as np
 
 from .network import Actor
-from .reverb_utils import ReverbSyncPolicy
 
 
 class Agent:
@@ -41,8 +40,6 @@ class Agent:
             action_shape=self._env.action_space.shape,
         )
 
-        self.reverb_sync_policy = ReverbSyncPolicy("192.168.1.38", self._actor.model)
-
         # init Weights & Biases
         wandb.init(project="rl-toolkit")
 
@@ -63,7 +60,7 @@ class Agent:
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
             # Sync actor's params with db
-            self.reverb_sync_policy.sync()
+            self._actor.update(tf.nest.flatten(self._db.sample("model_vars").data[0]))
 
             # re-new noise matrix before every rollouts
             self._actor.reset_noise()
@@ -80,7 +77,7 @@ class Agent:
                         action = self._get_action(self._last_obs, deterministic=False)
 
                     # Step in the environment
-                    obs2, reward, done, _ = self._env.step(action)
+                    obs2, reward, terminal, _ = self._env.step(action)
 
                     # update variables
                     self._episode_reward += reward
@@ -93,7 +90,7 @@ class Agent:
                             "obs": np.array(self._last_obs, dtype=np.float32),
                             "action": np.array(action, dtype=np.float32),
                             "reward": np.array([reward], dtype=np.float32),
-                            "done": np.array([done], dtype=np.float32),
+                            "terminal": np.array([terminal], dtype=np.float32),
                         }
                     )
 
@@ -107,18 +104,17 @@ class Agent:
                                 "action": writer.history["action"][-2],
                                 "reward": writer.history["reward"][-2],
                                 "obs2": writer.history["obs"][-1],
-                                "done": writer.history["done"][-2],
+                                "terminal": writer.history["terminal"][-2],
                             },
                         )
 
                     # check the end of episode
-                    if done:
+                    if terminal:
                         print("=============================================")
                         print(f"Epoch: {self._total_episodes}")
                         print(f"Score: {self._episode_reward}")
                         print(f"Steps: {self._episode_steps}")
                         print(f"TotalInteractions: {self._total_steps}")
-                        print(f"Train step: {self.reverb_sync_policy._train_step}")
                         print("=============================================")
                         print(
                             f"Running ... {(self._total_steps*100)/self._max_steps} %"
