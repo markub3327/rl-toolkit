@@ -65,13 +65,13 @@ class Agent:
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
             # Sync actor's params with db
-            self._actor.update(
-                tf.nest.flatten(
-                    self._tf_db_client.sample(
-                        "model_vars", data_dtypes=[self._policy_dtypes]
-                    ).data[0]
-                )
-            )
+            #self._actor.update(
+            #    tf.nest.flatten(
+            #        self._tf_db_client.sample(
+            #            "model_vars", data_dtypes=[self._policy_dtypes]
+            #        ).data[0]
+            #    )
+            #)
 
             # re-new noise matrix before every rollouts
             self._actor.reset_noise()
