@@ -125,7 +125,7 @@ class Learner:
                         "action": tf.TensorSpec(
                             [*env.action_space.shape], dtype=env.action_space.dtype
                         ),
-                        "reward": tf.TensorSpec([1], dtype=tf.float32),
+                        "reward": tf.TensorSpec([n_step_returns, 1], dtype=tf.float32),
                         "obs2": tf.TensorSpec(
                             [*env.observation_space.shape],
                             dtype=env.observation_space.dtype,
@@ -265,7 +265,7 @@ class Learner:
 
         # Bellman Equation
         Q_targets = tf.stop_gradient(
-            batch.data["reward"]
+            self._get_reward(batch.data["reward"])
             + (1 - batch.data["terminal"])
             * self._gamma ** self._n_step_returns
             * (next_q - self._alpha * next_log_pi)
@@ -325,3 +325,11 @@ class Learner:
             net.model.trainable_variables, net_targ.model.trainable_variables
         ):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
+
+    def _get_reward(self, rewards):
+        discounted_reward, g = rewards[:, 0], self._gamma
+        for i in tf.range(1, self._n_step_returns + 1):
+            discounted_reward += rewards[:, i] * g
+            g *= self._gamma
+        tf.print(discounted_reward)
+        tf.print(g)

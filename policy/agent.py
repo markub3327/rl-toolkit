@@ -106,12 +106,6 @@ class Agent:
                     )
 
                     if step >= self._n_step_returns:
-                        # calc N-step return
-                        discounted_reward = self._get_reward(
-                            writer.history["reward"][-self._n_step_returns :]
-                        )
-
-                        # store in db
                         writer.create_item(
                             table="uniform_table",
                             priority=1.0,
@@ -120,7 +114,9 @@ class Agent:
                                 "action": writer.history["action"][
                                     -self._n_step_returns
                                 ],
-                                "reward": discounted_reward,
+                                "reward": writer.history["reward"][
+                                    -self._n_step_returns :
+                                ],
                                 "obs2": writer.history["obs"][-1],
                                 "terminal": writer.history["terminal"][-1],
                             },
@@ -163,15 +159,6 @@ class Agent:
 
                 # Block until the item has been inserted and confirmed by the server.
                 writer.flush()
-
-    @tf.function
-    def _get_reward(self, rewards):
-        discounted_reward, g = 0.0, 1.0
-        for reward in rewards:
-            discounted_reward += reward * g
-            g *= self._gamma
-        tf.print(discounted_reward)
-        tf.print(g)
 
     @tf.function
     def _get_action(self, state, deterministic):
