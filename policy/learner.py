@@ -1,5 +1,5 @@
 import reverb
-import wandb
+#import wandb
 
 import tensorflow as tf
 
@@ -163,18 +163,18 @@ class Learner:
         self._tf_client = reverb.TFClient(server_address="localhost:8000")
 
         # init Weights & Biases
-        wandb.init(project="rl-toolkit")
+        #wandb.init(project="rl-toolkit")
 
         # set Weights & Biases
-        wandb.config.max_steps = max_steps
-        wandb.config.learning_starts = learning_starts
-        wandb.config.buffer_size = buffer_size
-        wandb.config.batch_size = batch_size
-        wandb.config.actor_learning_rate = actor_learning_rate
-        wandb.config.critic_learning_rate = critic_learning_rate
-        wandb.config.alpha_learning_rate = alpha_learning_rate
-        wandb.config.tau = tau
-        wandb.config.gamma = gamma
+        #wandb.config.max_steps = max_steps
+        #wandb.config.learning_starts = learning_starts
+        #wandb.config.buffer_size = buffer_size
+        #wandb.config.batch_size = batch_size
+        #wandb.config.actor_learning_rate = actor_learning_rate
+        #wandb.config.critic_learning_rate = critic_learning_rate
+        #wandb.config.alpha_learning_rate = alpha_learning_rate
+        #wandb.config.tau = tau
+        #wandb.config.gamma = gamma
 
     #@tf.function
     def do_update(self, sample):
@@ -205,6 +205,8 @@ class Learner:
     def run(self):
         self._total_steps = 0
 
+        print('Training starting ...')
+
         # iterating over dataset
         for sample in self._dataset:
             self.do_update(sample)
@@ -220,16 +222,16 @@ class Learner:
             print(f"Training ... {(self._total_steps * 100) / self._max_steps} %")
 
             # log to W&B
-            wandb.log(
-                {
-                    "loss_a": self._loss_a.result(),
-                    "loss_c1": self._loss_c1.result(),
-                    "loss_c2": self._loss_c2.result(),
-                    "loss_alpha": self._loss_alpha.result(),
-                    "alpha": self._alpha,
-                },
-                step=self._total_steps,
-            )
+            #wandb.log(
+            #    {
+            #        "loss_a": self._loss_a.result(),
+            #        "loss_c1": self._loss_c1.result(),
+            #        "loss_c2": self._loss_c2.result(),
+            #        "loss_alpha": self._loss_alpha.result(),
+            #        "alpha": self._alpha,
+            #    },
+            #    step=self._total_steps,
+            #)
 
             # update variables
             self._total_steps += 1

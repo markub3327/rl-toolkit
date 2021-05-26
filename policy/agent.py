@@ -1,5 +1,5 @@
 import reverb
-import wandb
+#import wandb
 
 import tensorflow as tf
 import numpy as np
@@ -41,12 +41,12 @@ class Agent:
         )
 
         # init Weights & Biases
-        wandb.init(project="rl-toolkit")
+        #wandb.init(project="rl-toolkit")
 
         # Settings
-        wandb.config.max_steps = self._max_steps
-        wandb.config.env_steps = self._env_steps
-        wandb.config.learning_starts = self._learning_starts
+        #wandb.config.max_steps = self._max_steps
+        #wandb.config.env_steps = self._env_steps
+        #wandb.config.learning_starts = self._learning_starts
 
     def run(self):
         self._total_steps = 0
@@ -122,15 +122,15 @@ class Agent:
                             f"Running ... {(self._total_steps*100)/self._max_steps} %"
                         )
 
-                        wandb.log(
-                            {
-                                "epoch": self._total_episodes,
-                                "score": self._episode_reward,
-                                "steps": self._episode_steps,
-                                #        "replayBuffer": len(self._rpm),
-                            },
-                            step=self._total_steps,
-                        )
+                        #wandb.log(
+                        #    {
+                        #        "epoch": self._total_episodes,
+                        #        "score": self._episode_reward,
+                        #        "steps": self._episode_steps,
+                        #        #        "replayBuffer": len(self._rpm),
+                        #    },
+                        #    step=self._total_steps,
+                        #)
 
                         self._episode_reward = 0.0
                         self._episode_steps = 0
