@@ -184,32 +184,30 @@ class Learner:
         wandb.config.gamma = gamma
 
     @tf.function
-    def do_update(self):
-        for sample in self._dataset.take(self._gradient_steps):
-            # re-new noise matrix every update of 'log_std' params
-            self._actor.reset_noise()
+    def do_update(self, sample):
+        # re-new noise matrix every update of 'log_std' params
+        self._actor.reset_noise()
 
-            # Alpha param update
-            self._loss_alpha.update_state(self._update_alpha(sample))
+        # Alpha param update
+        self._loss_alpha.update_state(self._update_alpha(sample))
 
-            l_c1, l_c2 = self._update_critic(sample)
-            self._loss_c1.update_state(l_c1)
-            self._loss_c2.update_state(l_c2)
+        l_c1, l_c2 = self._update_critic(sample)
+        self._loss_c1.update_state(l_c1)
+        self._loss_c2.update_state(l_c2)
 
-            # Actor model update
-            self._loss_a.update_state(self._update_actor(sample))
+        # Actor model update
+        self._loss_a.update_state(self._update_actor(sample))
 
-            # ------------------- soft update target networks ------------------- #
-            self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
-            self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
-
-        # save updated variables to table
-        self._reverb_policy_container.insert()
+        # ------------------- soft update target networks ------------------- #
+        self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
+        self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
     def run(self):
-        # hlavny cyklus ucenia
-        for step in range(self._learning_starts, self._max_steps, self._gradient_steps):
-            self.do_update()
+        self._total_steps = self._learning_starts
+
+        # iterating over dataset
+        for sample in self._dataset:
+            self.do_update(sample)
 
             # log to W&B
             wandb.log(
@@ -220,8 +218,28 @@ class Learner:
                     "loss_alpha": self._loss_alpha.result(),
                     "alpha": self._alpha,
                 },
-                step=step,
+                step=self._total_steps,
             )
+
+            # update variables
+            self._total_steps += 1
+
+            # The maximal training epoch was reached
+            if self._total_steps >= self._max_steps:
+                break
+            # save updated variables to table (update frequency)
+            elif (self._total_steps % self._gradient_steps) == 0:
+                self._reverb_policy_container.insert()
+
+                print("=============================================")
+                print(f"Step: {self._total_steps}")
+                print(f"Alpha: {self._alpha}")
+                print(f"Actor's loss: {self._loss_a.result()}")
+                print(f"Critic 1's loss: {self._loss_c1.result()}")
+                print(f"Critic 2's loss: {self._loss_c2.result()}")
+                print(f"Alpha's loss: {self._loss_alpha.result()}")
+                print("=============================================")
+                print(f"Training ... {(self._total_steps * 100) / self._max_steps} %")
 
             # reset logger
             self._loss_a.reset_states()
