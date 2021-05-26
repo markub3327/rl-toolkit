@@ -61,7 +61,7 @@ class Agent:
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
             # Sync actor's params with db
-            print(list(self._db.sample('model_vars', num_samples=1)))
+            #print(list(self._db.sample('model_vars', num_samples=1)))
             #self._actor.update(tf.nest.flatten(list(self._db.sample("model_vars"))[0]))
 
             # re-new noise matrix before every rollouts
@@ -144,6 +144,9 @@ class Agent:
 
                     # super critical !!!
                     self._last_obs = obs2
+
+                # Block until the item has been inserted and confirmed by the server.
+                writer.flush()
 
     @tf.function
     def _get_action(self, state, deterministic):
