@@ -31,6 +31,8 @@ class Learner:
         # ---
         learning_starts: int = int(1e4),
         # ---
+        n_step_returns: int = 5,
+        # ---
         buffer_size: int = int(1e6),
         batch_size: int = 256,
         # ---
@@ -46,6 +48,7 @@ class Learner:
         model_c2_path: str = None,
     ):
         self._max_steps = max_steps
+        self._n_step_returns = tf.constant(n_step_returns)
         self._tau = tf.constant(tau)
         self._gamma = tf.constant(gamma)
 
@@ -202,16 +205,6 @@ class Learner:
         for sample in self._dataset:
             self.do_update(sample)
 
-            print("=============================================")
-            print(f"Step: {self._total_steps}")
-            print(f"Alpha: {self._alpha}")
-            print(f"Actor's loss: {self._loss_a.result()}")
-            print(f"Critic 1's loss: {self._loss_c1.result()}")
-            print(f"Critic 2's loss: {self._loss_c2.result()}")
-            print(f"Alpha's loss: {self._loss_alpha.result()}")
-            print("=============================================")
-            print(f"Training ... {(self._total_steps * 100) / self._max_steps} %")
-
             # log to W&B
             wandb.log(
                 {
@@ -272,7 +265,7 @@ class Learner:
         Q_targets = tf.stop_gradient(
             batch.data["reward"]
             + (1 - batch.data["terminal"])
-            * self._gamma
+            * self._gamma ** self._n_step_returns
             * (next_q - self._alpha * next_log_pi)
         )
 
