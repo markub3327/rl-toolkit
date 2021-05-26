@@ -39,7 +39,7 @@ class Agent:
 
         # Initializes the Reverb client
         self._db_client = reverb.Client("192.168.1.38:8000")
-        self._reverb_policy_container = ReverbPolicyContainer("192.168.1.38:8000", self._actor.model)
+        self._reverb_policy_container = ReverbPolicyContainer("192.168.1.38", self._actor.model)
 
         # init Weights & Biases
         wandb.init(project="rl-toolkit")

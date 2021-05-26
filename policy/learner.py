@@ -156,7 +156,7 @@ class Learner:
             table="uniform_table",
             max_in_flight_samples_per_worker=10,
         ).batch(batch_size)
-        self._reverb_policy_container = ReverbPolicyContainer("192.168.1.38:8000", self._actor.model)
+        self._reverb_policy_container = ReverbPolicyContainer("localhost", self._actor.model)
         self._reverb_policy_container.insert() # store random generated variables
 
         # init Weights & Biases
