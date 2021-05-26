@@ -41,9 +41,10 @@ class Agent:
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
         )
-        self._policy_dtypes = tf.nest.map_structure(
-            lambda spec: spec.dtype, self._actor.model.variables
-        )
+        self._policy_params = {
+            "actor_variables": self._actor.model.variables,
+        }
+        self._policy_dtypes = tf.nest.map_structure(lambda spec: spec.dtype, self._policy_params)
 
         # init Weights & Biases
         wandb.init(project="rl-toolkit")
@@ -72,6 +73,7 @@ class Agent:
             #        ).data[0]
             #    )
             #)
+            print(self._tf_db_client.sample("model_vars", data_dtypes=[self._policy_dtypes]).data[0])
 
             # re-new noise matrix before every rollouts
             self._actor.reset_noise()
