@@ -56,11 +56,13 @@ class Agent:
 
         # init environment
         self._last_obs = self._env.reset()
+        print('Starting game')
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
             # Sync actor's params with db
-            self._actor.update(tf.nest.flatten(list(self._db.sample("model_vars"))[0]))
+            print(list(self._db.sample('model_vars', num_samples=1)))
+            #self._actor.update(tf.nest.flatten(list(self._db.sample("model_vars"))[0]))
 
             # re-new noise matrix before every rollouts
             self._actor.reset_noise()

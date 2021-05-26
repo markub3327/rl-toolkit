@@ -176,7 +176,7 @@ class Learner:
         wandb.config.tau = tau
         wandb.config.gamma = gamma
 
-    @tf.function
+    #@tf.function
     def do_update(self, sample):
         # re-new noise matrix every update of 'log_std' params
         self._actor.reset_noise()
