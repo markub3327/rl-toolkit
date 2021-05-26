@@ -1,5 +1,6 @@
 import argparse
 import gym
+import pybullet_envs  # noqa
 
 from policy import Learner
 

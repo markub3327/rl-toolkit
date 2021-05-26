@@ -233,7 +233,7 @@ class Learner:
 
                 print("=============================================")
                 print(f"Step: {self._total_steps}")
-                print(f"Alpha: {self._alpha}")
+                print(f"Alpha: {self._alpha.numpy()}")
                 print(f"Actor's loss: {self._loss_a.result()}")
                 print(f"Critic 1's loss: {self._loss_c1.result()}")
                 print(f"Critic 2's loss: {self._loss_c2.result()}")
