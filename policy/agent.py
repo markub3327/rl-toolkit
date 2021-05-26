@@ -41,6 +41,9 @@ class Agent:
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
         )
+        self._policy_dtypes = tf.nest.map_structure(
+            lambda spec: spec.dtype, self._actor.model.variables
+        )
 
         # init Weights & Biases
         wandb.init(project="rl-toolkit")
@@ -63,7 +66,11 @@ class Agent:
         while self._total_steps < self._max_steps:
             # Sync actor's params with db
             self._actor.update(
-                tf.nest.flatten(self._tf_db_client.sample("model_vars").data[0])
+                tf.nest.flatten(
+                    self._tf_db_client.sample(
+                        "model_vars", data_dtypes=[self._policy_dtypes]
+                    ).data[0]
+                )
             )
 
             # re-new noise matrix before every rollouts
