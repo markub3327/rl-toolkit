@@ -146,6 +146,10 @@ class Learner:
                     max_size=1,
                     max_times_sampled=0,
                     signature={
+                        "train_step": tf.TensorSpec(
+                            [],
+                            dtype=tf.int32,
+                        ),                    
                         "actor_variables": tf.nest.map_structure(
                             lambda variable: tf.TensorSpec(
                                 variable.shape, dtype=variable.dtype
