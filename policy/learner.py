@@ -267,7 +267,7 @@ class Learner:
         Q_targets = tf.stop_gradient(
             self._get_reward(batch.data["reward"])
             + (1 - batch.data["terminal"])
-            * self._gamma ** self._n_step_returns
+            * self._gamma ** tf.cast(self._n_step_returns, tf.float32)
             * (next_q - self._alpha * next_log_pi)
         )
 
