@@ -328,7 +328,7 @@ class Learner:
 
     def _get_reward(self, rewards):
         discounted_reward, g = rewards[:, 0], self._gamma
-        for i in tf.range(1, self._n_step_returns + 1):
+        for i in tf.range(1, self._n_step_returns):
             discounted_reward += rewards[:, i] * g
             g *= self._gamma
         tf.print(discounted_reward)
