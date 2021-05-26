@@ -5,6 +5,7 @@ import tensorflow as tf
 import numpy as np
 
 from .network import Actor
+from .reverb_utils import ReverbPolicyContainer
 
 
 class Agent:
@@ -30,21 +31,15 @@ class Agent:
         self._env_steps = env_steps
         self._learning_starts = learning_starts
 
-        # Initializes the Reverb client
-        self._db_client = reverb.Client("192.168.1.38:8000")
-        self._tf_db_client = reverb.TFClient(server_address="192.168.1.38:8000")
-
-        print(self._db_client.server_info())
-
         # Init Actor's network
         self._actor = Actor(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
         )
-        self._policy_params = {
-            "actor_variables": self._actor.model.variables,
-        }
-        self._policy_dtypes = tf.nest.map_structure(lambda spec: spec.dtype, self._policy_params)
+
+        # Initializes the Reverb client
+        self._db_client = reverb.Client("192.168.1.38:8000")
+        self._reverb_policy_container = ReverbPolicyContainer("192.168.1.38:8000", self._actor.model)
 
         # init Weights & Biases
         wandb.init(project="rl-toolkit")
@@ -66,14 +61,7 @@ class Agent:
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
             # Sync actor's params with db
-            #self._actor.update(
-            #    tf.nest.flatten(
-            #        self._tf_db_client.sample(
-            #            "model_vars", data_dtypes=[self._policy_dtypes]
-            #        ).data[0]
-            #    )
-            #)
-            print(self._tf_db_client.sample("model_vars", data_dtypes=[self._policy_dtypes]).data[0])
+            self._reverb_policy_container.update()
 
             # re-new noise matrix before every rollouts
             self._actor.reset_noise()

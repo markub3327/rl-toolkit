@@ -4,6 +4,7 @@ import wandb
 import tensorflow as tf
 
 from .network import Actor, Critic
+from .reverb_utils import ReverbPolicyContainer
 
 
 class Learner:
@@ -71,9 +72,6 @@ class Learner:
             learning_rate=actor_learning_rate,
             model_path=model_a_path,
         )
-        self._policy_params = {
-            "actor_variables": self._actor.model.variables,
-        }
 
         # Critic network & target network
         self._critic_1 = Critic(
@@ -158,9 +156,8 @@ class Learner:
             table="uniform_table",
             max_in_flight_samples_per_worker=10,
         ).batch(batch_size)
-
-        # init TF client
-        self._tf_client = reverb.TFClient(server_address="localhost:8000")
+        self._reverb_policy_container = ReverbPolicyContainer("192.168.1.38:8000", self._actor.model)
+        self._reverb_policy_container.insert() # store random generated variables
 
         # init Weights & Biases
         wandb.init(project="rl-toolkit")
@@ -195,12 +192,8 @@ class Learner:
         self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
         self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
-        # save params to table
-        self._tf_client.insert(
-            data=tf.nest.flatten(self._policy_params),
-            tables=tf.constant(["model_vars"]),
-            priorities=tf.constant([1.0], dtype=tf.float64),
-        )
+        # save updated variables to table
+        self._reverb_policy_container.insert()
 
     def run(self):
         self._total_steps = 0
