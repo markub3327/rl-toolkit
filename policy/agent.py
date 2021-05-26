@@ -1,5 +1,5 @@
 import reverb
-#import wandb
+import wandb
 
 import tensorflow as tf
 import numpy as np
@@ -31,8 +31,10 @@ class Agent:
         self._learning_starts = learning_starts
 
         # Initializes the Reverb client
-        self._db = reverb.Client("192.168.1.38:8000")
-        print(self._db.server_info())
+        self._db_client = reverb.Client("192.168.1.38:8000")
+        self._tf_db_client = reverb.TFClient(server_address="192.168.1.38:8000")
+
+        print(self._db_client.server_info())
 
         # Init Actor's network
         self._actor = Actor(
@@ -41,12 +43,12 @@ class Agent:
         )
 
         # init Weights & Biases
-        #wandb.init(project="rl-toolkit")
+        wandb.init(project="rl-toolkit")
 
         # Settings
-        #wandb.config.max_steps = self._max_steps
-        #wandb.config.env_steps = self._env_steps
-        #wandb.config.learning_starts = self._learning_starts
+        wandb.config.max_steps = self._max_steps
+        wandb.config.env_steps = self._env_steps
+        wandb.config.learning_starts = self._learning_starts
 
     def run(self):
         self._total_steps = 0
@@ -56,19 +58,19 @@ class Agent:
 
         # init environment
         self._last_obs = self._env.reset()
-        print('Starting game')
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
             # Sync actor's params with db
-            #print(list(self._db.sample('model_vars', num_samples=1)))
-            #self._actor.update(tf.nest.flatten(list(self._db.sample("model_vars"))[0]))
+            self._actor.update(
+                tf.nest.flatten(self._tf_db_client.sample("model_vars").data[0])
+            )
 
             # re-new noise matrix before every rollouts
             self._actor.reset_noise()
 
             # init writer
-            with self._db.trajectory_writer(num_keep_alive_refs=2) as writer:
+            with self._db_client.trajectory_writer(num_keep_alive_refs=2) as writer:
                 # collect rollouts
                 for step in range(self._env_steps):
                     # select action randomly or using policy network
@@ -122,15 +124,15 @@ class Agent:
                             f"Running ... {(self._total_steps*100)/self._max_steps} %"
                         )
 
-                        #wandb.log(
-                        #    {
-                        #        "epoch": self._total_episodes,
-                        #        "score": self._episode_reward,
-                        #        "steps": self._episode_steps,
-                        #        #        "replayBuffer": len(self._rpm),
-                        #    },
-                        #    step=self._total_steps,
-                        #)
+                        wandb.log(
+                            {
+                                "epoch": self._total_episodes,
+                                "score": self._episode_reward,
+                                "steps": self._episode_steps,
+                                #        "replayBuffer": len(self._rpm),
+                            },
+                            step=self._total_steps,
+                        )
 
                         self._episode_reward = 0.0
                         self._episode_steps = 0
