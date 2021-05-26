@@ -333,3 +333,4 @@ class Learner:
             g *= self._gamma
         tf.print(discounted_reward)
         tf.print(g)
+        return discounted_reward
