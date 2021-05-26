@@ -45,7 +45,9 @@ class Agent:
 
         # Initializes the Reverb client
         self._db_client = reverb.Client("192.168.1.38:8000")
-        self._reverb_policy_container = ReverbPolicyContainer("192.168.1.38", self._actor.model)
+        self._reverb_policy_container = ReverbPolicyContainer(
+            "192.168.1.38", self._actor.model
+        )
 
         # init Weights & Biases
         wandb.init(project="rl-toolkit")
@@ -73,7 +75,9 @@ class Agent:
             self._actor.reset_noise()
 
             # init writer
-            with self._db_client.trajectory_writer(num_keep_alive_refs=self._n_step_returns) as writer:
+            with self._db_client.trajectory_writer(
+                num_keep_alive_refs=self._n_step_returns
+            ) as writer:
                 # collect rollouts
                 for step in range(self._env_steps):
                     # select action randomly or using policy network
@@ -103,7 +107,9 @@ class Agent:
 
                     if step >= self._n_step_returns:
                         # calc N-step return
-                        discounted_reward = self._get_reward(writer.history["reward"][-self._n_step_returns:])
+                        discounted_reward = self._get_reward(
+                            writer.history["reward"][-self._n_step_returns :]
+                        )
 
                         # store in db
                         writer.create_item(
@@ -111,7 +117,9 @@ class Agent:
                             priority=1.0,
                             trajectory={
                                 "obs": writer.history["obs"][-self._n_step_returns],
-                                "action": writer.history["action"][-self._n_step_returns],
+                                "action": writer.history["action"][
+                                    -self._n_step_returns
+                                ],
                                 "reward": discounted_reward,
                                 "obs2": writer.history["obs"][-1],
                                 "terminal": writer.history["terminal"][-1],
