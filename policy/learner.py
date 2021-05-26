@@ -167,7 +167,7 @@ class Learner:
         self._reverb_policy_container = ReverbPolicyContainer(
             "localhost", self._actor.model
         )
-        self._reverb_policy_container.insert()  # store random generated variables
+        self._reverb_policy_container.insert(0)  # store random generated variables
 
         # init Weights & Biases
         wandb.init(project="rl-toolkit")
@@ -229,7 +229,7 @@ class Learner:
                 break
             # save updated variables to table (update frequency)
             elif (self._total_steps % self._gradient_steps) == 0:
-                self._reverb_policy_container.insert()
+                self._reverb_policy_container.insert(self._total_steps)
 
                 print("=============================================")
                 print(f"Step: {self._total_steps}")
