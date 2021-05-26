@@ -331,6 +331,4 @@ class Learner:
         for i in tf.range(1, self._n_step_returns):
             discounted_reward += rewards[:, i] * g
             g *= self._gamma
-        tf.print(discounted_reward)
-        tf.print(g)
         return discounted_reward
