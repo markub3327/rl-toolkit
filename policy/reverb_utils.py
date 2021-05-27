@@ -6,9 +6,9 @@ import tensorflow as tf
 class ReverbPolicyContainer:
     def __init__(self, server_name, actor):
 
-# actual training step
+        # actual training step
         self.train_step = tf.Variable(
-            -1,
+            0,
             trainable=False,
             dtype=tf.int32,
             aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
@@ -33,13 +33,7 @@ class ReverbPolicyContainer:
 
     def update(self):
         sample = self._tf_client.sample("model_vars", data_dtypes=[self._dtypes])
-        data = sample.data[0]
-        if data['train_step'] <= 0 or data['train_step'] != self.train_step:
-            for variable, value in zip(
-                tf.nest.flatten(self.vars), tf.nest.flatten(data)
-            ):
-                variable.assign(value)
-
-            return True
-        else:
-            return False
+        for variable, value in zip(
+            tf.nest.flatten(self.vars), tf.nest.flatten(sample.data[0])
+        ):
+            variable.assign(value)

@@ -68,43 +68,42 @@ class Agent:
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
             # Sync actor's params with db
-            if self._reverb_policy_container.update():
-                # re-new noise matrix before every rollouts
-                self._actor.reset_noise()
+            self._reverb_policy_container.update()
 
-                # init writer
-                with self._db_client.trajectory_writer(
-                    num_keep_alive_refs=2
-                ) as writer:
-                    # collect rollouts
-                    for step in range(self._env_steps):
-                        # select action randomly or using policy network
-                        if self._total_steps < self._learning_starts:
-                            # warmup
-                            action = self._env.action_space.sample()
-                        else:
-                            action = self._get_action(self._last_obs, deterministic=False)
+            # re-new noise matrix before every rollouts
+            self._actor.reset_noise()
 
-                        # Step in the environment
-                        obs2, reward, terminal, _ = self._env.step(action)
+            # init writer
+            with self._db_client.trajectory_writer(num_keep_alive_refs=2) as writer:
+                # collect rollouts
+                for step in range(self._env_steps):
+                    # select action randomly or using policy network
+                    if self._total_steps < self._learning_starts:
+                        # warmup
+                        action = self._env.action_space.sample()
+                    else:
+                        action = self._get_action(self._last_obs, deterministic=False)
 
-                        # update variables
-                        self._episode_reward += reward
-                        self._episode_steps += 1
-                        self._total_steps += 1
+                    # Step in the environment
+                    obs2, reward, terminal, _ = self._env.step(action)
 
-                        # Update the replay buffer
-                        writer.append(
-                            {
-                                "obs": np.array(self._last_obs, dtype=np.float32),
-                                "action": np.array(action, dtype=np.float32),
-                                "reward": np.array([reward], dtype=np.float32),
-                                "terminal": np.array([terminal], dtype=np.float32),
-                            }
-                        )
+                    # update variables
+                    self._episode_reward += reward
+                    self._episode_steps += 1
+                    self._total_steps += 1
 
-                        if step >= 1:
-                            writer.create_item(
+                    # Update the replay buffer
+                    writer.append(
+                        {
+                            "obs": np.array(self._last_obs, dtype=np.float32),
+                            "action": np.array(action, dtype=np.float32),
+                            "reward": np.array([reward], dtype=np.float32),
+                            "terminal": np.array([terminal], dtype=np.float32),
+                        }
+                    )
+
+                    if step >= 1:
+                        writer.create_item(
                             table="uniform_table",
                             priority=1.0,
                             trajectory={
@@ -116,46 +115,46 @@ class Agent:
                             },
                         )
 
-                        # check the end of episode
-                        if terminal:
-                            print("=============================================")
-                            print(f"Epoch: {self._total_episodes}")
-                            print(f"Score: {self._episode_reward}")
-                            print(f"Steps: {self._episode_steps}")
-                            print(f"TotalInteractions: {self._total_steps}")
-                            print(f"Train step: {self._reverb_policy_container.train_step.numpy()}")
-                            print("=============================================")
-                            print(
-                                f"Running ... {(self._total_steps*100)/self._max_steps} %"
-                            )
+                    # check the end of episode
+                    if terminal:
+                        print("=============================================")
+                        print(f"Epoch: {self._total_episodes}")
+                        print(f"Score: {self._episode_reward}")
+                        print(f"Steps: {self._episode_steps}")
+                        print(f"TotalInteractions: {self._total_steps}")
+                        print(
+                            f"Train step: {self._reverb_policy_container.train_step.numpy()}"
+                        )
+                        print("=============================================")
+                        print(
+                            f"Running ... {(self._total_steps*100)/self._max_steps} %"
+                        )
 
-                            wandb.log(
-                                {
-                                    "epoch": self._total_episodes,
-                                    "score": self._episode_reward,
-                                    "steps": self._episode_steps,
-                                    #        "replayBuffer": len(self._rpm),
-                                },
-                                step=self._total_steps,
-                            )
+                        wandb.log(
+                            {
+                                "epoch": self._total_episodes,
+                                "score": self._episode_reward,
+                                "steps": self._episode_steps,
+                                #        "replayBuffer": len(self._rpm),
+                            },
+                            step=self._total_steps,
+                        )
 
-                            self._episode_reward = 0.0
-                            self._episode_steps = 0
-                            self._total_episodes += 1
+                        self._episode_reward = 0.0
+                        self._episode_steps = 0
+                        self._total_episodes += 1
 
-                            # init environment
-                            self._last_obs = self._env.reset()
+                        # init environment
+                        self._last_obs = self._env.reset()
 
-                            # interrupt the rollout
-                            break
+                        # interrupt the rollout
+                        break
 
-                        # super critical !!!
-                        self._last_obs = obs2
+                    # super critical !!!
+                    self._last_obs = obs2
 
-                    # Block until the item has been inserted and confirmed by the server.
-                    writer.flush()
-            else:
-                time.sleep(0.2)    #  wait until new variables are available
+                # Block until the item has been inserted and confirmed by the server.
+                writer.flush()
 
     @tf.function
     def _get_action(self, state, deterministic):
