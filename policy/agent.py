@@ -110,7 +110,7 @@ class Agent:
                             trajectory={
                                 "obs": writer.history["obs"][-2],
                                 "action": writer.history["action"][-2],
-                                "reward": writer.history["reward"][-2]
+                                "reward": writer.history["reward"][-2],
                                 "obs2": writer.history["obs"][-1],
                                 "terminal": writer.history["terminal"][-2],
                             },
