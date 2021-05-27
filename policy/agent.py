@@ -69,10 +69,6 @@ class Agent:
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
-            if self._total_steps >= self._learning_starts:
-                # Sync actor's params with db
-                self._reverb_policy_container.update()
-
             # re-new noise matrix before every rollouts
             self._actor.reset_noise()
 
@@ -161,6 +157,10 @@ class Agent:
 
                 # Block until the item has been inserted and confirmed by the server.
                 writer.flush()
+
+            if self._total_steps >= self._learning_starts:
+                # Sync actor's params with db
+                self._reverb_policy_container.update()
 
     @tf.function
     def _get_action(self, state, deterministic):
