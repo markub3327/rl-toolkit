@@ -34,8 +34,6 @@ class Learner:
         # ---
         learning_starts: int = int(1e4),
         # ---
-        n_step_returns: int = 5,
-        # ---
         buffer_size: int = int(1e6),
         batch_size: int = 256,
         # ---
@@ -53,7 +51,6 @@ class Learner:
         self._max_steps = max_steps
         self._gradient_steps = gradient_steps
         self._learning_starts = learning_starts
-        self._n_step_returns = tf.constant(n_step_returns)
         self._tau = tf.constant(tau)
         self._gamma = tf.constant(gamma)
 
@@ -130,7 +127,7 @@ class Learner:
                         "action": tf.TensorSpec(
                             [*env.action_space.shape], dtype=env.action_space.dtype
                         ),
-                        "reward": tf.TensorSpec([n_step_returns, 1], dtype=tf.float32),
+                        "reward": tf.TensorSpec([1], dtype=tf.float32),
                         "obs2": tf.TensorSpec(
                             [*env.observation_space.shape],
                             dtype=env.observation_space.dtype,
@@ -284,9 +281,9 @@ class Learner:
 
         # Bellman Equation
         Q_targets = tf.stop_gradient(
-            self._get_reward(batch.data["reward"])
+            batch.data["reward"]
             + (1 - batch.data["terminal"])
-            * self._gamma ** tf.cast(self._n_step_returns, tf.float32)
+            * self._gamma
             * (next_q - self._alpha * next_log_pi)
         )
 
@@ -344,10 +341,3 @@ class Learner:
             net.model.trainable_variables, net_targ.model.trainable_variables
         ):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
-
-    def _get_reward(self, rewards):
-        discounted_reward, g = rewards[:, 0], self._gamma
-        for i in tf.range(1, self._n_step_returns):
-            discounted_reward += rewards[:, i] * g
-            g *= self._gamma
-        return discounted_reward
