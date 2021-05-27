@@ -37,16 +37,16 @@ class Agent:
         self._n_step_returns = n_step_returns
         self._gamma = tf.constant(gamma)
 
-        # Initializes the Reverb client
-        self._db_client = reverb.Client("192.168.1.38:8000")
-        self._reverb_policy_container = ReverbPolicyContainer(
-            "192.168.1.38", self._actor.model
-        )
-
         # Init Actor's network
         self._actor = Actor(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
+        )
+
+        # Initializes the Reverb client
+        self._db_client = reverb.Client("192.168.1.38:8000")
+        self._reverb_policy_container = ReverbPolicyContainer(
+            "192.168.1.38", self._actor.model
         )
         self._reverb_policy_container.update()
 
