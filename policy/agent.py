@@ -27,15 +27,12 @@ class Agent:
         # ---
         learning_starts: int = int(1e4),
         # ---
-        n_step_returns: int = 5,
-        # ---
         gamma: float = 0.99,
     ):
         self._env = env
         self._max_steps = max_steps
         self._env_steps = env_steps
         self._learning_starts = learning_starts
-        self._n_step_returns = n_step_returns
         self._gamma = tf.constant(gamma)
 
         # Init Actor's network
@@ -77,7 +74,7 @@ class Agent:
 
                 # init writer
                 with self._db_client.trajectory_writer(
-                    num_keep_alive_refs=self._n_step_returns
+                    num_keep_alive_refs=2
                 ) as writer:
                     # collect rollouts
                     for step in range(self._env_steps):
@@ -106,20 +103,16 @@ class Agent:
                             }
                         )
 
-                        if step >= self._n_step_returns:
+                        if step >= 1:
                             writer.create_item(
                             table="uniform_table",
                             priority=1.0,
                             trajectory={
-                                "obs": writer.history["obs"][-self._n_step_returns],
-                                "action": writer.history["action"][
-                                    -self._n_step_returns
-                                ],
-                                "reward": writer.history["reward"][
-                                    -self._n_step_returns :
-                                ],
+                                "obs": writer.history["obs"][-2],
+                                "action": writer.history["action"][-2],
+                                "reward": writer.history["reward"][-2]
                                 "obs2": writer.history["obs"][-1],
-                                "terminal": writer.history["terminal"][-1],
+                                "terminal": writer.history["terminal"][-2],
                             },
                         )
 
