@@ -1,5 +1,6 @@
 import reverb
 import wandb
+import time
 
 import tensorflow as tf
 import numpy as np
@@ -160,6 +161,8 @@ class Agent:
 
                     # Block until the item has been inserted and confirmed by the server.
                     writer.flush()
+                else:
+                    time.sleep(0.2)    #  wait until new variables are available
 
     @tf.function
     def _get_action(self, state, deterministic):
