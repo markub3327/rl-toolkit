@@ -69,11 +69,11 @@ class Agent:
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
-            # re-new noise matrix before every rollouts
-            self._actor.reset_noise()
-
             # Sync actor's params with db
             if self._reverb_policy_container.update():
+                # re-new noise matrix before every rollouts
+                self._actor.reset_noise()
+
                 # init writer
                 with self._db_client.trajectory_writer(
                     num_keep_alive_refs=self._n_step_returns
