@@ -38,15 +38,14 @@ class ReverbPolicyContainer:
         )
 
     def update(self):
-        # ineffective way !!!!
-        while True:
-            sample = self._tf_client.sample("model_vars", data_dtypes=[self._dtypes])
-            data = sample.data[0]
-            if data['train_step'] != self._train_step:
-                for variable, value in zip(
-                    tf.nest.flatten(self.vars), tf.nest.flatten(data)
-                ):
-                    variable.assign(value)
+        sample = self._tf_client.sample("model_vars", data_dtypes=[self._dtypes])
+        data = sample.data[0]
+        if data['train_step'] <= 0 or data['train_step'] != self._train_step:
+            for variable, value in zip(
+                tf.nest.flatten(self.vars), tf.nest.flatten(data)
+            ):
+                variable.assign(value)
 
-                # end of updating
-                break
+            return True
+        else:
+            return False
