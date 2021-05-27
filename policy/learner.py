@@ -16,13 +16,11 @@ class Learner:
         env: the instance of environment object
         max_steps (int): maximum number of interactions do in environment
         gradient_steps (int): number of update steps after each rollout
-        learning_starts (int): number of interactions before using policy network
         buffer_size (int): maximum size of the replay buffer
         batch_size (int): size of mini-batch used for training
         actor_learning_rate (float): learning rate for actor's optimizer
         critic_learning_rate (float): learning rate for critic's optimizer
         alpha_learning_rate (float): learning rate for alpha's optimizer
-        learning_starts (int): number of interactions before using policy network
     """
 
     def __init__(
@@ -31,8 +29,6 @@ class Learner:
         # ---
         max_steps: int,
         gradient_steps: int = 64,
-        # ---
-        learning_starts: int = int(1e4),
         # ---
         buffer_size: int = int(1e6),
         batch_size: int = 256,
@@ -50,7 +46,6 @@ class Learner:
     ):
         self._max_steps = max_steps
         self._gradient_steps = gradient_steps
-        self._learning_starts = learning_starts
         self._tau = tf.constant(tau)
         self._gamma = tf.constant(gamma)
 
@@ -117,7 +112,7 @@ class Learner:
                     name="uniform_table",
                     sampler=reverb.selectors.Uniform(),
                     remover=reverb.selectors.Fifo(),
-                    rate_limiter=reverb.rate_limiters.MinSize(learning_starts),
+                    rate_limiter=reverb.rate_limiters.MinSize(1),
                     max_size=buffer_size,
                     signature={
                         "obs": tf.TensorSpec(
@@ -175,7 +170,6 @@ class Learner:
 
         # set Weights & Biases
         wandb.config.max_steps = max_steps
-        wandb.config.learning_starts = learning_starts
         wandb.config.buffer_size = buffer_size
         wandb.config.batch_size = batch_size
         wandb.config.actor_learning_rate = actor_learning_rate
@@ -204,7 +198,7 @@ class Learner:
         self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
     def run(self):
-        self._total_steps = self._learning_starts
+        self._total_steps = 0
 
         # iterating over dataset
         for sample in self._dataset:
