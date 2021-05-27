@@ -19,12 +19,6 @@ class ReverbPolicyContainer:
             "train_step": self.train_step,
             "actor_variables": actor.variables,
         }
-        variable_container_signature = tf.nest.map_structure(
-            lambda variable: tf.TensorSpec(variable.shape, dtype=variable.dtype),
-            self.vars,
-        )
-        print(f"Signature of variables: \n{variable_container_signature}")
-
         self._dtypes = tf.nest.map_structure(lambda spec: spec.dtype, self.vars)
 
         self._tf_client = reverb.TFClient(server_address=f"{server_name}:8000")
