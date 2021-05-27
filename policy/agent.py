@@ -42,6 +42,7 @@ class Agent:
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
         )
+        self._reverb_policy_container.update()
 
         # Initializes the Reverb client
         self._db_client = reverb.Client("192.168.1.38:8000")
@@ -68,8 +69,9 @@ class Agent:
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
-            # Sync actor's params with db
-            self._reverb_policy_container.update()
+            if self._total_steps >= self._learning_starts:
+                # Sync actor's params with db
+                self._reverb_policy_container.update()
 
             # re-new noise matrix before every rollouts
             self._actor.reset_noise()
