@@ -129,7 +129,7 @@ class Agent:
                             print(f"Score: {self._episode_reward}")
                             print(f"Steps: {self._episode_steps}")
                             print(f"TotalInteractions: {self._total_steps}")
-                            print(f"Train step: {self._reverb_policy_container.train_step}")
+                            print(f"Train step: {self._reverb_policy_container.train_step.numpy()}")
                             print("=============================================")
                             print(
                                 f"Running ... {(self._total_steps*100)/self._max_steps} %"
