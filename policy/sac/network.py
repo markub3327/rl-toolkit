@@ -2,6 +2,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Concatenate, Dense, Lambda
 from tensorflow.keras.models import load_model
+from tensorflow.keras import initializers
 from .layers import NoisyLayer
 
 import tensorflow as tf
@@ -10,7 +11,7 @@ import tensorflow_probability as tfp
 
 class Actor:
     """
-    Actor (for SAC)
+    Actor
     ===============
     Attributes:
         state_shape: the shape of state space
@@ -23,8 +24,8 @@ class Actor:
         self,
         state_shape=None,
         action_shape=None,
-        model_path=None,
-        learning_rate: float = 3e-4,
+        learning_rate: float = None,
+        model_path: str = None,
         clip_mean: float = 2.0,
     ):
 
@@ -42,13 +43,20 @@ class Actor:
             )(h1)
 
             # vystupna vrstva   -- 'mean' musi byt v intervale (-∞, ∞)
-            mean = Dense(action_shape[0], activation="linear", name="mean")(latent_sde)
+            mean = Dense(
+                action_shape[0],
+                activation="linear",
+                name="mean",
+                kernel_initializer=initializers.RandomUniform(
+                    minval=-0.003, maxval=0.003
+                )
+            )(latent_sde)
             mean = Lambda(
                 lambda x: tf.clip_by_value(x, -clip_mean, clip_mean), name="clip_mean"
             )(mean)
 
-            self.noisy_l = NoisyLayer(action_shape[0], name="noise")
-            noise = self.noisy_l(latent_sde)
+            self._noisy_l = NoisyLayer(action_shape[0], name="noise")
+            noise = self._noisy_l(latent_sde)
 
             # Vytvor model
             self.model = Model(inputs=state_input, outputs=[mean, noise, latent_sde])
@@ -60,33 +68,36 @@ class Actor:
             print("Actor loaded from file succesful ...")
 
         # Optimalizator modelu
-        self.optimizer = Adam(learning_rate=learning_rate)
-        self.bijector = tfp.bijectors.Tanh()
+        if learning_rate is not None:
+            self.optimizer = Adam(learning_rate=learning_rate)
+    
+        # Vystup musi byt v intervale (-1, 1)
+        self._bijector = tfp.bijectors.Tanh()
 
         self.model.summary()
 
     @tf.function
     def reset_noise(self):
-        self.noisy_l.sample_weights()
+        self._noisy_l.sample_weights()
 
     def predict(self, x, with_logprob=True, deterministic=False):
         mean, noise, latent_sde = self.model(x)
 
         if deterministic:
-            pi_action = self.bijector.forward(mean)
+            pi_action = self._bijector.forward(mean)
             logp_pi = None
         else:
-            pi_action = self.bijector.forward(mean + noise)
+            pi_action = self._bijector.forward(mean + noise)
 
             if with_logprob:
                 variance = tf.matmul(
-                    tf.square(latent_sde), tf.square(self.noisy_l.get_std())
+                    tf.square(latent_sde), tf.square(self._noisy_l.get_std())
                 )
                 pi_distribution = tfp.distributions.TransformedDistribution(
                     distribution=tfp.distributions.MultivariateNormalDiag(
                         loc=mean, scale_diag=tf.sqrt(variance + 1e-6)
                     ),
-                    bijector=self.bijector,
+                    bijector=self._bijector,
                 )
                 logp_pi = pi_distribution.log_prob(pi_action)[..., tf.newaxis]
             else:
@@ -97,7 +108,7 @@ class Actor:
 
 class Critic:
     """
-    Critic (for SAC)
+    Critic
     ===============
 
     Attributes:
@@ -111,8 +122,8 @@ class Critic:
         self,
         state_shape=None,
         action_shape=None,
-        model_path=None,
         learning_rate: float = 3e-4,
+        model_path: str = None,
     ):
 
         if model_path is None:
@@ -129,7 +140,14 @@ class Critic:
             )(h1)
 
             # vystupna vrstva   -- Q hodnoty su v intervale (-∞, ∞)
-            output = Dense(1, activation="linear", name="q_val")(h2)
+            output = Dense(
+                1,
+                activation="linear",
+                name="q_val",
+                kernel_initializer=initializers.RandomUniform(
+                    minval=-0.003, maxval=0.003
+                )
+            )(h2)
 
             # Vytvor model
             self.model = Model(inputs=[state_input, action_input], outputs=output)
