@@ -1,6 +1,6 @@
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Input, Concatenate, Dense, Lambda
+from tensorflow.keras.layers import Input, Concatenate, Dense
 from tensorflow.keras.models import load_model
 from tensorflow.keras import initializers
 from .layers import NoisyLayer
@@ -26,7 +26,6 @@ class Actor:
         action_shape=None,
         learning_rate: float = None,
         model_path: str = None,
-        clip_mean: float = 2.0,
     ):
 
         if model_path is None:
@@ -51,9 +50,6 @@ class Actor:
                     minval=-0.03, maxval=0.03
                 )
             )(latent_sde)
-            mean = Lambda(
-                lambda x: tf.clip_by_value(x, -clip_mean, clip_mean), name="clip_mean"
-            )(mean)
 
             self._noisy_l = NoisyLayer(action_shape[0], name="noise")
             noise = self._noisy_l(latent_sde)
