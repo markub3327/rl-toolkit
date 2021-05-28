@@ -24,9 +24,8 @@ class Actor:
         self,
         state_shape=None,
         action_shape=None,
-        model_path: str = None,
         learning_rate: float = None,
-        clip_mean: float = 2.0,
+        model_path: str = None,
     ):
 
         if model_path is None:
@@ -51,9 +50,6 @@ class Actor:
                     minval=-0.003, maxval=0.003
                 ),
             )(latent_sde)
-            mean = Lambda(
-                lambda x: tf.clip_by_value(x, -clip_mean, clip_mean), name="clip_mean"
-            )(mean)
 
             self._noisy_l = NoisyLayer(action_shape[0], name="noise")
             noise = self._noisy_l(latent_sde)
@@ -70,19 +66,15 @@ class Actor:
         # Optimalizator modelu
         if learning_rate is not None:
             self.optimizer = Adam(learning_rate=learning_rate)
-
+    
         # Vystup musi byt v intervale (-1, 1)
         self._bijector = tfp.bijectors.Tanh()
 
         self.model.summary()
 
+    @tf.function
     def reset_noise(self):
         self._noisy_l.sample_weights()
-
-    def update(self, values):
-        # update actor's params
-        for variable, value in zip(self.model.variables, values):
-            variable.assign(value)
 
     def predict(self, x, with_logprob=True, deterministic=False):
         mean, noise, latent_sde = self.model(x)
@@ -126,8 +118,8 @@ class Critic:
         self,
         state_shape=None,
         action_shape=None,
-        model_path: str = None,
         learning_rate: float = 3e-4,
+        model_path: str = None,
     ):
 
         if model_path is None:

@@ -1,2 +1,2 @@
-from .agent import Agent  # noqa
-from .learner import Learner  # noqa
+from .sac import SAC   # noqa
+from .network import Actor, Critic  # noqa
