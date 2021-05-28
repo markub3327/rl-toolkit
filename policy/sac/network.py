@@ -2,7 +2,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Concatenate, Dense, Lambda
 from tensorflow.keras.models import load_model
-from .noisy_layer import NoisyLayer
+from .layers import NoisyLayer
 
 import tensorflow as tf
 import tensorflow_probability as tfp
