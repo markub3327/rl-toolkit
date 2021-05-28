@@ -1,2 +1,2 @@
-from .sac import SAC   # noqa
-from .network import Actor, Critic  # noqa
+from .off_policy import OffPolicy  # noqa
+from .sac import SAC  # noqa

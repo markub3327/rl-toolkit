@@ -1,4 +1,4 @@
-from .off_policy import OffPolicy
+from policy.off_policy import OffPolicy
 from .network import Actor, Critic
 
 import wandb
