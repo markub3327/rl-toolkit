@@ -48,7 +48,7 @@ class Actor:
                 activation="linear",
                 name="mean",
                 kernel_initializer=initializers.RandomUniform(
-                    minval=-0.003, maxval=0.003
+                    minval=-0.03, maxval=0.03
                 )
             )(latent_sde)
             mean = Lambda(
@@ -145,7 +145,7 @@ class Critic:
                 activation="linear",
                 name="q_val",
                 kernel_initializer=initializers.RandomUniform(
-                    minval=-0.003, maxval=0.003
+                    minval=-0.03, maxval=0.03
                 )
             )(h2)
 
