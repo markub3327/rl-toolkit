@@ -247,6 +247,20 @@ class OffPolicy(ABC):
                     if done:
                         self._logging_train()
 
+                        # write the final state !!!
+                        writer.append({'obs': new_obs})
+                        writer.create_item(
+                            table="uniform_table",
+                            priority=1.0,
+                            trajectory={
+                                "obs": writer.history["obs"][-2],
+                                "act": writer.history["act"][-2],
+                                "rew": writer.history["rew"][-2],
+                                "obs2": writer.history["obs"][-1],
+                                "done": writer.history["done"][-2],
+                            },
+                        )
+
                         # blocks until all the items have been sent to the server
                         writer.end_episode(timeout_ms=1000)
 
