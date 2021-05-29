@@ -226,11 +226,11 @@ class OffPolicy(ABC):
                             "obs": self._last_obs,
                             "act": action,
                             "rew": np.array(reward, dtype=np.float32),
-                            "done": np.array(done, dtype=np.float32)
+                            "done": np.array(done, dtype=np.float32),
                         }
                     )
 
-                    if self._total_steps > 1:
+                    if self._episode_steps > 1:
                         writer.create_item(
                             table="uniform_table",
                             priority=1.0,
