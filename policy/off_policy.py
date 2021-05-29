@@ -1,13 +1,11 @@
 from abc import ABC, abstractmethod
 
+import reverb
 import cv2
 import math
 import wandb
 import tensorflow as tf
 import numpy as np
-
-# utilities
-from utils.replay_buffer import ReplayBuffer
 
 
 class OffPolicy(ABC):
@@ -21,7 +19,7 @@ class OffPolicy(ABC):
         env_steps (int): maximum number of steps in each rollout
         gradient_steps (int): number of update steps after each rollout
         learning_starts (int): number of interactions before using policy network
-        buffer_size (int): the maximum size of experiences replay buffer
+        buffer_capacity (int): the maximum size of experiences replay buffer
         batch_size (int): size of mini-batch used for training
         tau (float): the soft update coefficient for target networks
         gamma (float): the discount factor
@@ -38,7 +36,7 @@ class OffPolicy(ABC):
         # ---
         learning_starts: int,
         # ---
-        buffer_size: int,
+        buffer_capacity: int,
         batch_size: int,
         # ---
         tau: float,
@@ -51,17 +49,47 @@ class OffPolicy(ABC):
         self._env_steps = env_steps
         self._gradient_steps = gradient_steps
         self._learning_starts = learning_starts
-        self._batch_size = batch_size
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
         self._logging_wandb = logging_wandb
 
-        # init replay buffer
-        self._rpm = ReplayBuffer(
-            obs_dim=self._env.observation_space.shape,
-            act_dim=self._env.action_space.shape,
-            size=buffer_size,
+        # Initialize the reverb server.
+        self.server = reverb.Server(
+            tables=[
+                reverb.Table(
+                    name="uniform_table",
+                    max_size=buffer_capacity,
+                    sampler=reverb.selectors.Uniform(),
+                    remover=reverb.selectors.Fifo(),
+                    rate_limiter=reverb.rate_limiters.MinSize(self._learning_starts),
+                    signature={
+                        "obs": tf.TensorSpec(
+                            [*self._env.observation_space.shape],
+                            self._env.observation_space.dtype,
+                        ),
+                        "act": tf.TensorSpec(
+                            [*self._env.action_space.shape],
+                            self._env.action_space.dtype,
+                        ),
+                        "rew": tf.TensorSpec([1], tf.float32),
+                        "obs2": tf.TensorSpec(
+                            [*self._env.observation_space.shape],
+                            self._env.observation_space.dtype,
+                        ),
+                        "done": tf.TensorSpec([1], tf.float32),
+                    },
+                )
+            ],
+            port=8000,
         )
+
+        # Initializes the reverb client
+        self._client = reverb.Client("localhost:8000")
+        self._dataset = reverb.TrajectoryDataset.from_table_signature(
+            server_address="localhost:8000",
+            table="uniform_table",
+            max_in_flight_samples_per_worker=10,
+        ).batch(batch_size)
 
         # check obseration's ranges
         if np.all(np.isfinite(self._env.observation_space.low)) and np.all(
@@ -121,7 +149,6 @@ class OffPolicy(ABC):
         print(f"Score: {self._episode_reward}")
         print(f"Steps: {self._episode_steps}")
         print(f"TotalInteractions: {self._total_steps}")
-        print(f"ReplayBuffer: {len(self._rpm)}")
         print("=============================================")
         print(
             f"Training ... {math.floor(self._total_steps * 100.0 / self._max_steps)} %"
@@ -132,7 +159,6 @@ class OffPolicy(ABC):
                     "epoch": self._total_episodes,
                     "score": self._episode_reward,
                     "steps": self._episode_steps,
-                    "replayBuffer": len(self._rpm),
                 },
                 step=self._total_steps,
             )
@@ -157,46 +183,6 @@ class OffPolicy(ABC):
                 step=self._total_steps,
             )
 
-    def _collect_rollouts(self):
-        for _ in range(self._env_steps):
-            # select action randomly or using policy network
-            if self._total_steps < self._learning_starts:
-                # warmup
-                action = self._env.action_space.sample()
-            else:
-                # Get the noisy action
-                action = self._get_action(self._last_obs, deterministic=False).numpy()
-
-            # Step in the environment
-            new_obs, reward, done, _ = self._env.step(action)
-            new_obs = self._normalize(new_obs)
-
-            # update variables
-            self._episode_reward += reward
-            self._episode_steps += 1
-            self._total_steps += 1
-
-            # Update the replay buffer
-            self._rpm.store(self._last_obs, action, reward, new_obs, done)
-
-            # check the end of episode
-            if done:
-                self._logging_train()
-
-                self._episode_reward = 0.0
-                self._episode_steps = 0
-                self._total_episodes += 1
-
-                # init environment
-                self._last_obs = self._env.reset()
-                self._last_obs = self._normalize(self._last_obs)
-
-                # interrupt the rollout
-                break
-
-            # super critical !!!
-            self._last_obs = new_obs
-
     def train(self):
         self._total_steps = 0
         self._total_episodes = 0
@@ -208,21 +194,81 @@ class OffPolicy(ABC):
         self._last_obs = self._normalize(self._last_obs)
 
         # hlavny cyklus hry
-        while self._total_steps < self._max_steps:
-            # re-new noise matrix before every rollouts
-            self._actor.reset_noise()
+        with self._client.trajectory_writer(num_keep_alive_refs=2) as writer:
+            while self._total_steps < self._max_steps:
+                # re-new noise matrix before every rollouts
+                self._actor.reset_noise()
 
-            # collect rollouts
-            self._collect_rollouts()
+                # collect rollouts
+                for _ in range(self._env_steps):
+                    # select action randomly or using policy network
+                    if self._total_steps < self._learning_starts:
+                        # warmup
+                        action = self._env.action_space.sample()
+                    else:
+                        # Get the noisy action
+                        action = self._get_action(
+                            self._last_obs, deterministic=False
+                        ).numpy()
 
-            # update models
-            if (
-                self._total_steps >= self._learning_starts
-                and len(self._rpm) >= self._batch_size
-            ):
-                self._update()
-                self._logging_models()
-                # self.convert()
+                    # Step in the environment
+                    new_obs, reward, done, _ = self._env.step(action)
+                    new_obs = self._normalize(new_obs)
+
+                    # update variables
+                    self._episode_reward += reward
+                    self._episode_steps += 1
+                    self._total_steps += 1
+
+                    # Update the replay buffer
+                    writer.append(
+                        {
+                            "obs": self._last_obs,
+                            "act": action,
+                            "rew": reward,
+                            "done": done,
+                        }
+                    )
+
+                    if self._total_steps > 1:
+                        writer.create_item(
+                            table="uniform_table",
+                            priority=1.0,
+                            trajectory={
+                                "obs": writer.history["obs"][-2],
+                                "act": writer.history["act"][-2],
+                                "rew": writer.history["rew"][-2],
+                                "obs2": writer.history["obs"][-1],
+                                "done": writer.history["done"][-2],
+                            },
+                        )
+
+                    # check the end of episode
+                    if done:
+                        self._logging_train()
+
+                        # blocks until all the items have been sent to the server
+                        writer.end_episode(timeout_ms=1000)
+
+                        # init variables
+                        self._episode_reward = 0.0
+                        self._episode_steps = 0
+                        self._total_episodes += 1
+
+                        # init environment
+                        self._last_obs = self._env.reset()
+                        self._last_obs = self._normalize(self._last_obs)
+
+                        # interrupt the rollout
+                        break
+
+                    # super critical !!!
+                    self._last_obs = new_obs
+
+                # update models
+                if self._total_steps >= self._learning_starts:
+                    self._update()
+                    self._logging_models()
 
     def test(self, render):
         self._total_steps = 0

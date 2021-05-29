@@ -36,7 +36,7 @@ if __name__ == "__main__":
         "--batch_size", type=int, help="Size of the batch", default=256
     )
     my_parser.add_argument(
-        "--buffer_size", type=int, help="Size of the replay buffer", default=int(1e6)
+        "--buffer_capacity", type=int, help="Size of the replay buffer", default=int(1e6)
     )
     my_parser.add_argument(
         "--learning_starts",
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         env_steps=args.env_steps,
         gradient_steps=args.gradient_steps,
         learning_starts=args.learning_starts,
-        buffer_size=args.buffer_size,
+        buffer_capacity=args.buffer_capacity,
         batch_size=args.batch_size,
         actor_learning_rate=args.learning_rate,
         critic_learning_rate=args.learning_rate,
@@ -105,6 +105,8 @@ if __name__ == "__main__":
     finally:
         # zatvor prostredie
         env.close()
+        # zastav server
+        agent.server.stop()
         # save models
         if args.save is not None:
             agent.save(args.save)

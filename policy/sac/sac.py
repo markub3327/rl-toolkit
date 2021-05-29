@@ -153,24 +153,26 @@ class SAC(OffPolicy):
 
     # -------------------------------- update critic ------------------------------- #
     def _update_critic(self, batch):
-        next_action, next_log_pi = self._actor.predict(batch["obs2"])
+        next_action, next_log_pi = self._actor.predict(batch.data["obs2"])
 
         # target Q-values
-        next_q_1 = self._critic_targ_1.model([batch["obs2"], next_action])
-        next_q_2 = self._critic_targ_2.model([batch["obs2"], next_action])
+        next_q_1 = self._critic_targ_1.model([batch.data["obs2"], next_action])
+        next_q_2 = self._critic_targ_2.model([batch.data["obs2"], next_action])
         next_q = tf.minimum(next_q_1, next_q_2)
         # tf.print(f'nextQ: {next_q.shape}')
 
         # Bellman Equation
         Q_targets = tf.stop_gradient(
-            batch["rew"]
-            + (1 - batch["done"]) * self._gamma * (next_q - self._alpha * next_log_pi)
+            batch.data["rew"]
+            + (1 - batch.data["done"])
+            * self._gamma
+            * (next_q - self._alpha * next_log_pi)
         )
         # tf.print(f'qTarget: {Q_targets.shape}')
 
         # update critic '1'
         with tf.GradientTape() as tape:
-            q_values = self._critic_1.model([batch["obs"], batch["act"]])
+            q_values = self._critic_1.model([batch.data["obs"], batch.data["act"]])
             q_losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_targets, y_pred=q_values
             )
@@ -184,7 +186,7 @@ class SAC(OffPolicy):
 
         # update critic '2'
         with tf.GradientTape() as tape:
-            q_values = self._critic_2.model([batch["obs"], batch["act"]])
+            q_values = self._critic_2.model([batch.data["obs"], batch.data["act"]])
             q_losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_targets, y_pred=q_values
             )
@@ -201,12 +203,12 @@ class SAC(OffPolicy):
     def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
-            y_pred, log_pi = self._actor.predict(batch["obs"])
+            y_pred, log_pi = self._actor.predict(batch.data["obs"])
             # tf.print(f'log_pi: {log_pi.shape}')
 
             # predict q value
-            q_1 = self._critic_1.model([batch["obs"], y_pred])
-            q_2 = self._critic_2.model([batch["obs"], y_pred])
+            q_1 = self._critic_1.model([batch.data["obs"], y_pred])
+            q_2 = self._critic_2.model([batch.data["obs"], y_pred])
             q = tf.minimum(q_1, q_2)
             # tf.print(f'q: {q.shape}')
 
@@ -223,7 +225,7 @@ class SAC(OffPolicy):
 
     # -------------------------------- update alpha ------------------------------- #
     def _update_alpha(self, batch):
-        _, log_pi = self._actor.predict(batch["obs"])
+        _, log_pi = self._actor.predict(batch.data["obs"])
         # tf.print(f'y_pred: {y_pred.shape}')
         # tf.print(f'log_pi: {log_pi.shape}')
 
@@ -241,30 +243,24 @@ class SAC(OffPolicy):
         return alpha_loss
 
     @tf.function
-    def _do_updates(self, batch):
-        # re-new noise matrix every update of 'log_std' params
-        self._actor.reset_noise()
-
-        # Alpha param update
-        self._loss_alpha.update_state(self._update_alpha(batch))
-
-        l_c1, l_c2 = self._update_critic(batch)
-        self._loss_c1.update_state(l_c1)
-        self._loss_c2.update_state(l_c2)
-
-        # Actor model update
-        self._loss_a.update_state(self._update_actor(batch))
-
-        # -------------------- soft update target networks -------------------- #
-        self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
-        self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
-
     def _update(self):
-        for _ in range(self._gradient_steps):
-            batch = self._rpm.sample(self._batch_size)
+        for sample in self._dataset.take(self._gradient_steps):
+            # re-new noise matrix every update of 'log_std' params
+            self._actor.reset_noise()
 
-            # do update weights
-            self._do_updates(batch)
+            # Alpha param update
+            self._loss_alpha.update_state(self._update_alpha(sample))
+
+            l_c1, l_c2 = self._update_critic(sample)
+            self._loss_c1.update_state(l_c1)
+            self._loss_c2.update_state(l_c2)
+
+            # Actor model update
+            self._loss_a.update_state(self._update_actor(sample))
+
+            # -------------------- soft update target networks -------------------- #
+            self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
+            self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
     def _logging_models(self):
         if self._logging_wandb:

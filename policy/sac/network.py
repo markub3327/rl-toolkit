@@ -48,7 +48,7 @@ class Actor:
                 name="mean",
                 kernel_initializer=initializers.RandomUniform(
                     minval=-0.03, maxval=0.03
-                )
+                ),
             )(latent_sde)
 
             self._noisy_l = NoisyLayer(action_shape[0], name="noise")
@@ -66,7 +66,7 @@ class Actor:
         # Optimalizator modelu
         if learning_rate is not None:
             self.optimizer = Adam(learning_rate=learning_rate)
-    
+
         # Vystup musi byt v intervale (-1, 1)
         self._bijector = tfp.bijectors.Tanh()
 
@@ -142,7 +142,7 @@ class Critic:
                 name="q_val",
                 kernel_initializer=initializers.RandomUniform(
                     minval=-0.03, maxval=0.03
-                )
+                ),
             )(h2)
 
             # Vytvor model
