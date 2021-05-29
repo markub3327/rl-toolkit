@@ -61,7 +61,7 @@ class OffPolicy(ABC):
                     max_size=buffer_capacity,
                     sampler=reverb.selectors.Uniform(),
                     remover=reverb.selectors.Fifo(),
-                    rate_limiter=reverb.rate_limiters.MinSize(self._learning_starts),
+                    rate_limiter=reverb.rate_limiters.MinSize(1),
                     signature={
                         "obs": tf.TensorSpec(
                             [*self._env.observation_space.shape],
