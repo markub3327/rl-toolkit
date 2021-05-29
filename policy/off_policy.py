@@ -71,12 +71,12 @@ class OffPolicy(ABC):
                             [*self._env.action_space.shape],
                             self._env.action_space.dtype,
                         ),
-                        "rew": tf.TensorSpec([1], tf.float32),
+                        "rew": tf.TensorSpec([], tf.float32),
                         "obs2": tf.TensorSpec(
                             [*self._env.observation_space.shape],
                             self._env.observation_space.dtype,
                         ),
-                        "done": tf.TensorSpec([1], tf.float32),
+                        "done": tf.TensorSpec([], tf.float32),
                     },
                 )
             ],
@@ -225,8 +225,8 @@ class OffPolicy(ABC):
                         {
                             "obs": self._last_obs,
                             "act": action,
-                            "rew": reward,
-                            "done": done,
+                            "rew": reward.astype(np.float32),
+                            "done": done.astype(np.float32),
                         }
                     )
 
