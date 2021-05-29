@@ -225,8 +225,8 @@ class OffPolicy(ABC):
                         {
                             "obs": self._last_obs,
                             "act": action,
-                            "rew": reward.astype(np.float32),
-                            "done": done.astype(np.float32),
+                            "rew": np.array(reward, dtype=np.float32),
+                            "done": np.array(done, dtype=np.float32)
                         }
                     )
 
