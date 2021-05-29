@@ -36,7 +36,10 @@ if __name__ == "__main__":
         "--batch_size", type=int, help="Size of the batch", default=256
     )
     my_parser.add_argument(
-        "--buffer_capacity", type=int, help="Size of the replay buffer", default=int(1e6)
+        "--buffer_capacity",
+        type=int,
+        help="Capacity of the replay buffer",
+        default=int(1e6),
     )
     my_parser.add_argument(
         "--learning_starts",

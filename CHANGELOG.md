@@ -1,3 +1,11 @@
+# v3.0.0 (May 29, 2021)
+## Features 🔊
+- Reverb
+- updated kernel_initializer for last layers
+- without clipping the mean
+
+<br>
+
 # v2.0.2 (May 23, 2021)
 ## Bug fixes 🛠️
 - update Dockerfile
@@ -12,7 +20,7 @@
 
 <br>
 
-# v2.0 (April 22, 2021)
+# v2.0.0 (April 22, 2021)
 ## Features 🔊
 - Add Huber loss
 - In test mode, rendering to the video file
