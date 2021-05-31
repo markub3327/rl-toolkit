@@ -43,6 +43,8 @@ class OffPolicy(ABC):
         gamma: float,
         # ---
         logging_wandb: bool,
+        # ---
+        db_checkpoint_path: str
     ):
         self._env = env
         self._max_steps = max_steps
@@ -52,6 +54,11 @@ class OffPolicy(ABC):
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
         self._logging_wandb = logging_wandb
+
+        if db_checkpoint_path is None:
+            checkpointer = None
+        else:
+            checkpointer = reverb.checkpointers.DefaultCheckpointer(path=db_checkpoint_path)
 
         # Initialize the reverb server.
         self.server = reverb.Server(
@@ -81,10 +88,11 @@ class OffPolicy(ABC):
                 )
             ],
             port=8000,
+            checkpointer=checkpointer
         )
 
         # Initializes the reverb client
-        self._client = reverb.Client("localhost:8000")
+        self.client = reverb.Client("localhost:8000")
         self._dataset = reverb.TrajectoryDataset.from_table_signature(
             server_address="localhost:8000",
             table="uniform_table",

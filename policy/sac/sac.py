@@ -44,17 +44,19 @@ class SAC(OffPolicy):
         buffer_capacity: int = 1000000,
         batch_size: int = 256,
         # ---
-        actor_learning_rate: float = 3e-4,
-        critic_learning_rate: float = 3e-4,
-        alpha_learning_rate: float = 3e-4,
+        actor_learning_rate: float = 7.3e-4,
+        critic_learning_rate: float = 7.3e-4,
+        alpha_learning_rate: float = 7.3e-4,
         # ---
-        tau: float = 0.005,
+        tau: float = 0.01,
         gamma: float = 0.99,
         # ---
         model_a_path: str = None,
         model_c1_path: str = None,
         model_c2_path: str = None,
         logging_wandb: bool = False,
+        # ---
+        db_checkpoint_path: str = None
     ):
         super(SAC, self).__init__(
             env=env,
@@ -67,6 +69,7 @@ class SAC(OffPolicy):
             tau=tau,
             gamma=gamma,
             logging_wandb=logging_wandb,
+            db_checkpoint_path=db_checkpoint_path
         )
 
         # logging metrics
