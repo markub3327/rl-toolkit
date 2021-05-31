@@ -228,12 +228,22 @@ class SAC(OffPolicy):
             wandb.config.gamma = gamma
 
         # init actor's params in DB
+        self._push_variables()
+
+    def _push_variables(self):
         self.tf_client.insert(
             data=tf.nest.flatten(self._variables_learner),
             tables=tf.constant(["variables"]),
             priorities=tf.constant([1.0], dtype=tf.float64),
         )
 
+    @tf.function
+    def _update_variables(self):
+        sample = self.tf_client.sample("variables", data_dtypes=[self._dtypes_agent])
+        for variable, value in zip(
+            tf.nest.flatten(self._variables_agent), tf.nest.flatten(sample.data[0])
+        ):
+            variable.assign(value)
 
     @tf.function
     def _get_action(self, state, deterministic):
@@ -356,11 +366,7 @@ class SAC(OffPolicy):
             self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
             # store new actor's params
-            self.tf_client.insert(
-                data=tf.nest.flatten(self._variables_learner),
-                tables=tf.constant(["variables"]),
-                priorities=tf.constant([1.0], dtype=tf.float64),
-            )
+            self._push_variables()
 
     def _logging_models(self):
         if self._logging_wandb:

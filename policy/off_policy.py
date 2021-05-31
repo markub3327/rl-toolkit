@@ -158,14 +158,7 @@ class OffPolicy(ABC):
         with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
             while self._total_steps < self._max_steps:
                 # Refresh actor's params
-                sample = self.tf_client.sample(
-                    "variables", data_dtypes=[self._dtypes_agent]
-                )
-                for variable, value in zip(
-                    tf.nest.flatten(self._variables_agent),
-                    tf.nest.flatten(sample.data[0]),
-                ):
-                    variable.assign(value)
+                self._update_variables()
 
                 # re-new noise matrix before every rollouts
                 self._actor_agent.reset_noise()
