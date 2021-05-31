@@ -1,6 +1,7 @@
 from policy.off_policy import OffPolicy
 from .network import Actor, Critic
 
+import reverb
 import wandb
 import tensorflow as tf
 
@@ -58,6 +59,19 @@ class SAC(OffPolicy):
         # ---
         db_checkpoint_path: str = None,
     ):
+        super(SAC, self).__init__(
+            env=env,
+            max_steps=max_steps,
+            env_steps=env_steps,
+            gradient_steps=gradient_steps,
+            learning_starts=learning_starts,
+            buffer_capacity=buffer_capacity,
+            batch_size=batch_size,
+            tau=tau,
+            gamma=gamma,
+            logging_wandb=logging_wandb,
+        )
+
         # logging metrics
         self._loss_a = tf.keras.metrics.Mean()
         self._loss_c1 = tf.keras.metrics.Mean()
@@ -122,10 +136,79 @@ class SAC(OffPolicy):
         self._update_target(self._critic_1, self._critic_targ_1, tau=tf.constant(1.0))
         self._update_target(self._critic_2, self._critic_targ_2, tau=tf.constant(1.0))
 
+        if db_checkpoint_path is None:
+            checkpointer = None
+        else:
+            checkpointer = reverb.checkpointers.DefaultCheckpointer(
+                path=db_checkpoint_path
+            )
+
         # prepare variable container
+        self._variables_agent = {
+            "policy_variables": self._actor_agent.model.variables,
+        }
         self._variables_learner = {
             "policy_variables": self._actor_learner.model.variables,
         }
+
+        # variables signature for variable container table
+        variable_container_signature = tf.nest.map_structure(
+            lambda variable: tf.TensorSpec(variable.shape, dtype=variable.dtype),
+            self._variables_agent,
+        )
+        self._dtypes_agent = tf.nest.map_structure(
+            lambda spec: spec.dtype, variable_container_signature
+        )
+
+        # Initialize the reverb server
+        self.server = reverb.Server(
+            tables=[
+                reverb.Table(  # Replay buffer
+                    name="experience",
+                    sampler=reverb.selectors.Uniform(),
+                    remover=reverb.selectors.Fifo(),
+                    rate_limiter=reverb.rate_limiters.MinSize(1),
+                    max_size=buffer_capacity,
+                    max_times_sampled=0,
+                    signature={
+                        "obs": tf.TensorSpec(
+                            [*self._env.observation_space.shape],
+                            self._env.observation_space.dtype,
+                        ),
+                        "act": tf.TensorSpec(
+                            [*self._env.action_space.shape],
+                            self._env.action_space.dtype,
+                        ),
+                        "rew": tf.TensorSpec([1], tf.float32),
+                        "obs2": tf.TensorSpec(
+                            [*self._env.observation_space.shape],
+                            self._env.observation_space.dtype,
+                        ),
+                        "done": tf.TensorSpec([1], tf.float32),
+                    },
+                ),
+                reverb.Table(  # Variable container
+                    name="variables",
+                    sampler=reverb.selectors.Uniform(),
+                    remover=reverb.selectors.Fifo(),
+                    rate_limiter=reverb.rate_limiters.MinSize(1),
+                    max_size=1,
+                    max_times_sampled=0,
+                    signature=variable_container_signature,
+                ),
+            ],
+            port=8000,
+            checkpointer=checkpointer,
+        )
+
+        # Initializes the reverb client
+        self.client = reverb.Client("localhost:8000")
+        self.tf_client = reverb.TFClient(server_address="localhost:8000")
+        self._dataset = reverb.TrajectoryDataset.from_table_signature(
+            server_address="localhost:8000",
+            table="experience",
+            max_in_flight_samples_per_worker=10,
+        ).batch(batch_size)
 
         # init Weights & Biases
         if self._logging_wandb:
@@ -143,20 +226,6 @@ class SAC(OffPolicy):
             wandb.config.alpha_learning_rate = alpha_learning_rate
             wandb.config.tau = tau
             wandb.config.gamma = gamma
-
-        super(SAC, self).__init__(
-            env=env,
-            max_steps=max_steps,
-            env_steps=env_steps,
-            gradient_steps=gradient_steps,
-            learning_starts=learning_starts,
-            buffer_capacity=buffer_capacity,
-            batch_size=batch_size,
-            tau=tau,
-            gamma=gamma,
-            logging_wandb=logging_wandb,
-            db_checkpoint_path=db_checkpoint_path,
-        )
 
     @tf.function
     def _get_action(self, state, deterministic):
@@ -282,7 +351,8 @@ class SAC(OffPolicy):
             self.tf_client.insert(
                 data=tf.nest.flatten(self._variables_learner),
                 tables=tf.constant(["variables"]),
-                priorities=tf.constant([1.0], dtype=tf.float64))
+                priorities=tf.constant([1.0], dtype=tf.float64),
+            )
 
     def _logging_models(self):
         if self._logging_wandb:

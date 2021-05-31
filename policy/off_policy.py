@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 
-import reverb
 import cv2
 import math
 import wandb
@@ -43,8 +42,6 @@ class OffPolicy(ABC):
         gamma: float,
         # ---
         logging_wandb: bool,
-        # ---
-        db_checkpoint_path: str,
     ):
         self._env = env
         self._max_steps = max_steps
@@ -54,73 +51,6 @@ class OffPolicy(ABC):
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
         self._logging_wandb = logging_wandb
-
-        if db_checkpoint_path is None:
-            checkpointer = None
-        else:
-            checkpointer = reverb.checkpointers.DefaultCheckpointer(
-                path=db_checkpoint_path
-            )
-
-        # prepare variable container
-        self._variables_agent = {
-            "policy_variables": self._actor_agent.model.variables,
-        }
-        # variables signature for variable container table
-        variable_container_signature = tf.nest.map_structure(
-            lambda variable: tf.TensorSpec(variable.shape, dtype=variable.dtype),
-            self._variables_agent)
-        self._dtypes_agent = tf.nest.map_structure(lambda spec: spec.dtype, variable_container_signature)
-
-        # Initialize the reverb server
-        self.server = reverb.Server(
-            tables=[
-                reverb.Table(  # Replay buffer
-                    name="experience",
-                    sampler=reverb.selectors.Uniform(),
-                    remover=reverb.selectors.Fifo(),
-                    rate_limiter=reverb.rate_limiters.MinSize(1),
-                    max_size=buffer_capacity,
-                    max_times_sampled=0,
-                    signature={
-                        "obs": tf.TensorSpec(
-                            [*self._env.observation_space.shape],
-                            self._env.observation_space.dtype,
-                        ),
-                        "act": tf.TensorSpec(
-                            [*self._env.action_space.shape],
-                            self._env.action_space.dtype,
-                        ),
-                        "rew": tf.TensorSpec([1], tf.float32),
-                        "obs2": tf.TensorSpec(
-                            [*self._env.observation_space.shape],
-                            self._env.observation_space.dtype,
-                        ),
-                        "done": tf.TensorSpec([1], tf.float32),
-                    },
-                ),
-                reverb.Table(  # Variable container
-                    name="variables",
-                    sampler=reverb.selectors.Uniform(),
-                    remover=reverb.selectors.Fifo(),
-                    rate_limiter=reverb.rate_limiters.MinSize(1),
-                    max_size=1,
-                    max_times_sampled=0,
-                    signature=variable_container_signature,
-                )
-            ],
-            port=8000,
-            checkpointer=checkpointer,
-        )
-
-        # Initializes the reverb client
-        self.client = reverb.Client("localhost:8000")
-        self.tf_client = reverb.TFClient(server_address="localhost:8000")
-        self._dataset = reverb.TrajectoryDataset.from_table_signature(
-            server_address="localhost:8000",
-            table="experience",
-            max_in_flight_samples_per_worker=10,
-        ).batch(batch_size)
 
         # check obseration's ranges
         if np.all(np.isfinite(self._env.observation_space.low)) and np.all(
@@ -228,8 +158,13 @@ class OffPolicy(ABC):
         with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
             while self._total_steps < self._max_steps:
                 # Refresh actor's params
-                sample = self._tf_client.sample("variables", data_dtypes=[self._dtypes_agent])
-                for variable, value in zip(tf.nest.flatten(self._variables_agent), tf.nest.flatten(sample.data[0])):
+                sample = self._tf_client.sample(
+                    "variables", data_dtypes=[self._dtypes_agent]
+                )
+                for variable, value in zip(
+                    tf.nest.flatten(self._variables_agent),
+                    tf.nest.flatten(sample.data[0]),
+                ):
                     variable.assign(value)
 
                 # re-new noise matrix before every rollouts
