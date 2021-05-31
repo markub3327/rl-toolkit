@@ -64,9 +64,6 @@ if __name__ == "__main__":
     my_parser.add_argument("--model_a", type=str, help="Actor's model file")
     my_parser.add_argument("--model_c1", type=str, help="Critic 1's model file")
     my_parser.add_argument("--model_c2", type=str, help="Critic 2's model file")
-    my_parser.add_argument(
-        "--db_checkpoint_path", type=str, help="Path to the DB's checkpoint"
-    )
 
     # nacitaj zadane argumenty programu
     args = my_parser.parse_args()
@@ -101,7 +98,7 @@ if __name__ == "__main__":
         model_c1_path=args.model_c1,
         model_c2_path=args.model_c2,
         logging_wandb=args.wandb,
-        db_checkpoint_path=args.db_checkpoint_path,
+        save_path=args.save,
     )
 
     try:
@@ -114,11 +111,7 @@ if __name__ == "__main__":
         env.close()
 
         # save models and snapshot of the database
-        if args.save is not None:
-            agent.save(args.save)
-            checkpoint_path = agent.client.checkpoint()
-
-            print(checkpoint_path)
+        agent.save()
 
         # zastav server
         agent.server.stop()

@@ -1,6 +1,7 @@
 from policy.off_policy import OffPolicy
 from .network import Actor, Critic
 
+import os
 import reverb
 import wandb
 import tensorflow as tf
@@ -57,7 +58,7 @@ class SAC(OffPolicy):
         model_c2_path: str = None,
         logging_wandb: bool = False,
         # ---
-        db_checkpoint_path: str = None,
+        save_path: str = None,
     ):
         super(SAC, self).__init__(
             env=env,
@@ -71,6 +72,8 @@ class SAC(OffPolicy):
             gamma=gamma,
             logging_wandb=logging_wandb,
         )
+
+        self._save_path = save_path
 
         # logging metrics
         self._loss_a = tf.keras.metrics.Mean()
@@ -136,11 +139,11 @@ class SAC(OffPolicy):
         self._update_target(self._critic_1, self._critic_targ_1, tau=tf.constant(1.0))
         self._update_target(self._critic_2, self._critic_targ_2, tau=tf.constant(1.0))
 
-        if db_checkpoint_path is None:
+        if self._save_path is None:
             checkpointer = None
         else:
             checkpointer = reverb.checkpointers.DefaultCheckpointer(
-                path=db_checkpoint_path
+                path=self._save_path
             )
 
         # prepare variable container
@@ -390,11 +393,16 @@ class SAC(OffPolicy):
         self._loss_c2.reset_states()
         self._loss_alpha.reset_states()
 
-    def save(self, path):
-        # Save model to local drive
-        self._actor_learner.model.save(f"{path}model_A.h5")
-        self._critic_1.model.save(f"{path}model_C1.h5")
-        self._critic_2.model.save(f"{path}model_C2.h5")
+    def save(self):
+        if self._save_path is not None:
+            # store models
+            self._actor_learner.model.save(os.path.join(self._save_path, "model_A.h5"))
+            self._critic_1.model.save(os.path.join(self._save_path, "model_C1.h5"))
+            self._critic_2.model.save(os.path.join(self._save_path, "model_C2.h5"))
+
+            # store checkpoint of DB
+            checkpoint_path = self.client.checkpoint()
+            print(checkpoint_path)
 
     def convert(self):
         # Convert the model.
