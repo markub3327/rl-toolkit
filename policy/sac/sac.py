@@ -227,6 +227,14 @@ class SAC(OffPolicy):
             wandb.config.tau = tau
             wandb.config.gamma = gamma
 
+        # init actor's params in DB
+        self.tf_client.insert(
+            data=tf.nest.flatten(self._variables_learner),
+            tables=tf.constant(["variables"]),
+            priorities=tf.constant([1.0], dtype=tf.float64),
+        )
+
+
     @tf.function
     def _get_action(self, state, deterministic):
         a, _ = self._actor_agent.predict(
