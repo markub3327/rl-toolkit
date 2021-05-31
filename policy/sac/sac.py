@@ -88,8 +88,16 @@ class SAC(OffPolicy):
             -tf.reduce_prod(self._env.action_space.shape), dtype=tf.float32
         )
 
-        # Actor network
-        self._actor = Actor(
+        # Actor network (for learner)
+        self._actor_learner = Actor(
+            state_shape=self._env.observation_space.shape,
+            action_shape=self._env.action_space.shape,
+            learning_rate=actor_learning_rate,
+            model_path=model_a_path,
+        )
+
+        # Actor network (for agent)
+        self._actor_agent = Actor(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
             learning_rate=actor_learning_rate,
@@ -128,6 +136,11 @@ class SAC(OffPolicy):
         self._update_target(self._critic_1, self._critic_targ_1, tau=tf.constant(1.0))
         self._update_target(self._critic_2, self._critic_targ_2, tau=tf.constant(1.0))
 
+        # prepare variable container
+        self._variables_learner = {
+            "policy_variables": self._actor_learner.model.variables,
+        }
+
         # init Weights & Biases
         if self._logging_wandb:
             wandb.init(project="rl-toolkit")
@@ -147,7 +160,7 @@ class SAC(OffPolicy):
 
     @tf.function
     def _get_action(self, state, deterministic):
-        a, _ = self._actor.predict(
+        a, _ = self._actor_agent.predict(
             tf.expand_dims(state, axis=0),
             with_logprob=False,
             deterministic=deterministic,
@@ -156,7 +169,7 @@ class SAC(OffPolicy):
 
     # -------------------------------- update critic ------------------------------- #
     def _update_critic(self, batch):
-        next_action, next_log_pi = self._actor.predict(batch.data["obs2"])
+        next_action, next_log_pi = self._actor_learner.predict(batch.data["obs2"])
 
         # target Q-values
         next_q_1 = self._critic_targ_1.model([batch.data["obs2"], next_action])
@@ -206,7 +219,7 @@ class SAC(OffPolicy):
     def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
-            y_pred, log_pi = self._actor.predict(batch.data["obs"])
+            y_pred, log_pi = self._actor_learner.predict(batch.data["obs"])
             # tf.print(f'log_pi: {log_pi.shape}')
 
             # predict q value
@@ -219,16 +232,16 @@ class SAC(OffPolicy):
             a_loss = tf.nn.compute_average_loss(a_losses)
             # tf.print(f'a_losses: {a_losses}')
 
-        grads = tape.gradient(a_loss, self._actor.model.trainable_variables)
-        self._actor.optimizer.apply_gradients(
-            zip(grads, self._actor.model.trainable_variables)
+        grads = tape.gradient(a_loss, self._actor_learner.model.trainable_variables)
+        self._actor_learner.optimizer.apply_gradients(
+            zip(grads, self._actor_learner.model.trainable_variables)
         )
 
         return a_loss
 
     # -------------------------------- update alpha ------------------------------- #
     def _update_alpha(self, batch):
-        _, log_pi = self._actor.predict(batch.data["obs"])
+        _, log_pi = self._actor_learner.predict(batch.data["obs"])
         # tf.print(f'y_pred: {y_pred.shape}')
         # tf.print(f'log_pi: {log_pi.shape}')
 
@@ -249,7 +262,7 @@ class SAC(OffPolicy):
     def _update(self):
         for sample in self._dataset.take(self._gradient_steps):
             # re-new noise matrix every update of 'log_std' params
-            self._actor.reset_noise()
+            self._actor_learner.reset_noise()
 
             # Alpha param update
             self._loss_alpha.update_state(self._update_alpha(sample))
@@ -264,6 +277,12 @@ class SAC(OffPolicy):
             # -------------------- soft update target networks -------------------- #
             self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
             self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
+
+            # store new actor's params
+            self.tf_client.insert(
+                data=tf.nest.flatten(self._variables_learner),
+                tables=tf.constant(["variables"]),
+                priorities=tf.constant([1.0], dtype=tf.float64))
 
     def _logging_models(self):
         if self._logging_wandb:
@@ -289,13 +308,13 @@ class SAC(OffPolicy):
 
     def save(self, path):
         # Save model to local drive
-        self._actor.model.save(f"{path}model_A.h5")
+        self._actor_learner.model.save(f"{path}model_A.h5")
         self._critic_1.model.save(f"{path}model_C1.h5")
         self._critic_2.model.save(f"{path}model_C2.h5")
 
     def convert(self):
         # Convert the model.
-        converter = tf.lite.TFLiteConverter.from_keras_model(self._actor.model)
+        converter = tf.lite.TFLiteConverter.from_keras_model(self._actor_learner.model)
         tflite_model = converter.convert()
 
         # Save the model.
