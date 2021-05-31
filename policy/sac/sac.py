@@ -143,7 +143,7 @@ class SAC(OffPolicy):
             checkpointer = None
         else:
             checkpointer = reverb.checkpointers.DefaultCheckpointer(
-                path=self._save_path
+                path=os.path.join(self._save_path, "db")
             )
 
         # prepare variable container
