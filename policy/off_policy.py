@@ -44,7 +44,7 @@ class OffPolicy(ABC):
         # ---
         logging_wandb: bool,
         # ---
-        db_checkpoint_path: str
+        db_checkpoint_path: str,
     ):
         self._env = env
         self._max_steps = max_steps
@@ -58,7 +58,9 @@ class OffPolicy(ABC):
         if db_checkpoint_path is None:
             checkpointer = None
         else:
-            checkpointer = reverb.checkpointers.DefaultCheckpointer(path=db_checkpoint_path)
+            checkpointer = reverb.checkpointers.DefaultCheckpointer(
+                path=db_checkpoint_path
+            )
 
         # Initialize the reverb server.
         self.server = reverb.Server(
@@ -88,7 +90,7 @@ class OffPolicy(ABC):
                 )
             ],
             port=8000,
-            checkpointer=checkpointer
+            checkpointer=checkpointer,
         )
 
         # Initializes the reverb client
@@ -256,7 +258,7 @@ class OffPolicy(ABC):
                         self._logging_train()
 
                         # write the final state !!!
-                        writer.append({'obs': new_obs})
+                        writer.append({"obs": new_obs})
                         writer.create_item(
                             table="uniform_table",
                             priority=1.0,

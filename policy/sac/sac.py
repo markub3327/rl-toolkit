@@ -56,7 +56,7 @@ class SAC(OffPolicy):
         model_c2_path: str = None,
         logging_wandb: bool = False,
         # ---
-        db_checkpoint_path: str = None
+        db_checkpoint_path: str = None,
     ):
         super(SAC, self).__init__(
             env=env,
@@ -69,7 +69,7 @@ class SAC(OffPolicy):
             tau=tau,
             gamma=gamma,
             logging_wandb=logging_wandb,
-            db_checkpoint_path=db_checkpoint_path
+            db_checkpoint_path=db_checkpoint_path,
         )
 
         # logging metrics
