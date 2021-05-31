@@ -3,11 +3,11 @@
 ## Actor
 
 <p align="center">
-  <img src="../../img/model_A_SAC.png" alt="actor">
+  <img src="../../img/model_A.png" alt="actor">
 </p>
 
 ## Critic
 
 <p align="center">
-  <img src="../../img/model_C_SAC.png" alt="critic">
+  <img src="../../img/model_C.png" alt="critic">
 </p>
