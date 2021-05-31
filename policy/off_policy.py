@@ -204,7 +204,7 @@ class OffPolicy(ABC):
         self._last_obs = self._normalize(self._last_obs)
 
         # hlavny cyklus hry
-        with self._client.trajectory_writer(num_keep_alive_refs=2) as writer:
+        with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
             while self._total_steps < self._max_steps:
                 # re-new noise matrix before every rollouts
                 self._actor.reset_noise()
