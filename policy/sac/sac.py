@@ -58,20 +58,6 @@ class SAC(OffPolicy):
         # ---
         db_checkpoint_path: str = None,
     ):
-        super(SAC, self).__init__(
-            env=env,
-            max_steps=max_steps,
-            env_steps=env_steps,
-            gradient_steps=gradient_steps,
-            learning_starts=learning_starts,
-            buffer_capacity=buffer_capacity,
-            batch_size=batch_size,
-            tau=tau,
-            gamma=gamma,
-            logging_wandb=logging_wandb,
-            db_checkpoint_path=db_checkpoint_path,
-        )
-
         # logging metrics
         self._loss_a = tf.keras.metrics.Mean()
         self._loss_c1 = tf.keras.metrics.Mean()
@@ -157,6 +143,20 @@ class SAC(OffPolicy):
             wandb.config.alpha_learning_rate = alpha_learning_rate
             wandb.config.tau = tau
             wandb.config.gamma = gamma
+
+        super(SAC, self).__init__(
+            env=env,
+            max_steps=max_steps,
+            env_steps=env_steps,
+            gradient_steps=gradient_steps,
+            learning_starts=learning_starts,
+            buffer_capacity=buffer_capacity,
+            batch_size=batch_size,
+            tau=tau,
+            gamma=gamma,
+            logging_wandb=logging_wandb,
+            db_checkpoint_path=db_checkpoint_path,
+        )
 
     @tf.function
     def _get_action(self, state, deterministic):
