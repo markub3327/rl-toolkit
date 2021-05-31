@@ -158,7 +158,7 @@ class OffPolicy(ABC):
         with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
             while self._total_steps < self._max_steps:
                 # Refresh actor's params
-                sample = self._tf_client.sample(
+                sample = self.tf_client.sample(
                     "variables", data_dtypes=[self._dtypes_agent]
                 )
                 for variable, value in zip(
