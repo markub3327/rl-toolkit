@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
@@ -10,7 +10,7 @@ with open("CHANGELOG.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="rl-toolkit",
-    version="3.0.3",
+    version="3.0.4",
     description="The RL-Toolkit: A toolkit for developing and comparing your reinforcement learning agents in various games (OpenAI Gym or Pybullet).",  # noqa
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -21,7 +21,9 @@ setup(
     author="Martin Kubovčík",
     author_email="markub3327@gmail.com",
     license="mit",
-    packages=["rl-toolkit"],
+    packages=[
+        package for package in find_packages() if package.startswith("rl-toolkit")
+    ],
     keywords=[
         "reinforcement-learning",
         "ml",
