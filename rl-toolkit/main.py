@@ -8,8 +8,8 @@ from policy import SAC
 if __name__ == "__main__":
 
     my_parser = argparse.ArgumentParser(
-        prog="python3 training.py",
-        description="RL training toolkit",
+        prog="python3 main.py",
+        description="The RL-Toolkit: A toolkit for developing and comparing your reinforcement learning agents in various games (OpenAI Gym or Pybullet).",  # noqa
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
@@ -18,7 +18,13 @@ if __name__ == "__main__":
         "--environment",
         type=str,
         help="Only OpenAI Gym/PyBullet environments are available!",
-        default="BipedalWalker-v3",
+        required=True,
+    )
+    my_parser.add_argument(
+        "--mode",
+        choices=["training", "testing"],
+        help="Choose between training and testing mode.",
+        required=True,
     )
     my_parser.add_argument(
         "-t",
@@ -59,11 +65,15 @@ if __name__ == "__main__":
         help="Delay between critic and policy update",
         default=2,
     )
+    my_parser.add_argument(
+        "--render", action="store_true", help="Render the environment"
+    )
     my_parser.add_argument("--wandb", action="store_true", help="Logging to wanDB")
     my_parser.add_argument("-s", "--save", type=str, help="Path for saving model files")
     my_parser.add_argument("--model_a", type=str, help="Actor's model file")
     my_parser.add_argument("--model_c1", type=str, help="Critic 1's model file")
     my_parser.add_argument("--model_c2", type=str, help="Critic 2's model file")
+    my_parser.add_argument("--db_path", type=str, help="DB's checkpoints path")
 
     # nacitaj zadane argumenty programu
     args = my_parser.parse_args()
@@ -99,19 +109,30 @@ if __name__ == "__main__":
         model_c2_path=args.model_c2,
         logging_wandb=args.wandb,
         save_path=args.save,
+        db_path=args.db_path,
     )
 
-    try:
-        # run training process
-        agent.train()
-    except KeyboardInterrupt:
-        print("Terminated by user ... Bay bay")
-    finally:
-        # zatvor herne prostredie
-        env.close()
+    if args.mode == "training":
+        try:
+            # run training process
+            agent.train()
+        except KeyboardInterrupt:
+            print("Terminated by user ... Bay bay")
+        finally:
+            # zatvor herne prostredie
+            env.close()
 
-        # save models and snapshot of the database
-        agent.save()
+            # save models and snapshot of the database
+            agent.save()
 
-        # zastav server
-        agent.server.stop()
+            # zastav server
+            agent.server.stop()
+    elif args.mode == "testing":
+        try:
+            # run testing process
+            agent.test(render=args.render)
+        except KeyboardInterrupt:
+            print("Terminated by user ... Bay bay")
+        finally:
+            # zatvor prostredie
+            env.close()

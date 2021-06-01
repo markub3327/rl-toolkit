@@ -3,6 +3,7 @@
 - Reverb
 - updated kernel_initializer for last layers
 - without clipping the mean
+- setup.py (package is available on PyPI)
 
 <br>
 

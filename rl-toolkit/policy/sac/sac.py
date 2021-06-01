@@ -59,6 +59,7 @@ class SAC(OffPolicy):
         logging_wandb: bool = False,
         # ---
         save_path: str = None,
+        db_path: str = None,
     ):
         super(SAC, self).__init__(
             env=env,
@@ -139,12 +140,10 @@ class SAC(OffPolicy):
         self._update_target(self._critic_1, self._critic_targ_1, tau=tf.constant(1.0))
         self._update_target(self._critic_2, self._critic_targ_2, tau=tf.constant(1.0))
 
-        if self._save_path is None:
+        if db_path is None:
             checkpointer = None
         else:
-            checkpointer = reverb.checkpointers.DefaultCheckpointer(
-                path=os.path.join(self._save_path, "db")
-            )
+            checkpointer = reverb.checkpointers.DefaultCheckpointer(path=db_path)
 
         # prepare variable container
         self._variables_agent = {
@@ -400,9 +399,9 @@ class SAC(OffPolicy):
             self._critic_1.model.save(os.path.join(self._save_path, "model_C1.h5"))
             self._critic_2.model.save(os.path.join(self._save_path, "model_C2.h5"))
 
-            # store checkpoint of DB
-            checkpoint_path = self.client.checkpoint()
-            print(checkpoint_path)
+        # store checkpoint of DB
+        checkpoint_path = self.client.checkpoint()
+        print(checkpoint_path)
 
     def convert(self):
         # Convert the model.
