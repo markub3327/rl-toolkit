@@ -18,6 +18,7 @@ class Learner:
     Attributes:
         env: the instance of environment object
         max_steps (int): maximum number of interactions do in environment
+        gradient_steps (int): number of update steps after each rollout
         learning_starts (int): number of interactions before using policy network
         buffer_capacity (int): the capacity of experiences replay buffer
         batch_size (int): size of mini-batch used for training
@@ -39,6 +40,7 @@ class Learner:
         # ---
         env,
         max_steps: int,
+        gradient_steps: int = 64,
         learning_starts: int = 10000,
         # ---
         buffer_capacity: int = 1000000,
@@ -61,11 +63,18 @@ class Learner:
     ):
         self._env = env
         self._max_steps = max_steps
+        self._gradient_steps = gradient_steps
         self._learning_starts = learning_starts
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
         self._logging_wandb = logging_wandb
         self._save_path = save_path
+
+        # logging metrics
+        self._loss_a = tf.keras.metrics.Mean()
+        self._loss_c1 = tf.keras.metrics.Mean()
+        self._loss_c2 = tf.keras.metrics.Mean()
+        self._loss_alpha = tf.keras.metrics.Mean()
 
         # init param 'alpha' - Lagrangian constraint
         self._log_alpha = tf.Variable(0.0, trainable=True, name="log_alpha")
@@ -122,10 +131,22 @@ class Learner:
         else:
             checkpointer = reverb.checkpointers.DefaultCheckpointer(path=db_path)
 
+        # actual training step
+        self._train_step = tf.Variable(
+            0,
+            trainable=False,
+            dtype=tf.int32,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            shape=(),
+        )
+
         # prepare variable container
         self._variables_container = {
+            "train_step": self._train_step,
             "policy_variables": self._actor.model.variables,
         }
+
+        # variables signature for variable container table
         variable_container_signature = tf.nest.map_structure(
             lambda variable: tf.TensorSpec(variable.shape, dtype=variable.dtype),
             self._variables_container,
@@ -187,6 +208,7 @@ class Learner:
 
             # Settings
             wandb.config.max_steps = max_steps
+            wandb.config.gradient_steps = gradient_steps
             wandb.config.learning_starts = learning_starts
             wandb.config.buffer_capacity = buffer_capacity
             wandb.config.batch_size = batch_size
@@ -304,63 +326,70 @@ class Learner:
         return alpha_loss
 
     @tf.function
-    def _train_on_batch(self, batch):
-        # re-new noise matrix every update of 'log_std' params
-        self._actor.reset_noise()
+    def _update(self):
+        #  env_steps : gradient_steps = 1 : 1
+        for sample in self._dataset.take(self._gradient_steps):
+            # re-new noise matrix every update of 'log_std' params
+            self._actor.reset_noise()
 
-        # Alpha param update
-        loss_alpha = self._update_alpha(batch)
+            # Alpha param update
+            self._loss_alpha.update_state(self._update_alpha(sample))
 
-        # Critic models update
-        loss_c1, loss_c2 = self._update_critic(batch)
+            l_c1, l_c2 = self._update_critic(sample)
+            self._loss_c1.update_state(l_c1)
+            self._loss_c2.update_state(l_c2)
 
-        # Actor model update
-        loss_a = self._update_actor(batch)
+            # Actor model update
+            self._loss_a.update_state(self._update_actor(sample))
 
-        # -------------------- soft update target networks -------------------- #
-        self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
-        self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
+            # -------------------- soft update target networks -------------------- #
+            self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
+            self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
         # store new actor's params
         self._push_variables()
 
-        return loss_alpha, loss_c1, loss_c2, loss_a
-
     def run(self):
-        self._total_steps = self._learning_starts
+        for step in range(self._learning_starts, self._max_steps, self._gradient_steps):
+            # update train_step
+            self._train_step.assign(step)
 
-        for sample in self._dataset.take(self._max_steps):
             # update models
-            loss_alpha, loss_c1, loss_c2, loss_a = self._train_on_batch(sample)
-            self._logging_models(loss_alpha, loss_c1, loss_c2, loss_a)
+            self._update()
 
-            # update variables
-            self._total_steps += 1
+            # log metrics
+            self._logging_models()
 
-    def _logging_models(self, loss_alpha, loss_c1, loss_c2, loss_a):
-        # logging frequency
-        if self._total_steps % 64 == 0:
-            print("=============================================")
-            print(f"Step: {self._total_steps}")
-            print(f"Actor's loss: {loss_a}")
-            print(f"Critic 1's loss: {loss_c1}")
-            print(f"Critic 2's loss: {loss_c2}")
-            print("=============================================")
-            print(
-                f"Training ... {math.floor(self._total_steps * 100.0 / self._max_steps)} %"  # noqa
-            )
+    def _logging_models(self):
+        print("=============================================")
+        print(f"Step: {self._train_step.numpy()}")
+        print(f"Actor's loss: {self._loss_a.result()}")
+        print(f"Critic 1's loss: {self._loss_c1.result()}")
+        print(f"Critic 2's loss: {self._loss_c2.result()}")
+        print("=============================================")
+        print(
+            f"Training ... {math.floor(self._train_step.numpy() * 100.0 / self._max_steps)} %"  # noqa
+        )
         if self._logging_wandb:
             # logging of epoch's mean loss
             wandb.log(
                 {
-                    "loss_a": loss_a,
-                    "loss_c1": loss_c1,
-                    "loss_c2": loss_c2,
-                    "loss_alpha": loss_alpha,
+                    "loss_a": self._loss_a.result(),
+                    "loss_c1": self._loss_c1.result(),
+                    "loss_c2": self._loss_c2.result(),
+                    "loss_alpha": self._loss_alpha.result(),
                     "alpha": self._alpha,
                 },
-                step=self._total_steps,
+                step=self._train_step.numpy(),
             )
+        self._clear_metrics()  # clear stored metrics of losses
+
+    def _clear_metrics(self):
+        # reset logger
+        self._loss_a.reset_states()
+        self._loss_c1.reset_states()
+        self._loss_c2.reset_states()
+        self._loss_alpha.reset_states()
 
     def save(self):
         if self._save_path is not None:

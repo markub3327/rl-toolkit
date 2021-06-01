@@ -57,6 +57,9 @@ if __name__ == "__main__":
         "--env_steps", type=int, help="Num. of environment steps", default=64
     )
     my_parser.add_argument(
+        "--gradient_steps", type=int, help="Num. of gradient steps", default=64
+    )
+    my_parser.add_argument(
         "--policy_delay",
         type=int,
         help="Delay between critic and policy update",
@@ -115,6 +118,7 @@ if __name__ == "__main__":
         agent = Learner(
             env=env,
             max_steps=args.max_steps,
+            gradient_steps=args.gradient_steps,
             learning_starts=args.learning_starts,
             buffer_capacity=args.buffer_capacity,
             batch_size=args.batch_size,
