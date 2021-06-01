@@ -3,7 +3,7 @@ import gym
 import pybullet_envs  # noqa
 
 # policy
-from .policy import SAC
+from rl_toolkit.policy import Learner, Agent, Tester
 
 if __name__ == "__main__":
 
@@ -22,8 +22,8 @@ if __name__ == "__main__":
     )
     my_parser.add_argument(
         "--mode",
-        choices=["training", "testing"],
-        help="Choose between training and testing mode.",
+        choices=["agent", "learner", "tester"],
+        help="Choose operating mode.",
         required=True,
     )
     my_parser.add_argument(
@@ -74,6 +74,9 @@ if __name__ == "__main__":
     my_parser.add_argument("--model_c1", type=str, help="Critic 1's model file")
     my_parser.add_argument("--model_c2", type=str, help="Critic 2's model file")
     my_parser.add_argument("--db_path", type=str, help="DB's checkpoints path")
+    my_parser.add_argument(
+        "--db_server", type=str, help="DB server name", default="localhost"
+    )
 
     # nacitaj zadane argumenty programu
     args = my_parser.parse_args()
@@ -90,32 +93,49 @@ if __name__ == "__main__":
     print(env.observation_space.low, env.observation_space.high)
     print()
 
-    # init policy
-    agent = SAC(
-        env=env,
-        max_steps=args.max_steps,
-        env_steps=args.env_steps,
-        gradient_steps=args.gradient_steps,
-        learning_starts=args.learning_starts,
-        buffer_capacity=args.buffer_capacity,
-        batch_size=args.batch_size,
-        actor_learning_rate=args.learning_rate,
-        critic_learning_rate=args.learning_rate,
-        alpha_learning_rate=args.learning_rate,
-        tau=args.tau,
-        gamma=args.gamma,
-        model_a_path=args.model_a,
-        model_c1_path=args.model_c1,
-        model_c2_path=args.model_c2,
-        logging_wandb=args.wandb,
-        save_path=args.save,
-        db_path=args.db_path,
-    )
+    if args.mode == "agent":
+        agent = Agent(
+            db_server=args.db_server,
+            env=env,
+            max_steps=args.max_steps,
+            env_steps=args.env_steps,
+            learning_starts=args.learning_starts,
+            logging_wandb=args.wandb,
+        )
 
-    if args.mode == "training":
+        try:
+            # run actor process
+            agent.run()
+        except KeyboardInterrupt:
+            print("Terminated by user ... Bay bay")
+        finally:
+            # zatvor herne prostredie
+            env.close()
+
+    if args.mode == "learner":
+        agent = Learner(
+            env=env,
+            max_steps=args.max_steps,
+            gradient_steps=args.gradient_steps,
+            learning_starts=args.learning_starts,
+            buffer_capacity=args.buffer_capacity,
+            batch_size=args.batch_size,
+            actor_learning_rate=args.learning_rate,
+            critic_learning_rate=args.learning_rate,
+            alpha_learning_rate=args.learning_rate,
+            tau=args.tau,
+            gamma=args.gamma,
+            model_a_path=args.model_a,
+            model_c1_path=args.model_c1,
+            model_c2_path=args.model_c2,
+            save_path=args.save,
+            db_path=args.db_path,
+            logging_wandb=args.wandb,
+        )
+
         try:
             # run training process
-            agent.train()
+            agent.run()
         except KeyboardInterrupt:
             print("Terminated by user ... Bay bay")
         finally:
@@ -127,12 +147,19 @@ if __name__ == "__main__":
 
             # zastav server
             agent.server.stop()
-    elif args.mode == "testing":
+    elif args.mode == "tester":
+        agent = Tester(
+            env=env,
+            max_steps=args.max_steps,
+            model_a_path=args.model_a,
+            logging_wandb=args.wandb,
+        )
+
         try:
-            # run testing process
-            agent.test(render=args.render)
+            # run actor process
+            agent.run(render=args.render)
         except KeyboardInterrupt:
             print("Terminated by user ... Bay bay")
         finally:
-            # zatvor prostredie
+            # zatvor herne prostredie
             env.close()

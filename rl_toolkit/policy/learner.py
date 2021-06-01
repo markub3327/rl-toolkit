@@ -1,13 +1,14 @@
-from rl_toolkit.policy.off_policy import OffPolicy
-from .network import Actor, Critic
+from rl_toolkit.networks import Actor, Critic
 
 import os
+import math
 import reverb
 import wandb
+
 import tensorflow as tf
 
 
-class SAC(OffPolicy):
+class Learner:
     """
     Soft Actor-Critic
     =================
@@ -35,12 +36,10 @@ class SAC(OffPolicy):
 
     def __init__(
         self,
+        # ---
         env,
-        # ---
         max_steps: int,
-        env_steps: int = 64,
         gradient_steps: int = 64,
-        # ---
         learning_starts: int = 10000,
         # ---
         buffer_capacity: int = 1000000,
@@ -56,24 +55,17 @@ class SAC(OffPolicy):
         model_a_path: str = None,
         model_c1_path: str = None,
         model_c2_path: str = None,
-        logging_wandb: bool = False,
-        # ---
         save_path: str = None,
         db_path: str = None,
+        # ---
+        logging_wandb: bool = False,
     ):
-        super(SAC, self).__init__(
-            env=env,
-            max_steps=max_steps,
-            env_steps=env_steps,
-            gradient_steps=gradient_steps,
-            learning_starts=learning_starts,
-            buffer_capacity=buffer_capacity,
-            batch_size=batch_size,
-            tau=tau,
-            gamma=gamma,
-            logging_wandb=logging_wandb,
-        )
-
+        self._env = env
+        self._max_steps = max_steps
+        self._gradient_steps = gradient_steps
+        self._gamma = tf.constant(gamma)
+        self._tau = tf.constant(tau)
+        self._logging_wandb = logging_wandb
         self._save_path = save_path
 
         # logging metrics
@@ -93,15 +85,7 @@ class SAC(OffPolicy):
         )
 
         # Actor network (for learner)
-        self._actor_learner = Actor(
-            state_shape=self._env.observation_space.shape,
-            action_shape=self._env.action_space.shape,
-            learning_rate=actor_learning_rate,
-            model_path=model_a_path,
-        )
-
-        # Actor network (for agent)
-        self._actor_agent = Actor(
+        self._actor = Actor(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
             learning_rate=actor_learning_rate,
@@ -146,20 +130,12 @@ class SAC(OffPolicy):
             checkpointer = reverb.checkpointers.DefaultCheckpointer(path=db_path)
 
         # prepare variable container
-        self._variables_agent = {
-            "policy_variables": self._actor_agent.model.variables,
+        self._variables_container = {
+            "policy_variables": self._actor.model.variables,
         }
-        self._variables_learner = {
-            "policy_variables": self._actor_learner.model.variables,
-        }
-
-        # variables signature for variable container table
         variable_container_signature = tf.nest.map_structure(
             lambda variable: tf.TensorSpec(variable.shape, dtype=variable.dtype),
-            self._variables_agent,
-        )
-        self._dtypes_agent = tf.nest.map_structure(
-            lambda spec: spec.dtype, variable_container_signature
+            self._variables_container,
         )
 
         # Initialize the reverb server
@@ -169,7 +145,7 @@ class SAC(OffPolicy):
                     name="experience",
                     sampler=reverb.selectors.Uniform(),
                     remover=reverb.selectors.Fifo(),
-                    rate_limiter=reverb.rate_limiters.MinSize(1),
+                    rate_limiter=reverb.rate_limiters.MinSize(learning_starts),
                     max_size=buffer_capacity,
                     max_times_sampled=0,
                     signature={
@@ -218,7 +194,6 @@ class SAC(OffPolicy):
 
             # Settings
             wandb.config.max_steps = max_steps
-            wandb.config.env_steps = env_steps
             wandb.config.gradient_steps = gradient_steps
             wandb.config.learning_starts = learning_starts
             wandb.config.buffer_capacity = buffer_capacity
@@ -232,33 +207,22 @@ class SAC(OffPolicy):
         # init actor's params in DB
         self._push_variables()
 
+    def _update_target(self, net, net_targ, tau):
+        for source_weight, target_weight in zip(
+            net.model.trainable_variables, net_targ.model.trainable_variables
+        ):
+            target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
+
     def _push_variables(self):
         self.tf_client.insert(
-            data=tf.nest.flatten(self._variables_learner),
+            data=tf.nest.flatten(self._variables_container),
             tables=tf.constant(["variables"]),
             priorities=tf.constant([1.0], dtype=tf.float64),
         )
 
-    @tf.function
-    def _update_variables(self):
-        sample = self.tf_client.sample("variables", data_dtypes=[self._dtypes_agent])
-        for variable, value in zip(
-            tf.nest.flatten(self._variables_agent), tf.nest.flatten(sample.data[0])
-        ):
-            variable.assign(value)
-
-    @tf.function
-    def _get_action(self, state, deterministic):
-        a, _ = self._actor_agent.predict(
-            tf.expand_dims(state, axis=0),
-            with_logprob=False,
-            deterministic=deterministic,
-        )
-        return tf.squeeze(a, axis=0)  # remove batch_size dim
-
     # -------------------------------- update critic ------------------------------- #
     def _update_critic(self, batch):
-        next_action, next_log_pi = self._actor_learner.predict(batch.data["obs2"])
+        next_action, next_log_pi = self._actor.predict(batch.data["obs2"])
 
         # target Q-values
         next_q_1 = self._critic_targ_1.model([batch.data["obs2"], next_action])
@@ -308,7 +272,7 @@ class SAC(OffPolicy):
     def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
-            y_pred, log_pi = self._actor_learner.predict(batch.data["obs"])
+            y_pred, log_pi = self._actor.predict(batch.data["obs"])
             # tf.print(f'log_pi: {log_pi.shape}')
 
             # predict q value
@@ -321,16 +285,16 @@ class SAC(OffPolicy):
             a_loss = tf.nn.compute_average_loss(a_losses)
             # tf.print(f'a_losses: {a_losses}')
 
-        grads = tape.gradient(a_loss, self._actor_learner.model.trainable_variables)
-        self._actor_learner.optimizer.apply_gradients(
-            zip(grads, self._actor_learner.model.trainable_variables)
+        grads = tape.gradient(a_loss, self._actor.model.trainable_variables)
+        self._actor.optimizer.apply_gradients(
+            zip(grads, self._actor.model.trainable_variables)
         )
 
         return a_loss
 
     # -------------------------------- update alpha ------------------------------- #
     def _update_alpha(self, batch):
-        _, log_pi = self._actor_learner.predict(batch.data["obs"])
+        _, log_pi = self._actor.predict(batch.data["obs"])
         # tf.print(f'y_pred: {y_pred.shape}')
         # tf.print(f'log_pi: {log_pi.shape}')
 
@@ -351,7 +315,7 @@ class SAC(OffPolicy):
     def _update(self):
         for sample in self._dataset.take(self._gradient_steps):
             # re-new noise matrix every update of 'log_std' params
-            self._actor_learner.reset_noise()
+            self._actor.reset_noise()
 
             # Alpha param update
             self._loss_alpha.update_state(self._update_alpha(sample))
@@ -370,7 +334,22 @@ class SAC(OffPolicy):
             # store new actor's params
             self._push_variables()
 
+    def run(self):
+        for self._total_steps in range(self._max_steps):
+            # update models
+            self._update()
+            self._logging_models()
+
     def _logging_models(self):
+        print("=============================================")
+        print(f"Step: {self._total_steps}")
+        print(f"Actor's loss: {self._loss_a.result()}")
+        print(f"Critic 1's loss: {self._loss_c1.result()}")
+        print(f"Critic 2's loss: {self._loss_c2.result()}")
+        print("=============================================")
+        print(
+            f"Training ... {math.floor(self._total_steps * 100.0 / self._max_steps)} %"
+        )
         if self._logging_wandb:
             # logging of epoch's mean loss
             wandb.log(
@@ -395,7 +374,7 @@ class SAC(OffPolicy):
     def save(self):
         if self._save_path is not None:
             # store models
-            self._actor_learner.model.save(os.path.join(self._save_path, "model_A.h5"))
+            self._actor.model.save(os.path.join(self._save_path, "model_A.h5"))
             self._critic_1.model.save(os.path.join(self._save_path, "model_C1.h5"))
             self._critic_2.model.save(os.path.join(self._save_path, "model_C2.h5"))
 
@@ -405,7 +384,7 @@ class SAC(OffPolicy):
 
     def convert(self):
         # Convert the model.
-        converter = tf.lite.TFLiteConverter.from_keras_model(self._actor_learner.model)
+        converter = tf.lite.TFLiteConverter.from_keras_model(self._actor.model)
         tflite_model = converter.convert()
 
         # Save the model.

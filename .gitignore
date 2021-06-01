@@ -145,3 +145,6 @@ wandb/
 
 # Visual Studio Code
 .vscode/
+
+# ignore saved models and checkpoints (db)
+save/

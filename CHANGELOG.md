@@ -1,9 +1,10 @@
-# v3.0.0 (May 29, 2021)
+# v3.0.7 (June 1, 2021)
 ## Features 🔊
 - Reverb
 - updated kernel_initializer for last layers
 - without clipping the mean
 - setup.py (package is available on PyPI)
+- split research process into **agent**, **learner** and **tester** roles
 
 <br>
 
