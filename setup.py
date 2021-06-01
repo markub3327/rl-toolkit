@@ -10,7 +10,7 @@ with open("CHANGELOG.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="rl-toolkit",
-    version="3.0.1",
+    version="3.0.2",
     description="The RL-Toolkit: A toolkit for developing and comparing your reinforcement learning agents in various games (OpenAI Gym or Pybullet).",  # noqa
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -50,7 +50,7 @@ setup(
         "wandb",
         "dm-reverb",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.7",
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Environment :: Console",
@@ -58,6 +58,7 @@ setup(
         "Intended Audience :: Science/Research",
         "Intended Audience :: Education",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
     ],
