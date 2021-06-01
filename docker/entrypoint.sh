@@ -23,4 +23,6 @@ if ! [ -e "$file" ]; then
     exit 1
 fi
 
-exec "$@"
+# Execute bash
+#exec "$@"
+exec "/bin/bash"
