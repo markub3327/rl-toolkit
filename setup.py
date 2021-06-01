@@ -22,7 +22,7 @@ setup(
     author_email="markub3327@gmail.com",
     license="mit",
     packages=[
-        package for package in find_packages() if package.startswith("rl-toolkit")
+        package for package in find_packages() if package.startswith("rl_toolkit")
     ],
     keywords=[
         "reinforcement-learning",

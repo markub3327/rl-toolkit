@@ -1,4 +1,4 @@
-from policy.off_policy import OffPolicy
+from rl_toolkit.policy.off_policy import OffPolicy
 from .network import Actor, Critic
 
 import os

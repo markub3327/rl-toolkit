@@ -3,7 +3,7 @@ import gym
 import pybullet_envs  # noqa
 
 # policy
-from policy import SAC
+from .policy import SAC
 
 if __name__ == "__main__":
 
