@@ -31,13 +31,7 @@ RUN apt-get -y update && apt-get install -y \
 ###########################################
 # RL Toolkit
 ###########################################
-RUN python3 -m pip install --no-cache-dir --upgrade pip setuptools wheel
-
-WORKDIR /root/
-RUN git clone https://github.com/markub3327/rl-toolkit.git
-WORKDIR /root/rl-toolkit
-
-RUN python3 -m pip install --no-cache-dir -e .
+RUN python3 -m pip install --no-cache-dir rl-toolkit
 
 ###########################################
 # Entry point
