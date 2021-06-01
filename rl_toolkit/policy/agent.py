@@ -10,27 +10,17 @@ import tensorflow as tf
 
 class Agent:
     """
-    Soft Actor-Critic
+    Agent (based on Soft Actor-Critic)
     =================
 
     Paper: https://arxiv.org/pdf/1812.05905.pdf
 
     Attributes:
+        db_server (str): database server name (IP or domain name)
         env: the instance of environment object
         max_steps (int): maximum number of interactions do in environment
         env_steps (int): maximum number of steps in each rollout
-        gradient_steps (int): number of update steps after each rollout
         learning_starts (int): number of interactions before using policy network
-        buffer_capacity (int): the capacity of experiences replay buffer
-        batch_size (int): size of mini-batch used for training
-        actor_learning_rate (float): learning rate for actor's optimizer
-        critic_learning_rate (float): learning rate for critic's optimizer
-        alpha_learning_rate (float): learning rate for alpha's optimizer
-        tau (float): the soft update coefficient for target networks
-        gamma (float): the discount factor
-        model_a_path (str): path to the actor's model
-        model_c1_path (str): path to the critic_1's model
-        model_c2_path (str): path to the critic_2's model
         logging_wandb (bool): logging by WanDB
     """
 

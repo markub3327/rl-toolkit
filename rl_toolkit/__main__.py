@@ -8,7 +8,7 @@ from rl_toolkit.policy import Learner, Agent, Tester
 if __name__ == "__main__":
 
     my_parser = argparse.ArgumentParser(
-        prog="python3 main.py",
+        prog="python3 -m rl_toolkit",
         description="The RL-Toolkit: A toolkit for developing and comparing your reinforcement learning agents in various games (OpenAI Gym or Pybullet).",  # noqa
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
@@ -57,9 +57,6 @@ if __name__ == "__main__":
         "--env_steps", type=int, help="Num. of environment steps", default=64
     )
     my_parser.add_argument(
-        "--gradient_steps", type=int, help="Num. of gradient steps", default=64
-    )
-    my_parser.add_argument(
         "--policy_delay",
         type=int,
         help="Delay between critic and policy update",
@@ -93,6 +90,7 @@ if __name__ == "__main__":
     print(env.observation_space.low, env.observation_space.high)
     print()
 
+    # Agent mode
     if args.mode == "agent":
         agent = Agent(
             db_server=args.db_server,
@@ -107,16 +105,16 @@ if __name__ == "__main__":
             # run actor process
             agent.run()
         except KeyboardInterrupt:
-            print("Terminated by user ... Bay bay")
+            print("Terminated by user 👋👋👋")
         finally:
             # zatvor herne prostredie
             env.close()
 
+    # Learner mode
     if args.mode == "learner":
         agent = Learner(
             env=env,
             max_steps=args.max_steps,
-            gradient_steps=args.gradient_steps,
             learning_starts=args.learning_starts,
             buffer_capacity=args.buffer_capacity,
             batch_size=args.batch_size,
@@ -137,7 +135,7 @@ if __name__ == "__main__":
             # run training process
             agent.run()
         except KeyboardInterrupt:
-            print("Terminated by user ... Bay bay")
+            print("Terminated by user 👋👋👋")
         finally:
             # zatvor herne prostredie
             env.close()
@@ -145,8 +143,7 @@ if __name__ == "__main__":
             # save models and snapshot of the database
             agent.save()
 
-            # zastav server
-            agent.server.stop()
+    # Test mode
     elif args.mode == "tester":
         agent = Tester(
             env=env,
@@ -159,7 +156,7 @@ if __name__ == "__main__":
             # run actor process
             agent.run(render=args.render)
         except KeyboardInterrupt:
-            print("Terminated by user ... Bay bay")
+            print("Terminated by user 👋👋👋")
         finally:
             # zatvor herne prostredie
             env.close()
