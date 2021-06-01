@@ -1,10 +1,23 @@
 from setuptools import setup
 
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
+
+long_description += "\n\n"
+
+with open("CHANGELOG.md", "r", encoding="utf-8") as fh:
+    long_description += fh.read()
+
 setup(
     name="rl-toolkit",
-    version="3.0",
+    version="3.0.0",
     description="The RL-Toolkit: A toolkit for developing and comparing your reinforcement learning agents in various games (OpenAI Gym or Pybullet).",  # noqa
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     url="https://github.com/markub3327/rl-toolkit",
+    project_urls={
+        "Bug Tracker": "https://github.com/markub3327/rl-toolkit/issues",
+    },
     author="Martin Kubovčík",
     author_email="markub3327@gmail.com",
     license="mit",
