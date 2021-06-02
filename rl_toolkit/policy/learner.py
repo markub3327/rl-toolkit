@@ -63,7 +63,6 @@ class Learner:
     ):
         self._env = env
         self._max_steps = max_steps
-        self._gradient_steps = gradient_steps
         self._learning_starts = learning_starts
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
@@ -145,9 +144,6 @@ class Learner:
         # Ratio for samples per insert rate limiting tolerance
         SAMPLES_PER_INSERT_TOLERANCE_RATIO = 0.1
 
-        # grad steps
-        SAMPLES_PER_INSERT = 64
-
         # Initialize the reverb server
         self.server = reverb.Server(
             tables=[
@@ -157,11 +153,11 @@ class Learner:
                     remover=reverb.selectors.Fifo(),
                     rate_limiter=reverb.rate_limiters.SampleToInsertRatio(
                         min_size_to_sample=learning_starts,
-                        samples_per_insert=SAMPLES_PER_INSERT,
+                        samples_per_insert=gradient_steps,
                         error_buffer=(
                             learning_starts
                             * SAMPLES_PER_INSERT_TOLERANCE_RATIO
-                            * SAMPLES_PER_INSERT
+                            * gradient_steps
                         ),
                     ),
                     max_size=buffer_capacity,
@@ -331,8 +327,7 @@ class Learner:
 
     @tf.function
     def _update(self):
-        #  env_steps : gradient_steps = 1 : 1
-        for sample in self._dataset.take(self._gradient_steps):
+        for sample in self._dataset.take(1):
             # re-new noise matrix every update of 'log_std' params
             self._actor.reset_noise()
 
@@ -354,7 +349,7 @@ class Learner:
         self._push_variables()
 
     def run(self):
-        for step in range(self._learning_starts, self._max_steps, self._gradient_steps):
+        for step in range(self._learning_starts, self._max_steps, 1):
             # update models
             self._update()
 
