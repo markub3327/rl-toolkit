@@ -29,7 +29,7 @@ class Learner:
         model_c2_path (str): path to the critic_2's model
         save_path (str): path to the models for saving
         db_path (str): path to the database
-        logging_wandb (bool): logging by WanDB
+        log_wandb (bool): log into WanDB cloud
     """
 
     def __init__(
@@ -55,7 +55,7 @@ class Learner:
         save_path: str = None,
         db_path: str = None,
         # ---
-        logging_wandb: bool = False,
+        log_wandb: bool = False,
         log_interval: int = 64,
     ):
         self._env = env
@@ -64,7 +64,7 @@ class Learner:
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
         self._save_path = save_path
-        self._logging_wandb = logging_wandb
+        self._log_wandb = log_wandb
         self._log_interval = log_interval
 
         # init param 'alpha' - Lagrangian constraint
@@ -196,7 +196,7 @@ class Learner:
         )
 
         # init Weights & Biases
-        if self._logging_wandb:
+        if self._log_wandb:
             wandb.init(project="rl-toolkit")
 
             # Settings
@@ -361,8 +361,8 @@ class Learner:
                     f"Training ... {math.floor(step * 100.0 / self._max_steps)} %"  # noqa
                 )
 
-            if self._logging_wandb:
-                # logging of epoch's mean loss
+            if self._log_wandb:
+                # log of epoch's mean loss
                 wandb.log(
                     {
                         "policy_loss": policy_loss,

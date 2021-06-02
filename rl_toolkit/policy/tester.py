@@ -19,7 +19,7 @@ class Tester:
         env: the instance of environment object
         max_steps (int): maximum number of interactions do in environment
         model_a_path (str): path to the actor's model
-        logging_wandb (bool): logging by WanDB
+        log_wandb (bool): log into WanDB cloud
     """
 
     def __init__(
@@ -30,11 +30,11 @@ class Tester:
         max_steps: int,
         # ---
         model_a_path: str = None,
-        logging_wandb: bool = False,
+        log_wandb: bool = False,
     ):
         self._env = env
         self._max_steps = max_steps
-        self._logging_wandb = logging_wandb
+        self._log_wandb = log_wandb
 
         # check obseration's ranges
         if np.all(np.isfinite(self._env.observation_space.low)) and np.all(
@@ -56,7 +56,7 @@ class Tester:
         )
 
         # init Weights & Biases
-        if self._logging_wandb:
+        if self._log_wandb:
             wandb.init(project="rl-toolkit")
 
             # Settings
@@ -71,7 +71,7 @@ class Tester:
         )
         return tf.squeeze(a, axis=0)  # remove batch_size dim
 
-    def _logging_test(self):
+    def _log_test(self):
         print("=============================================")
         print(f"Epoch: {self._total_episodes}")
         print(f"Score: {self._episode_reward}")
@@ -81,7 +81,7 @@ class Tester:
         print(
             f"Testing ... {math.floor(self._total_steps * 100.0 / self._max_steps)} %"
         )
-        if self._logging_wandb:
+        if self._log_wandb:
             wandb.log(
                 {
                     "epoch": self._total_episodes,
@@ -137,7 +137,7 @@ class Tester:
             self._total_episodes += 1
 
             # logovanie
-            self._logging_test()
+            self._log_test()
 
         # Release video file stream
         if render:

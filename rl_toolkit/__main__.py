@@ -57,7 +57,7 @@ if __name__ == "__main__":
         "--env_steps", type=int, help="Num. of environment steps", default=64
     )
     my_parser.add_argument(
-        "--gradient_steps", type=int, help="Num. of gradient steps", default=64
+        "--log_interval", type=int, help="Log into console interval", default=64
     )
     my_parser.add_argument(
         "--policy_delay",
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     my_parser.add_argument(
         "--render", action="store_true", help="Render the environment"
     )
-    my_parser.add_argument("--wandb", action="store_true", help="Logging to wanDB")
+    my_parser.add_argument("--wandb", action="store_true", help="Log into WanDB cloud")
     my_parser.add_argument("-s", "--save", type=str, help="Path for saving model files")
     my_parser.add_argument("--model_a", type=str, help="Actor's model file")
     my_parser.add_argument("--model_c1", type=str, help="Critic 1's model file")
@@ -101,7 +101,7 @@ if __name__ == "__main__":
             max_steps=args.max_steps,
             env_steps=args.env_steps,
             learning_starts=args.learning_starts,
-            logging_wandb=args.wandb,
+            log_wandb=args.wandb,
         )
 
         try:
@@ -118,7 +118,6 @@ if __name__ == "__main__":
         agent = Learner(
             env=env,
             max_steps=args.max_steps,
-            gradient_steps=args.gradient_steps,
             learning_starts=args.learning_starts,
             buffer_capacity=args.buffer_capacity,
             batch_size=args.batch_size,
@@ -132,7 +131,8 @@ if __name__ == "__main__":
             model_c2_path=args.model_c2,
             save_path=args.save,
             db_path=args.db_path,
-            logging_wandb=args.wandb,
+            log_wandb=args.wandb,
+            log_interval=args.log_interval
         )
 
         try:
@@ -153,7 +153,7 @@ if __name__ == "__main__":
             env=env,
             max_steps=args.max_steps,
             model_a_path=args.model_a,
-            logging_wandb=args.wandb,
+            log_wandb=args.wandb,
         )
 
         try:

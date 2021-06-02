@@ -19,7 +19,7 @@ class Agent:
         max_steps (int): maximum number of interactions do in environment
         env_steps (int): maximum number of steps in each rollout
         learning_starts (int): number of interactions before using policy network
-        logging_wandb (bool): logging by WanDB
+        log_wandb (bool): log into WanDB cloud
     """
 
     def __init__(
@@ -32,13 +32,13 @@ class Agent:
         env_steps: int = 64,
         learning_starts: int = 10000,
         # ---
-        logging_wandb: bool = False,
+        log_wandb: bool = False,
     ):
         self._env = env
         self._max_steps = max_steps
         self._env_steps = env_steps
         self._learning_starts = learning_starts
-        self._logging_wandb = logging_wandb
+        self._log_wandb = log_wandb
 
         # check obseration's ranges
         if np.all(np.isfinite(self._env.observation_space.low)) and np.all(
@@ -87,7 +87,7 @@ class Agent:
         self.tf_client = reverb.TFClient(server_address=f"{db_server}:8000")
 
         # init Weights & Biases
-        if self._logging_wandb:
+        if self._log_wandb:
             wandb.init(project="rl-toolkit")
 
             # Settings
@@ -125,7 +125,7 @@ class Agent:
         )
         return tf.squeeze(a, axis=0)  # remove batch_size dim
 
-    def _logging_train(self):
+    def _log_train(self):
         print("=============================================")
         print(f"Epoch: {self._total_episodes}")
         print(f"Score: {self._episode_reward}")
@@ -135,7 +135,7 @@ class Agent:
         print(
             f"Playing ... {math.floor(self._total_steps * 100.0 / self._max_steps)} %"
         )
-        if self._logging_wandb:
+        if self._log_wandb:
             wandb.log(
                 {
                     "epoch": self._total_episodes,
@@ -211,7 +211,7 @@ class Agent:
 
                         # check the end of episode
                         if terminal:
-                            self._logging_train()
+                            self._log_train()
 
                             # write the final state !!!
                             writer.append({"observation": new_obs})
