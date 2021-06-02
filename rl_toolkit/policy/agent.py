@@ -60,18 +60,8 @@ class Agent:
             action_shape=self._env.action_space.shape,
         )
 
-        # actual training step
-        self._train_step = tf.Variable(
-            0,
-            trainable=False,
-            dtype=tf.int32,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            shape=(),
-        )
-
         # prepare variable container
         self._variables_container = {
-            "train_step": self._train_step,
             "policy_variables": self._actor.model.variables,
         }
 
@@ -107,16 +97,10 @@ class Agent:
     @tf.function
     def _update_variables(self):
         sample = self.tf_client.sample("variables", data_dtypes=[self._dtypes])
-        data = sample.data[0]
-        if data["train_step"] == 0 or data["train_step"] != self._train_step:
-            for variable, value in zip(
-                tf.nest.flatten(self._variables_container), tf.nest.flatten(data)
-            ):
-                variable.assign(value)
-
-            return True
-        else:
-            return False
+        for variable, value in zip(
+            tf.nest.flatten(self._variables_container), tf.nest.flatten(sample.data[0])
+        ):
+            variable.assign(value)
 
     @tf.function
     def _get_action(self, state, deterministic):
@@ -161,86 +145,87 @@ class Agent:
         with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
             while self._total_steps < self._max_steps:
                 # Refresh actor's params
-                if self._update_variables():
-                    # re-new noise matrix before every rollouts
-                    self._actor.reset_noise()
+                self._update_variables()
 
-                    # collect rollouts
-                    for _ in range(self._env_steps):
-                        # select action randomly or using policy network
-                        if self._total_steps < self._learning_starts:
-                            # warmup
-                            action = self._env.action_space.sample()
-                        else:
-                            # Get the noisy action
-                            action = self._get_action(
-                                self._last_obs, deterministic=False
-                            ).numpy()
+                # re-new noise matrix before every rollouts
+                self._actor.reset_noise()
 
-                        # Step in the environment
-                        new_obs, reward, done, _ = self._env.step(action)
-                        new_obs = self._normalize(new_obs)
+                # collect rollouts
+                for _ in range(self._env_steps):
+                    # select action randomly or using policy network
+                    if self._total_steps < self._learning_starts:
+                        # warmup
+                        action = self._env.action_space.sample()
+                    else:
+                        # Get the noisy action
+                        action = self._get_action(
+                            self._last_obs, deterministic=False
+                        ).numpy()
 
-                        # update variables
-                        self._episode_reward += reward
-                        self._episode_steps += 1
-                        self._total_steps += 1
+                    # Step in the environment
+                    new_obs, reward, done, _ = self._env.step(action)
+                    new_obs = self._normalize(new_obs)
 
-                        # Update the replay buffer
-                        writer.append(
-                            {
-                                "obs": self._last_obs,
-                                "act": action,
-                                "rew": np.array([reward], dtype=np.float32),
-                                "done": np.array([done], dtype=np.float32),
-                            }
+                    # update variables
+                    self._episode_reward += reward
+                    self._episode_steps += 1
+                    self._total_steps += 1
+
+                    # Update the replay buffer
+                    writer.append(
+                        {
+                            "obs": self._last_obs,
+                            "act": action,
+                            "rew": np.array([reward], dtype=np.float32),
+                            "done": np.array([done], dtype=np.float32),
+                        }
+                    )
+
+                    if self._episode_steps > 1:
+                        writer.create_item(
+                            table="experience",
+                            priority=1.0,
+                            trajectory={
+                                "obs": writer.history["obs"][-2],
+                                "act": writer.history["act"][-2],
+                                "rew": writer.history["rew"][-2],
+                                "obs2": writer.history["obs"][-1],
+                                "done": writer.history["done"][-2],
+                            },
                         )
 
-                        if self._episode_steps > 1:
-                            writer.create_item(
-                                table="experience",
-                                priority=1.0,
-                                trajectory={
-                                    "obs": writer.history["obs"][-2],
-                                    "act": writer.history["act"][-2],
-                                    "rew": writer.history["rew"][-2],
-                                    "obs2": writer.history["obs"][-1],
-                                    "done": writer.history["done"][-2],
-                                },
-                            )
+                    # check the end of episode
+                    if done:
+                        self._logging_train()
 
-                        # check the end of episode
-                        if done:
-                            self._logging_train()
+                        # write the final state !!!
+                        writer.append({"obs": new_obs})
+                        writer.create_item(
+                            table="experience",
+                            priority=1.0,
+                            trajectory={
+                                "obs": writer.history["obs"][-2],
+                                "act": writer.history["act"][-2],
+                                "rew": writer.history["rew"][-2],
+                                "obs2": writer.history["obs"][-1],
+                                "done": writer.history["done"][-2],
+                            },
+                        )
 
-                            # write the final state !!!
-                            writer.append({"obs": new_obs})
-                            writer.create_item(
-                                table="experience",
-                                priority=1.0,
-                                trajectory={
-                                    "obs": writer.history["obs"][-2],
-                                    "act": writer.history["act"][-2],
-                                    "rew": writer.history["rew"][-2],
-                                    "obs2": writer.history["obs"][-1],
-                                    "done": writer.history["done"][-2],
-                                },
-                            )
+                        # blocks until all the items have been sent to the server
+                        writer.end_episode(timeout_ms=1000)
 
-                            # blocks until all the items have been sent to the server
-                            writer.end_episode(timeout_ms=1000)
+                        # init variables
+                        self._episode_reward = 0.0
+                        self._episode_steps = 0
+                        self._total_episodes += 1
 
-                            # init variables
-                            self._episode_reward = 0.0
-                            self._episode_steps = 0
-                            self._total_episodes += 1
+                        # init environment
+                        self._last_obs = self._env.reset()
+                        self._last_obs = self._normalize(self._last_obs)
 
-                            # init environment
-                            self._last_obs = self._env.reset()
-                            self._last_obs = self._normalize(self._last_obs)
+                        # interrupt the rollout
+                        break
 
-                            # interrupt the rollout
-                            break
-
-                        # super critical !!!
-                        self._last_obs = new_obs
+                    # super critical !!!
+                    self._last_obs = new_obs

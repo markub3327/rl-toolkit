@@ -131,18 +131,8 @@ class Learner:
         else:
             checkpointer = reverb.checkpointers.DefaultCheckpointer(path=db_path)
 
-        # actual training step
-        self._train_step = tf.Variable(
-            0,
-            trainable=False,
-            dtype=tf.int32,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            shape=(),
-        )
-
         # prepare variable container
         self._variables_container = {
-            "train_step": self._train_step,
             "policy_variables": self._actor.model.variables,
         }
 
@@ -152,6 +142,12 @@ class Learner:
             self._variables_container,
         )
 
+        # Ratio for samples per insert rate limiting tolerance
+        SAMPLES_PER_INSERT_TOLERANCE_RATIO = 0.1
+
+        # grad steps
+        SAMPLES_PER_INSERT = 64
+
         # Initialize the reverb server
         self.server = reverb.Server(
             tables=[
@@ -159,7 +155,15 @@ class Learner:
                     name="experience",
                     sampler=reverb.selectors.Uniform(),
                     remover=reverb.selectors.Fifo(),
-                    rate_limiter=reverb.rate_limiters.MinSize(learning_starts),
+                    rate_limiter=reverb.rate_limiters.SampleToInsertRatio(
+                        min_size_to_sample=learning_starts,
+                        samples_per_insert=SAMPLES_PER_INSERT,
+                        error_buffer=(
+                            learning_starts
+                            * SAMPLES_PER_INSERT_TOLERANCE_RATIO
+                            * SAMPLES_PER_INSERT
+                        ),
+                    ),
                     max_size=buffer_capacity,
                     max_times_sampled=0,
                     signature={
@@ -351,25 +355,20 @@ class Learner:
 
     def run(self):
         for step in range(self._learning_starts, self._max_steps, self._gradient_steps):
-            # update train_step
-            self._train_step.assign(step)
-
             # update models
             self._update()
 
             # log metrics
-            self._logging_models()
+            self._logging_models(step)
 
-    def _logging_models(self):
+    def _logging_models(self, step):
         print("=============================================")
-        print(f"Step: {self._train_step.numpy()}")
+        print(f"Step: {step}")
         print(f"Actor's loss: {self._loss_a.result()}")
         print(f"Critic 1's loss: {self._loss_c1.result()}")
         print(f"Critic 2's loss: {self._loss_c2.result()}")
         print("=============================================")
-        print(
-            f"Training ... {math.floor(self._train_step.numpy() * 100.0 / self._max_steps)} %"  # noqa
-        )
+        print(f"Training ... {math.floor(step * 100.0 / self._max_steps)} %")  # noqa
         if self._logging_wandb:
             # logging of epoch's mean loss
             wandb.log(
@@ -380,7 +379,7 @@ class Learner:
                     "loss_alpha": self._loss_alpha.result(),
                     "alpha": self._alpha,
                 },
-                step=self._train_step.numpy(),
+                step=step,
             )
         self._clear_metrics()  # clear stored metrics of losses
 
