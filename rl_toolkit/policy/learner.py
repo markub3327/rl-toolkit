@@ -16,7 +16,6 @@ class Learner:
     Attributes:
         env: the instance of environment object
         max_steps (int): maximum number of interactions do in environment
-        gradient_steps (int): number of update steps after each rollout
         learning_starts (int): number of interactions before using policy network
         buffer_capacity (int): the capacity of experiences replay buffer
         batch_size (int): size of mini-batch used for training
@@ -38,7 +37,6 @@ class Learner:
         # ---
         env,
         max_steps: int,
-        gradient_steps: int = 64,
         learning_starts: int = 10000,
         # ---
         buffer_capacity: int = 1000000,
@@ -58,21 +56,16 @@ class Learner:
         db_path: str = None,
         # ---
         logging_wandb: bool = False,
+        log_interval: int = 64,
     ):
         self._env = env
         self._max_steps = max_steps
-        self._gradient_steps = gradient_steps
         self._learning_starts = learning_starts
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
-        self._logging_wandb = logging_wandb
         self._save_path = save_path
-
-        # logging metrics
-        self._loss_a = tf.keras.metrics.Mean()
-        self._loss_c1 = tf.keras.metrics.Mean()
-        self._loss_c2 = tf.keras.metrics.Mean()
-        self._loss_alpha = tf.keras.metrics.Mean()
+        self._logging_wandb = logging_wandb
+        self._log_interval = log_interval
 
         # init param 'alpha' - Lagrangian constraint
         self._log_alpha = tf.Variable(0.0, trainable=True, name="log_alpha")
@@ -194,11 +187,13 @@ class Learner:
         # Initializes the reverb client
         self.client = reverb.Client("localhost:8000")
         self.tf_client = reverb.TFClient(server_address="localhost:8000")
-        self._dataset = reverb.TrajectoryDataset.from_table_signature(
-            server_address="localhost:8000",
-            table="experience",
-            max_in_flight_samples_per_worker=10,
-        ).batch(batch_size)
+        self.dataset_iterator = iter(
+            reverb.TrajectoryDataset.from_table_signature(
+                server_address="localhost:8000",
+                table="experience",
+                max_in_flight_samples_per_worker=10,
+            ).batch(batch_size, drop_remainder=True)
+        )
 
         # init Weights & Biases
         if self._logging_wandb:
@@ -206,7 +201,6 @@ class Learner:
 
             # Settings
             wandb.config.max_steps = max_steps
-            wandb.config.gradient_steps = gradient_steps
             wandb.config.learning_starts = learning_starts
             wandb.config.buffer_capacity = buffer_capacity
             wandb.config.batch_size = batch_size
@@ -244,7 +238,6 @@ class Learner:
             [batch.data["next_observation"], next_action]
         )
         next_q = tf.minimum(next_q_1, next_q_2)
-        # tf.print(f'nextQ: {next_q.shape}')
 
         # Bellman Equation
         Q_targets = tf.stop_gradient(
@@ -253,7 +246,6 @@ class Learner:
             * self._gamma
             * (next_q - self._alpha * next_log_pi)
         )
-        # tf.print(f'qTarget: {Q_targets.shape}')
 
         # update critic '1'
         with tf.GradientTape() as tape:
@@ -264,7 +256,6 @@ class Learner:
                 y_true=Q_targets, y_pred=q_values
             )
             q1_loss = tf.nn.compute_average_loss(q_losses)
-        #    tf.print(f'q_val: {q_values.shape}')
 
         grads = tape.gradient(q1_loss, self._critic_1.model.trainable_variables)
         self._critic_1.optimizer.apply_gradients(
@@ -286,37 +277,32 @@ class Learner:
             zip(grads, self._critic_2.model.trainable_variables)
         )
 
-        return q1_loss, q2_loss
+        return q1_loss + q2_loss
 
     # -------------------------------- update actor ------------------------------- #
     def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
             y_pred, log_pi = self._actor.predict(batch.data["observation"])
-            # tf.print(f'log_pi: {log_pi.shape}')
 
             # predict q value
             q_1 = self._critic_1.model([batch.data["observation"], y_pred])
             q_2 = self._critic_2.model([batch.data["observation"], y_pred])
             q = tf.minimum(q_1, q_2)
-            # tf.print(f'q: {q.shape}')
 
-            a_losses = self._alpha * log_pi - q
-            a_loss = tf.nn.compute_average_loss(a_losses)
-            # tf.print(f'a_losses: {a_losses}')
+            policy_losses = self._alpha * log_pi - q
+            policy_loss = tf.nn.compute_average_loss(policy_losses)
 
-        grads = tape.gradient(a_loss, self._actor.model.trainable_variables)
+        grads = tape.gradient(policy_loss, self._actor.model.trainable_variables)
         self._actor.optimizer.apply_gradients(
             zip(grads, self._actor.model.trainable_variables)
         )
 
-        return a_loss
+        return policy_loss
 
     # -------------------------------- update alpha ------------------------------- #
     def _update_alpha(self, batch):
         _, log_pi = self._actor.predict(batch.data["observation"])
-        # tf.print(f'y_pred: {y_pred.shape}')
-        # tf.print(f'log_pi: {log_pi.shape}')
 
         self._alpha.assign(tf.exp(self._log_alpha))
         with tf.GradientTape() as tape:
@@ -324,7 +310,6 @@ class Learner:
                 self._log_alpha * tf.stop_gradient(log_pi + self._target_entropy)
             )
             alpha_loss = tf.nn.compute_average_loss(alpha_losses)
-        #    tf.print(f'alpha_losses: {alpha_losses.shape}')
 
         grads = tape.gradient(alpha_loss, [self._log_alpha])
         self._alpha_optimizer.apply_gradients(zip(grads, [self._log_alpha]))
@@ -333,69 +318,60 @@ class Learner:
 
     @tf.function
     def _update(self):
-        #  env_steps : gradient_steps = 1 : 1
-        for sample in self._dataset.take(self._gradient_steps):
-            # re-new noise matrix every update of 'log_std' params
-            self._actor.reset_noise()
+        # Get data from replay buffer
+        sample = self.dataset_iterator.get_next()
 
-            # Alpha param update
-            self._loss_alpha.update_state(self._update_alpha(sample))
+        # re-new noise matrix every update of 'log_std' params
+        self._actor.reset_noise()
 
-            l_c1, l_c2 = self._update_critic(sample)
-            self._loss_c1.update_state(l_c1)
-            self._loss_c2.update_state(l_c2)
+        # Alpha param update
+        alpha_loss = self._update_alpha(sample)
 
-            # Actor model update
-            self._loss_a.update_state(self._update_actor(sample))
+        # Critic models update
+        critic_loss = self._update_critic(sample)
 
-            # -------------------- soft update target networks -------------------- #
-            self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
-            self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
+        # Actor model update
+        policy_loss = self._update_actor(sample)
+
+        # -------------------- soft update target networks -------------------- #
+        self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
+        self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
         # store new actor's params
         self._push_variables()
 
+        return critic_loss, policy_loss, alpha_loss
+
     def run(self):
-        for step in range(self._learning_starts, self._max_steps, self._gradient_steps):
+        for step in range(self._learning_starts, self._max_steps, 1):
             # update train_step (otlacok modelov)
             self._train_step.assign(step)
 
             # update models
-            self._update()
+            critic_loss, policy_loss, alpha_loss = self._update()
 
             # log metrics
-            self._logging_models()
+            if (step % self._log_interval) == 0:
+                print("=============================================")
+                print(f"Step: {step}")
+                print(f"Critic loss: {critic_loss}")
+                print(f"Policy loss: {policy_loss}")
+                print("=============================================")
+                print(
+                    f"Training ... {math.floor(step * 100.0 / self._max_steps)} %"  # noqa
+                )
 
-    def _logging_models(self):
-        print("=============================================")
-        print(f"Step: {self._train_step.numpy()}")
-        print(f"Actor's loss: {self._loss_a.result()}")
-        print(f"Critic 1's loss: {self._loss_c1.result()}")
-        print(f"Critic 2's loss: {self._loss_c2.result()}")
-        print("=============================================")
-        print(
-            f"Training ... {math.floor(self._train_step.numpy() * 100.0 / self._max_steps)} %"  # noqa
-        )
-        if self._logging_wandb:
-            # logging of epoch's mean loss
-            wandb.log(
-                {
-                    "loss_a": self._loss_a.result(),
-                    "loss_c1": self._loss_c1.result(),
-                    "loss_c2": self._loss_c2.result(),
-                    "loss_alpha": self._loss_alpha.result(),
-                    "alpha": self._alpha,
-                },
-                step=self._train_step.numpy(),
-            )
-        self._clear_metrics()  # clear stored metrics of losses
-
-    def _clear_metrics(self):
-        # reset logger
-        self._loss_a.reset_states()
-        self._loss_c1.reset_states()
-        self._loss_c2.reset_states()
-        self._loss_alpha.reset_states()
+            if self._logging_wandb:
+                # logging of epoch's mean loss
+                wandb.log(
+                    {
+                        "policy_loss": policy_loss,
+                        "critic_loss": critic_loss,
+                        "alpha_loss": alpha_loss,
+                        "alpha": self._alpha,
+                    },
+                    step=step,
+                )
 
     def save(self):
         if self._save_path is not None:
@@ -405,8 +381,7 @@ class Learner:
             self._critic_2.model.save(os.path.join(self._save_path, "model_C2.h5"))
 
         # store checkpoint of DB
-        checkpoint_path = self.client.checkpoint()
-        print(checkpoint_path)
+        self.client.checkpoint()
 
     def convert(self):
         # Convert the model.
