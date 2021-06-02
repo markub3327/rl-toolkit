@@ -62,7 +62,7 @@ class Learner:
         db_path: str = None,
         # ---
         logging_wandb: bool = False,
-        log_freq: int = 64
+        log_freq: int = 64,
     ):
         self._env = env
         self._max_steps = max_steps
@@ -194,11 +194,13 @@ class Learner:
         # Initializes the reverb client
         self.client = reverb.Client("localhost:8000")
         self.tf_client = reverb.TFClient(server_address="localhost:8000")
-        self._dataset_iterator = iter(reverb.TrajectoryDataset.from_table_signature(
-            server_address="localhost:8000",
-            table="experience",
-            max_in_flight_samples_per_worker=10,
-        ).batch(batch_size))
+        self._dataset_iterator = iter(
+            reverb.TrajectoryDataset.from_table_signature(
+                server_address="localhost:8000",
+                table="experience",
+                max_in_flight_samples_per_worker=10,
+            ).batch(batch_size)
+        )
 
         # init Weights & Biases
         if self._logging_wandb:
@@ -367,7 +369,9 @@ class Learner:
             print(f"Critic 1's loss: {loss_c1}")
             print(f"Critic 2's loss: {loss_c2}")
             print("=============================================")
-            print(f"Training ... {math.floor(step * 100.0 / self._max_steps)} %")  # noqa
+            print(
+                f"Training ... {math.floor(step * 100.0 / self._max_steps)} %"
+            )  # noqa
 
         # log into wandb cloud
         if self._logging_wandb:
