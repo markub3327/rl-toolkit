@@ -1,4 +1,5 @@
 from rl_toolkit.networks import Actor, Critic
+from rl_toolkit.types import Transition
 
 import os
 import math
@@ -33,6 +34,7 @@ class Learner:
         save_path (str): path to the models for saving
         db_path (str): path to the database
         logging_wandb (bool): logging by WanDB
+        log_freq (int): logging frequency
     """
 
     def __init__(
@@ -60,20 +62,16 @@ class Learner:
         db_path: str = None,
         # ---
         logging_wandb: bool = False,
+        log_freq: int = 64
     ):
         self._env = env
         self._max_steps = max_steps
         self._learning_starts = learning_starts
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
-        self._logging_wandb = logging_wandb
         self._save_path = save_path
-
-        # logging metrics
-        self._loss_a = tf.keras.metrics.Mean()
-        self._loss_c1 = tf.keras.metrics.Mean()
-        self._loss_c2 = tf.keras.metrics.Mean()
-        self._loss_alpha = tf.keras.metrics.Mean()
+        self._logging_wandb = logging_wandb
+        self._log_freq = log_freq
 
         # init param 'alpha' - Lagrangian constraint
         self._log_alpha = tf.Variable(0.0, trainable=True, name="log_alpha")
@@ -163,20 +161,20 @@ class Learner:
                     max_size=buffer_capacity,
                     max_times_sampled=0,
                     signature={
-                        "obs": tf.TensorSpec(
+                        "observation": tf.TensorSpec(
                             [*self._env.observation_space.shape],
                             self._env.observation_space.dtype,
                         ),
-                        "act": tf.TensorSpec(
+                        "action": tf.TensorSpec(
                             [*self._env.action_space.shape],
                             self._env.action_space.dtype,
                         ),
-                        "rew": tf.TensorSpec([1], tf.float32),
-                        "obs2": tf.TensorSpec(
+                        "reward": tf.TensorSpec([1], tf.float32),
+                        "next_observation": tf.TensorSpec(
                             [*self._env.observation_space.shape],
                             self._env.observation_space.dtype,
                         ),
-                        "done": tf.TensorSpec([1], tf.float32),
+                        "terminal": tf.TensorSpec([1], tf.float32),
                     },
                 ),
                 reverb.Table(  # Variable container
@@ -196,11 +194,11 @@ class Learner:
         # Initializes the reverb client
         self.client = reverb.Client("localhost:8000")
         self.tf_client = reverb.TFClient(server_address="localhost:8000")
-        self._dataset = reverb.TrajectoryDataset.from_table_signature(
+        self._dataset_iterator = iter(reverb.TrajectoryDataset.from_table_signature(
             server_address="localhost:8000",
             table="experience",
             max_in_flight_samples_per_worker=10,
-        ).batch(batch_size)
+        ).batch(batch_size))
 
         # init Weights & Biases
         if self._logging_wandb:
@@ -236,18 +234,18 @@ class Learner:
 
     # -------------------------------- update critic ------------------------------- #
     def _update_critic(self, batch):
-        next_action, next_log_pi = self._actor.predict(batch.data["obs2"])
+        next_action, next_log_pi = self._actor.predict(batch.next_observation)
 
         # target Q-values
-        next_q_1 = self._critic_targ_1.model([batch.data["obs2"], next_action])
-        next_q_2 = self._critic_targ_2.model([batch.data["obs2"], next_action])
+        next_q_1 = self._critic_targ_1.model([batch.next_observation, next_action])
+        next_q_2 = self._critic_targ_2.model([batch.next_observation, next_action])
         next_q = tf.minimum(next_q_1, next_q_2)
         # tf.print(f'nextQ: {next_q.shape}')
 
         # Bellman Equation
         Q_targets = tf.stop_gradient(
-            batch.data["rew"]
-            + (1 - batch.data["done"])
+            batch.reward
+            + (1.0 - batch.terminal)
             * self._gamma
             * (next_q - self._alpha * next_log_pi)
         )
@@ -255,7 +253,7 @@ class Learner:
 
         # update critic '1'
         with tf.GradientTape() as tape:
-            q_values = self._critic_1.model([batch.data["obs"], batch.data["act"]])
+            q_values = self._critic_1.model([batch.observation, batch.action])
             q_losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_targets, y_pred=q_values
             )
@@ -269,7 +267,7 @@ class Learner:
 
         # update critic '2'
         with tf.GradientTape() as tape:
-            q_values = self._critic_2.model([batch.data["obs"], batch.data["act"]])
+            q_values = self._critic_2.model([batch.observation, batch.action])
             q_losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_targets, y_pred=q_values
             )
@@ -286,12 +284,12 @@ class Learner:
     def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
-            y_pred, log_pi = self._actor.predict(batch.data["obs"])
+            y_pred, log_pi = self._actor.predict(batch.observation)
             # tf.print(f'log_pi: {log_pi.shape}')
 
             # predict q value
-            q_1 = self._critic_1.model([batch.data["obs"], y_pred])
-            q_2 = self._critic_2.model([batch.data["obs"], y_pred])
+            q_1 = self._critic_1.model([batch.observation, y_pred])
+            q_2 = self._critic_2.model([batch.observation, y_pred])
             q = tf.minimum(q_1, q_2)
             # tf.print(f'q: {q.shape}')
 
@@ -308,7 +306,7 @@ class Learner:
 
     # -------------------------------- update alpha ------------------------------- #
     def _update_alpha(self, batch):
-        _, log_pi = self._actor.predict(batch.data["obs"])
+        _, log_pi = self._actor.predict(batch.observation)
         # tf.print(f'y_pred: {y_pred.shape}')
         # tf.print(f'log_pi: {log_pi.shape}')
 
@@ -327,51 +325,58 @@ class Learner:
 
     @tf.function
     def _update(self):
-        for sample in self._dataset.take(1):
-            # re-new noise matrix every update of 'log_std' params
-            self._actor.reset_noise()
+        # Get data from replay buffer
+        sample = next(self._iterator)
+        transitions: Transition = sample.data
 
-            # Alpha param update
-            self._loss_alpha.update_state(self._update_alpha(sample))
+        # re-new noise matrix every update of 'log_std' params
+        self._actor.reset_noise()
 
-            l_c1, l_c2 = self._update_critic(sample)
-            self._loss_c1.update_state(l_c1)
-            self._loss_c2.update_state(l_c2)
+        # Alpha param update
+        loss_alpha = self._update_alpha(transitions)
 
-            # Actor model update
-            self._loss_a.update_state(self._update_actor(sample))
+        # Critic model update
+        loss_c1, loss_c2 = self._update_critic(transitions)
 
-            # -------------------- soft update target networks -------------------- #
-            self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
-            self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
+        # Actor model update
+        loss_a = self._update_actor(transitions)
+
+        # -------------------- soft update target networks -------------------- #
+        self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
+        self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
         # store new actor's params
         self._push_variables()
 
+        return loss_alpha, loss_c1, loss_c2, loss_a
+
     def run(self):
         for step in range(self._learning_starts, self._max_steps, 1):
             # update models
-            self._update()
+            loss_alpha, loss_c1, loss_c2, loss_a = self._update()
 
             # log metrics
-            self._logging_models(step)
+            self._logging_models(loss_alpha, loss_c1, loss_c2, loss_a, step)
 
-    def _logging_models(self, step):
-        print("=============================================")
-        print(f"Step: {step}")
-        print(f"Actor's loss: {self._loss_a.result()}")
-        print(f"Critic 1's loss: {self._loss_c1.result()}")
-        print(f"Critic 2's loss: {self._loss_c2.result()}")
-        print("=============================================")
-        print(f"Training ... {math.floor(step * 100.0 / self._max_steps)} %")  # noqa
+    def _logging_models(self, loss_alpha, loss_c1, loss_c2, loss_a, step):
+        # log into console
+        if step % self._log_freq == 0:
+            print("=============================================")
+            print(f"Step: {step}")
+            print(f"Actor's loss: {loss_a}")
+            print(f"Critic 1's loss: {loss_c1}")
+            print(f"Critic 2's loss: {loss_c2}")
+            print("=============================================")
+            print(f"Training ... {math.floor(step * 100.0 / self._max_steps)} %")  # noqa
+
+        # log into wandb cloud
         if self._logging_wandb:
-            # logging of epoch's mean loss
             wandb.log(
                 {
-                    "loss_a": self._loss_a.result(),
-                    "loss_c1": self._loss_c1.result(),
-                    "loss_c2": self._loss_c2.result(),
-                    "loss_alpha": self._loss_alpha.result(),
+                    "loss_a": loss_a,
+                    "loss_c1": loss_c1,
+                    "loss_c2": loss_c2,
+                    "loss_alpha": loss_alpha,
                     "alpha": self._alpha,
                 },
                 step=step,

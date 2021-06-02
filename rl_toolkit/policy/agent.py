@@ -163,7 +163,7 @@ class Agent:
                         ).numpy()
 
                     # Step in the environment
-                    new_obs, reward, done, _ = self._env.step(action)
+                    new_obs, reward, terminal, _ = self._env.step(action)
                     new_obs = self._normalize(new_obs)
 
                     # update variables
@@ -174,10 +174,10 @@ class Agent:
                     # Update the replay buffer
                     writer.append(
                         {
-                            "obs": self._last_obs,
-                            "act": action,
-                            "rew": np.array([reward], dtype=np.float32),
-                            "done": np.array([done], dtype=np.float32),
+                            "observation": self._last_obs,
+                            "action": action,
+                            "reward": np.array([reward], dtype=np.float32),
+                            "terminal": np.array([terminal], dtype=np.float32),
                         }
                     )
 
@@ -186,16 +186,16 @@ class Agent:
                             table="experience",
                             priority=1.0,
                             trajectory={
-                                "obs": writer.history["obs"][-2],
-                                "act": writer.history["act"][-2],
-                                "rew": writer.history["rew"][-2],
-                                "obs2": writer.history["obs"][-1],
-                                "done": writer.history["done"][-2],
+                                "observation": writer.history["observation"][-2],
+                                "action": writer.history["action"][-2],
+                                "reward": writer.history["reward"][-2],
+                                "next_observation": writer.history["observation"][-1],
+                                "terminal": writer.history["terminal"][-2],
                             },
                         )
 
                     # check the end of episode
-                    if done:
+                    if terminal:
                         self._logging_train()
 
                         # write the final state !!!
@@ -204,16 +204,16 @@ class Agent:
                             table="experience",
                             priority=1.0,
                             trajectory={
-                                "obs": writer.history["obs"][-2],
-                                "act": writer.history["act"][-2],
-                                "rew": writer.history["rew"][-2],
-                                "obs2": writer.history["obs"][-1],
-                                "done": writer.history["done"][-2],
+                                "observation": writer.history["observation"][-2],
+                                "action": writer.history["action"][-2],
+                                "reward": writer.history["reward"][-2],
+                                "next_observation": writer.history["observation"][-1],
+                                "terminal": writer.history["terminal"][-2],
                             },
                         )
 
                         # blocks until all the items have been sent to the server
-                        writer.end_episode(timeout_ms=1000)
+                        writer.end_episode(timeout_ms=5000)
 
                         # init variables
                         self._episode_reward = 0.0
