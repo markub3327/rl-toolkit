@@ -229,9 +229,6 @@ class Agent:
                                 },
                             )
 
-                            # blocks until all the items have been sent to the server
-                            writer.end_episode()
-
                             # init variables
                             self._episode_reward = 0.0
                             self._episode_steps = 0
@@ -246,3 +243,6 @@ class Agent:
 
                         # super critical !!!
                         self._last_obs = new_obs
+
+                    # Block until the item has been inserted and confirmed by the server.
+                    writer.flush()

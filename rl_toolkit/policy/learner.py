@@ -1,7 +1,6 @@
 from rl_toolkit.networks import Actor, Critic
 
 import os
-import math
 import reverb
 import wandb
 
@@ -46,6 +45,8 @@ class Learner:
         critic_learning_rate: float = 7.3e-4,
         alpha_learning_rate: float = 7.3e-4,
         # ---
+        update_interval: int = 64,
+        # ---
         tau: float = 0.01,
         gamma: float = 0.99,
         # ---
@@ -61,6 +62,7 @@ class Learner:
         self._env = env
         self._max_steps = max_steps
         self._learning_starts = learning_starts
+        self._update_interval = tf.constant(update_interval)
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
         self._save_path = save_path
@@ -338,7 +340,8 @@ class Learner:
         self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
         # store new actor's params
-        self._push_variables()
+        if (self._train_step % self._update_interval) == 0:
+            self._push_variables()
 
         return critic_loss, policy_loss, alpha_loss
 
@@ -358,9 +361,8 @@ class Learner:
                 print(f"Policy loss: {policy_loss}")
                 print("=============================================")
                 print(
-                    f"Training ... {math.floor(step * 100.0 / self._max_steps)} %"  # noqa
+                    f"Training ... {tf.floor(self._train_step * 100 / self._max_steps)} %"  # noqa
                 )
-
             if self._log_wandb:
                 # log of epoch's mean loss
                 wandb.log(

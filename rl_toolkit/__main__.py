@@ -57,6 +57,9 @@ if __name__ == "__main__":
         "--env_steps", type=int, help="Num. of environment steps", default=64
     )
     my_parser.add_argument(
+        "--update_interval", type=int, help="Update policy interval", default=64
+    )
+    my_parser.add_argument(
         "--log_interval", type=int, help="Log into console interval", default=64
     )
     my_parser.add_argument(
@@ -124,6 +127,7 @@ if __name__ == "__main__":
             actor_learning_rate=args.learning_rate,
             critic_learning_rate=args.learning_rate,
             alpha_learning_rate=args.learning_rate,
+            update_interval=args.update_interval,
             tau=args.tau,
             gamma=args.gamma,
             model_a_path=args.model_a,
