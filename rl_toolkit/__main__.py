@@ -132,7 +132,7 @@ if __name__ == "__main__":
             save_path=args.save,
             db_path=args.db_path,
             log_wandb=args.wandb,
-            log_interval=args.log_interval
+            log_interval=args.log_interval,
         )
 
         try:
