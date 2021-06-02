@@ -244,5 +244,5 @@ class Agent:
                         # super critical !!!
                         self._last_obs = new_obs
 
-                    # Block until the item has been inserted and confirmed by the server.
+                    # Block until all is written
                     writer.flush()
