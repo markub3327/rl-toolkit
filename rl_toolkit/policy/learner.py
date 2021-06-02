@@ -1,5 +1,4 @@
 from rl_toolkit.networks import Actor, Critic
-from rl_toolkit.types import Transition
 
 import os
 import math
@@ -236,18 +235,18 @@ class Learner:
 
     # -------------------------------- update critic ------------------------------- #
     def _update_critic(self, batch):
-        next_action, next_log_pi = self._actor.predict(batch.next_observation)
+        next_action, next_log_pi = self._actor.predict(batch["next_observation"])
 
         # target Q-values
-        next_q_1 = self._critic_targ_1.model([batch.next_observation, next_action])
-        next_q_2 = self._critic_targ_2.model([batch.next_observation, next_action])
+        next_q_1 = self._critic_targ_1.model([batch["next_observation"], next_action])
+        next_q_2 = self._critic_targ_2.model([batch["next_observation"], next_action])
         next_q = tf.minimum(next_q_1, next_q_2)
         # tf.print(f'nextQ: {next_q.shape}')
 
         # Bellman Equation
         Q_targets = tf.stop_gradient(
-            batch.reward
-            + (1.0 - batch.terminal)
+            batch["reward"]
+            + (1.0 - batch["terminal"])
             * self._gamma
             * (next_q - self._alpha * next_log_pi)
         )
@@ -255,7 +254,7 @@ class Learner:
 
         # update critic '1'
         with tf.GradientTape() as tape:
-            q_values = self._critic_1.model([batch.observation, batch.action])
+            q_values = self._critic_1.model([batch["observation"], batch["action"]])
             q_losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_targets, y_pred=q_values
             )
@@ -269,7 +268,7 @@ class Learner:
 
         # update critic '2'
         with tf.GradientTape() as tape:
-            q_values = self._critic_2.model([batch.observation, batch.action])
+            q_values = self._critic_2.model([batch["observation"], batch["action"]])
             q_losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_targets, y_pred=q_values
             )
@@ -286,12 +285,12 @@ class Learner:
     def _update_actor(self, batch):
         with tf.GradientTape() as tape:
             # predict action
-            y_pred, log_pi = self._actor.predict(batch.observation)
+            y_pred, log_pi = self._actor.predict(batch["observation"])
             # tf.print(f'log_pi: {log_pi.shape}')
 
             # predict q value
-            q_1 = self._critic_1.model([batch.observation, y_pred])
-            q_2 = self._critic_2.model([batch.observation, y_pred])
+            q_1 = self._critic_1.model([batch["observation"], y_pred])
+            q_2 = self._critic_2.model([batch["observation"], y_pred])
             q = tf.minimum(q_1, q_2)
             # tf.print(f'q: {q.shape}')
 
@@ -308,7 +307,7 @@ class Learner:
 
     # -------------------------------- update alpha ------------------------------- #
     def _update_alpha(self, batch):
-        _, log_pi = self._actor.predict(batch.observation)
+        _, log_pi = self._actor.predict(batch["observation"])
         # tf.print(f'y_pred: {y_pred.shape}')
         # tf.print(f'log_pi: {log_pi.shape}')
 
@@ -328,20 +327,19 @@ class Learner:
     @tf.function
     def _update(self):
         # Get data from replay buffer
-        sample = next(self._iterator)
-        transitions: Transition = sample.data
+        sample = next(self._dataset_iterator).data
 
         # re-new noise matrix every update of 'log_std' params
         self._actor.reset_noise()
 
         # Alpha param update
-        loss_alpha = self._update_alpha(transitions)
+        loss_alpha = self._update_alpha(sample)
 
         # Critic model update
-        loss_c1, loss_c2 = self._update_critic(transitions)
+        loss_c1, loss_c2 = self._update_critic(sample)
 
         # Actor model update
-        loss_a = self._update_actor(transitions)
+        loss_a = self._update_actor(sample)
 
         # -------------------- soft update target networks -------------------- #
         self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
@@ -385,14 +383,6 @@ class Learner:
                 },
                 step=step,
             )
-        self._clear_metrics()  # clear stored metrics of losses
-
-    def _clear_metrics(self):
-        # reset logger
-        self._loss_a.reset_states()
-        self._loss_c1.reset_states()
-        self._loss_c2.reset_states()
-        self._loss_alpha.reset_states()
 
     def save(self):
         if self._save_path is not None:

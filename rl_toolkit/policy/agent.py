@@ -199,7 +199,7 @@ class Agent:
                         self._logging_train()
 
                         # write the final state !!!
-                        writer.append({"obs": new_obs})
+                        writer.append({"observation": new_obs})
                         writer.create_item(
                             table="experience",
                             priority=1.0,
@@ -213,7 +213,7 @@ class Agent:
                         )
 
                         # blocks until all the items have been sent to the server
-                        writer.end_episode(timeout_ms=5000)
+                        # writer.end_episode(timeout_ms=1000)
 
                         # init variables
                         self._episode_reward = 0.0
