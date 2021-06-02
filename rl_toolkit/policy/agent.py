@@ -202,7 +202,9 @@ class Agent:
                                     "observation": writer.history["observation"][-2],
                                     "action": writer.history["action"][-2],
                                     "reward": writer.history["reward"][-2],
-                                    "next_observation": writer.history["observation"][-1],
+                                    "next_observation": writer.history["observation"][
+                                        -1
+                                    ],
                                     "terminal": writer.history["terminal"][-2],
                                 },
                             )
@@ -220,7 +222,9 @@ class Agent:
                                     "observation": writer.history["observation"][-2],
                                     "action": writer.history["action"][-2],
                                     "reward": writer.history["reward"][-2],
-                                    "next_observation": writer.history["observation"][-1],
+                                    "next_observation": writer.history["observation"][
+                                        -1
+                                    ],
                                     "terminal": writer.history["terminal"][-2],
                                 },
                             )

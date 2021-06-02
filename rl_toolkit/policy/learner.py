@@ -237,8 +237,12 @@ class Learner:
         next_action, next_log_pi = self._actor.predict(batch.data["next_observation"])
 
         # target Q-values
-        next_q_1 = self._critic_targ_1.model([batch.data["next_observation"], next_action])
-        next_q_2 = self._critic_targ_2.model([batch.data["next_observation"], next_action])
+        next_q_1 = self._critic_targ_1.model(
+            [batch.data["next_observation"], next_action]
+        )
+        next_q_2 = self._critic_targ_2.model(
+            [batch.data["next_observation"], next_action]
+        )
         next_q = tf.minimum(next_q_1, next_q_2)
         # tf.print(f'nextQ: {next_q.shape}')
 
@@ -253,7 +257,9 @@ class Learner:
 
         # update critic '1'
         with tf.GradientTape() as tape:
-            q_values = self._critic_1.model([batch.data["observation"], batch.data["action"]])
+            q_values = self._critic_1.model(
+                [batch.data["observation"], batch.data["action"]]
+            )
             q_losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_targets, y_pred=q_values
             )
@@ -267,7 +273,9 @@ class Learner:
 
         # update critic '2'
         with tf.GradientTape() as tape:
-            q_values = self._critic_2.model([batch.data["observation"], batch.data["action"]])
+            q_values = self._critic_2.model(
+                [batch.data["observation"], batch.data["action"]]
+            )
             q_losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_targets, y_pred=q_values
             )

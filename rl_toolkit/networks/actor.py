@@ -54,7 +54,7 @@ class Actor:
             mean = Lambda(
                 lambda x: tf.clip_by_value(x, -clip_mean, clip_mean), name="clip_mean"
             )(mean)
-            
+
             self._noisy_l = NoisyLayer(action_shape[0], name="noise")
             noise = self._noisy_l(latent_sde)
 
