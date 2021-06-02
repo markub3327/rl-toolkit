@@ -10,7 +10,7 @@ with open("CHANGELOG.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="rl-toolkit",
-    version="3.1.3",
+    version="3.1.4",
     description="The RL-Toolkit: A toolkit for developing and comparing your reinforcement learning agents in various games (OpenAI Gym or Pybullet).",  # noqa
     long_description=long_description,
     long_description_content_type="text/markdown",
