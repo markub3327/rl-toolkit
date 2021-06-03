@@ -45,8 +45,6 @@ class Learner:
         critic_learning_rate: float = 7.3e-4,
         alpha_learning_rate: float = 7.3e-4,
         # ---
-        update_interval: int = 64,
-        # ---
         tau: float = 0.01,
         gamma: float = 0.99,
         # ---
@@ -62,7 +60,6 @@ class Learner:
         self._env = env
         self._max_steps = max_steps
         self._learning_starts = learning_starts
-        self._update_interval = tf.constant(update_interval)
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
         self._save_path = save_path
@@ -133,9 +130,18 @@ class Learner:
             shape=(),
         )
 
+        self._stop_agents = tf.Variable(
+            False,
+            trainable=False,
+            dtype=tf.bool,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            shape=(),
+        )
+
         # prepare variable container
         self._variables_container = {
             "train_step": self._train_step,
+            "stop_agents": self._stop_agents,
             "policy_variables": self._actor.model.variables,
         }
 
@@ -323,7 +329,7 @@ class Learner:
         # Get data from replay buffer
         sample = self.dataset_iterator.get_next()
 
-        # re-new noise matrix every update of 'log_std' params
+        # Re-new noise matrix every update of 'log_std' params
         self._actor.reset_noise()
 
         # Alpha param update
@@ -335,28 +341,27 @@ class Learner:
         # Actor model update
         policy_loss = self._update_actor(sample)
 
-        # -------------------- soft update target networks -------------------- #
+        # Soft update target networks
         self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
         self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
-        # store new actor's params
-        if (self._train_step % self._update_interval) == 0:
-            self._push_variables()
+        # Store new actor's params
+        self._push_variables()
 
         return critic_loss, policy_loss, alpha_loss
 
     def run(self):
-        for step in range(self._learning_starts, self._max_steps, 1):
+        for train_step in range(self._learning_starts, self._max_steps):
             # update train_step (otlacok modelov)
-            self._train_step.assign(step)
+            self._train_step.assign(train_step)
 
             # update models
             critic_loss, policy_loss, alpha_loss = self._update()
 
             # log metrics
-            if (step % self._log_interval) == 0:
+            if (train_step % self._log_interval) == 0:
                 print("=============================================")
-                print(f"Step: {step}")
+                print(f"Step: {train_step}")
                 print(f"Critic loss: {critic_loss}")
                 print(f"Policy loss: {policy_loss}")
                 print("=============================================")
@@ -372,8 +377,12 @@ class Learner:
                         "alpha_loss": alpha_loss,
                         "alpha": self._alpha,
                     },
-                    step=step,
+                    step=train_step,
                 )
+
+        # Stop the agents
+        self._stop_agents.assign(True)
+        self._push_variables()
 
     def save(self):
         if self._save_path is not None:

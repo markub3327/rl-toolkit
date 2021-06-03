@@ -2,7 +2,6 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Dense, Lambda
 from tensorflow.keras.models import load_model
-from tensorflow.keras import initializers
 from rl_toolkit.networks.layers import NoisyLayer
 
 import tensorflow as tf
@@ -25,8 +24,9 @@ class Actor:
         state_shape=None,
         action_shape=None,
         learning_rate: float = None,
-        model_path: str = None,
         clip_mean: float = 2.0,
+        last_kernel_initializer="glorot_uniform",
+        model_path: str = None,
     ):
 
         if model_path is None:
@@ -47,9 +47,7 @@ class Actor:
                 action_shape[0],
                 activation="linear",
                 name="mean",
-                kernel_initializer=initializers.RandomUniform(
-                    minval=-0.03, maxval=0.03
-                ),
+                kernel_initializer=last_kernel_initializer,
             )(latent_sde)
             mean = Lambda(
                 lambda x: tf.clip_by_value(x, -clip_mean, clip_mean), name="clip_mean"

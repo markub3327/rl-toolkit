@@ -1,6 +1,5 @@
 from rl_toolkit.networks import Actor
 
-import math
 import reverb
 import wandb
 
@@ -16,7 +15,6 @@ class Agent:
     Attributes:
         db_server (str): database server name (IP or domain name)
         env: the instance of environment object
-        max_steps (int): maximum number of interactions do in environment
         env_steps (int): maximum number of steps in each rollout
         learning_starts (int): number of interactions before using policy network
         log_wandb (bool): log into WanDB cloud
@@ -28,14 +26,12 @@ class Agent:
         db_server: str,
         # ---
         env,
-        max_steps: int,
         env_steps: int = 64,
         learning_starts: int = 10000,
         # ---
         log_wandb: bool = False,
     ):
         self._env = env
-        self._max_steps = max_steps
         self._env_steps = env_steps
         self._learning_starts = learning_starts
         self._log_wandb = log_wandb
@@ -67,9 +63,18 @@ class Agent:
             shape=(),
         )
 
+        self._stop_agents = tf.Variable(
+            False,
+            trainable=False,
+            dtype=tf.bool,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            shape=(),
+        )
+
         # prepare variable container
         self._variables_container = {
             "train_step": self._train_step,
+            "stop_agents": self._stop_agents,
             "policy_variables": self._actor.model.variables,
         }
 
@@ -91,7 +96,6 @@ class Agent:
             wandb.init(project="rl-toolkit")
 
             # Settings
-            wandb.config.max_steps = max_steps
             wandb.config.env_steps = env_steps
             wandb.config.learning_starts = learning_starts
 
@@ -105,16 +109,10 @@ class Agent:
     @tf.function
     def _update_variables(self):
         sample = self.tf_client.sample("variables", data_dtypes=[self._dtypes])
-        data = sample.data[0]
-        if data["train_step"] > self._train_step or data["train_step"] == 0:
-            for variable, value in zip(
-                tf.nest.flatten(self._variables_container), tf.nest.flatten(data)
-            ):
-                variable.assign(value)
-
-            return True
-        else:
-            return False
+        for variable, value in zip(
+            tf.nest.flatten(self._variables_container), tf.nest.flatten(sample.data[0])
+        ):
+            variable.assign(value)
 
     @tf.function
     def _get_action(self, state, deterministic):
@@ -132,9 +130,7 @@ class Agent:
         print(f"Steps: {self._episode_steps}")
         print(f"TotalInteractions: {self._total_steps}")
         print("=============================================")
-        print(
-            f"Playing ... {math.floor(self._total_steps * 100.0 / self._max_steps)} %"
-        )
+
         if self._log_wandb:
             wandb.log(
                 {
@@ -157,92 +153,90 @@ class Agent:
 
         # hlavny cyklus hry
         with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
-            while self._total_steps < self._max_steps:
-                # ak su dostupne nove parametre zacni hrat
-                if self._update_variables():
-                    # re-new noise matrix before every rollouts
-                    self._actor.reset_noise()
+            while not self._stop_agents:
+                # Update agent network
+                self._update_variables()
 
-                    # collect rollouts
-                    for _ in range(self._env_steps):
-                        # select action randomly or using policy network
-                        if self._total_steps < self._learning_starts:
-                            # warmup
-                            action = self._env.action_space.sample()
-                        else:
-                            # Get the noisy action
-                            action = self._get_action(
-                                self._last_obs, deterministic=False
-                            ).numpy()
+                # Re-new noise matrix before every rollouts
+                self._actor.reset_noise()
 
-                        # Step in the environment
-                        new_obs, reward, terminal, _ = self._env.step(action)
-                        new_obs = self._normalize(new_obs)
+                # Collect rollouts
+                for _ in range(self._env_steps):
+                    # Select action randomly or using policy network
+                    if self._train_step < self._learning_starts:
+                        # Warmup
+                        action = self._env.action_space.sample()
+                    else:
+                        # Get the noisy action
+                        action = self._get_action(
+                            self._last_obs, deterministic=False
+                        ).numpy()
 
-                        # update variables
-                        self._episode_reward += reward
-                        self._episode_steps += 1
-                        self._total_steps += 1
+                    # Step in the environment
+                    new_obs, reward, terminal, _ = self._env.step(action)
+                    new_obs = self._normalize(new_obs)
 
-                        # Update the replay buffer
-                        writer.append(
-                            {
-                                "observation": self._last_obs,
-                                "action": action,
-                                "reward": np.array([reward], dtype=np.float32),
-                                "terminal": np.array([terminal], dtype=np.float32),
-                            }
+                    # Update variables
+                    self._episode_reward += reward
+                    self._episode_steps += 1
+                    self._total_steps += 1
+
+                    # Update the replay buffer
+                    writer.append(
+                        {
+                            "observation": self._last_obs,
+                            "action": action,
+                            "reward": np.array([reward], dtype=np.float32),
+                            "terminal": np.array([terminal], dtype=np.float32),
+                        }
+                    )
+
+                    # Ak je v cyklickom bufferi dostatok prikladov
+                    if self._episode_steps > 1:
+                        writer.create_item(
+                            table="experience",
+                            priority=1.0,
+                            trajectory={
+                                "observation": writer.history["observation"][-2],
+                                "action": writer.history["action"][-2],
+                                "reward": writer.history["reward"][-2],
+                                "next_observation": writer.history["observation"][-1],
+                                "terminal": writer.history["terminal"][-2],
+                            },
                         )
 
-                        if self._episode_steps > 1:
-                            writer.create_item(
-                                table="experience",
-                                priority=1.0,
-                                trajectory={
-                                    "observation": writer.history["observation"][-2],
-                                    "action": writer.history["action"][-2],
-                                    "reward": writer.history["reward"][-2],
-                                    "next_observation": writer.history["observation"][
-                                        -1
-                                    ],
-                                    "terminal": writer.history["terminal"][-2],
-                                },
-                            )
+                    # Check the end of episode
+                    if terminal:
+                        self._log_train()
 
-                        # check the end of episode
-                        if terminal:
-                            self._log_train()
+                        # Write the final state !!!
+                        writer.append({"observation": new_obs})
+                        writer.create_item(
+                            table="experience",
+                            priority=1.0,
+                            trajectory={
+                                "observation": writer.history["observation"][-2],
+                                "action": writer.history["action"][-2],
+                                "reward": writer.history["reward"][-2],
+                                "next_observation": writer.history["observation"][-1],
+                                "terminal": writer.history["terminal"][-2],
+                            },
+                        )
 
-                            # write the final state !!!
-                            writer.append({"observation": new_obs})
-                            writer.create_item(
-                                table="experience",
-                                priority=1.0,
-                                trajectory={
-                                    "observation": writer.history["observation"][-2],
-                                    "action": writer.history["action"][-2],
-                                    "reward": writer.history["reward"][-2],
-                                    "next_observation": writer.history["observation"][
-                                        -1
-                                    ],
-                                    "terminal": writer.history["terminal"][-2],
-                                },
-                            )
+                        # Init variables
+                        self._episode_reward = 0.0
+                        self._episode_steps = 0
+                        self._total_episodes += 1
 
-                            # init variables
-                            self._episode_reward = 0.0
-                            self._episode_steps = 0
-                            self._total_episodes += 1
+                        # Init environment
+                        self._last_obs = self._env.reset()
+                        self._last_obs = self._normalize(self._last_obs)
 
-                            # init environment
-                            self._last_obs = self._env.reset()
-                            self._last_obs = self._normalize(self._last_obs)
+                        # Interrupt the rollout
+                        break
 
-                            # interrupt the rollout
-                            break
+                    # Super critical !!!
+                    self._last_obs = new_obs
 
-                        # super critical !!!
-                        self._last_obs = new_obs
-
-                    # Block until the item has been inserted and confirmed by the server.
-                    writer.flush()
+                # Block until the item has been inserted and confirmed by the server
+                writer.flush()

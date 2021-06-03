@@ -2,7 +2,6 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Concatenate, Dense
 from tensorflow.keras.models import load_model
-from tensorflow.keras import initializers
 
 
 class Critic:
@@ -22,6 +21,7 @@ class Critic:
         state_shape=None,
         action_shape=None,
         learning_rate: float = 3e-4,
+        last_kernel_initializer="glorot_uniform",
         model_path: str = None,
     ):
 
@@ -43,9 +43,7 @@ class Critic:
                 1,
                 activation="linear",
                 name="q_val",
-                kernel_initializer=initializers.RandomUniform(
-                    minval=-0.03, maxval=0.03
-                ),
+                kernel_initializer=last_kernel_initializer,
             )(h2)
 
             # Vytvor model

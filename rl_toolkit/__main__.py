@@ -30,21 +30,35 @@ if __name__ == "__main__":
         "-t",
         "--max_steps",
         type=int,
-        help="Maximum number of interactions doing in environment",
+        help="Number of agent's steps",
         default=int(1e6),
     )
-    my_parser.add_argument("--gamma", type=float, help="Discount factor", default=0.99)
     my_parser.add_argument(
-        "-lr", "--learning_rate", type=float, help="Learning rate", default=7.3e-4
+        "--gamma",
+        type=float,
+        help="Discount rate (gamma) for future rewards",
+        default=0.99,
     )
-    my_parser.add_argument("--tau", type=float, help="Soft update rate", default=0.01)
     my_parser.add_argument(
-        "--batch_size", type=int, help="Size of the batch", default=256
+        "--tau",
+        type=float,
+        help="Parameter for soft target network updates",
+        default=0.01,
+    )
+    my_parser.add_argument(
+        "-lr",
+        "--learning_rate",
+        type=float,
+        help="Learning rate for policy & critic networks",
+        default=7.3e-4,
+    )
+    my_parser.add_argument(
+        "--batch_size", type=int, help="Size of the mini-batch", default=256
     )
     my_parser.add_argument(
         "--buffer_capacity",
         type=int,
-        help="Capacity of the replay buffer",
+        help="Maximum capacity of replay memory",
         default=int(1e6),
     )
     my_parser.add_argument(
@@ -57,16 +71,7 @@ if __name__ == "__main__":
         "--env_steps", type=int, help="Num. of environment steps", default=64
     )
     my_parser.add_argument(
-        "--update_interval", type=int, help="Update policy interval", default=64
-    )
-    my_parser.add_argument(
         "--log_interval", type=int, help="Log into console interval", default=64
-    )
-    my_parser.add_argument(
-        "--policy_delay",
-        type=int,
-        help="Delay between critic and policy update",
-        default=2,
     )
     my_parser.add_argument(
         "--render", action="store_true", help="Render the environment"
@@ -101,7 +106,6 @@ if __name__ == "__main__":
         agent = Agent(
             db_server=args.db_server,
             env=env,
-            max_steps=args.max_steps,
             env_steps=args.env_steps,
             learning_starts=args.learning_starts,
             log_wandb=args.wandb,
@@ -127,7 +131,6 @@ if __name__ == "__main__":
             actor_learning_rate=args.learning_rate,
             critic_learning_rate=args.learning_rate,
             alpha_learning_rate=args.learning_rate,
-            update_interval=args.update_interval,
             tau=args.tau,
             gamma=args.gamma,
             model_a_path=args.model_a,
