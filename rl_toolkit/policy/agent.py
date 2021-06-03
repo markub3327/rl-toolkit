@@ -223,7 +223,6 @@ class Agent:
                             },
                         )
 
-<<<<<<< HEAD
                         # Init variables
                         self._episode_reward = 0.0
                         self._episode_steps = 0
@@ -241,57 +240,3 @@ class Agent:
 
                 # Block until the item has been inserted and confirmed by the server
                 writer.flush()
-=======
-                        if self._episode_steps > 1:
-                            writer.create_item(
-                                table="experience",
-                                priority=1.0,
-                                trajectory={
-                                    "observation": writer.history["observation"][-2],
-                                    "action": writer.history["action"][-2],
-                                    "reward": writer.history["reward"][-2],
-                                    "next_observation": writer.history["observation"][
-                                        -1
-                                    ],
-                                    "terminal": writer.history["terminal"][-2],
-                                },
-                            )
-
-                        # check the end of episode
-                        if terminal:
-                            self._log_train()
-
-                            # write the final state !!!
-                            writer.append({"observation": new_obs})
-                            writer.create_item(
-                                table="experience",
-                                priority=1.0,
-                                trajectory={
-                                    "observation": writer.history["observation"][-2],
-                                    "action": writer.history["action"][-2],
-                                    "reward": writer.history["reward"][-2],
-                                    "next_observation": writer.history["observation"][
-                                        -1
-                                    ],
-                                    "terminal": writer.history["terminal"][-2],
-                                },
-                            )
-
-                            # init variables
-                            self._episode_reward = 0.0
-                            self._episode_steps = 0
-                            self._total_episodes += 1
-
-                            # init environment
-                            self._last_obs = self._env.reset()
-                            self._last_obs = self._normalize(self._last_obs)
-
-                            # interrupt the rollout
-                            break
-
-                        # super critical !!!
-                        self._last_obs = new_obs
-
-                    # Block until all is written
-                    writer.flush()
->>>>>>> master
