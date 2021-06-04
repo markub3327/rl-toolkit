@@ -91,6 +91,11 @@ class Agent:
         self.client = reverb.Client(f"{db_server}:8000")
         self.tf_client = reverb.TFClient(server_address=f"{db_server}:8000")
 
+        self._policy_action = self._get_action(
+            self._last_obs, deterministic=False
+        ).numpy
+        self._random_action = self._env.action_space.sample
+
         # init Weights & Biases
         if self._log_wandb:
             wandb.init(project="rl-toolkit")
@@ -101,10 +106,7 @@ class Agent:
 
     def _normalize_fn(self, obs):
         # Min-max method
-        obs = (obs - self._env.observation_space.low) / (
-            self._env.observation_space.high - self._env.observation_space.low
-        )
-        return obs
+        return obs / self._env.observation_space.high
 
     @tf.function
     def _update_variables(self):
@@ -128,7 +130,7 @@ class Agent:
         print(f"Epoch: {self._total_episodes}")
         print(f"Score: {self._episode_reward}")
         print(f"Steps: {self._episode_steps}")
-        print(f"TotalInteractions: {self._total_steps}")
+        print(f"Train step: {self._train_step}")
         print("=============================================")
 
         if self._log_wandb:
@@ -138,11 +140,80 @@ class Agent:
                     "score": self._episode_reward,
                     "steps": self._episode_steps,
                 },
-                step=self._total_steps,
+                # step=step,
             )
 
+    def _collect_rollout(self, steps, action_fn, writer):
+        for _ in range(steps):
+            # Step in the environment
+            action = action_fn()
+            new_obs, reward, terminal, _ = self._env.step(action)
+            new_obs = self._normalize(new_obs)
+
+            # Update variables
+            self._episode_reward += reward
+            self._episode_steps += 1
+
+            # Update the replay buffer
+            writer.append(
+                {
+                    "observation": self._last_obs,
+                    "action": action,
+                    "reward": np.array([reward], dtype=np.float32),
+                    "terminal": np.array([terminal], dtype=np.float32),
+                }
+            )
+
+            # Ak je v cyklickom bufferi dostatok prikladov
+            if self._episode_steps > 1:
+                writer.create_item(
+                    table="experience",
+                    priority=1.0,
+                    trajectory={
+                        "observation": writer.history["observation"][-2],
+                        "action": writer.history["action"][-2],
+                        "reward": writer.history["reward"][-2],
+                        "next_observation": writer.history["observation"][-1],
+                        "terminal": writer.history["terminal"][-2],
+                    },
+                )
+
+            # Check the end of episode
+            if terminal:
+                self._log_train()
+
+                # Write the final state !!!
+                writer.append({"observation": new_obs})
+                writer.create_item(
+                    table="experience",
+                    priority=1.0,
+                    trajectory={
+                        "observation": writer.history["observation"][-2],
+                        "action": writer.history["action"][-2],
+                        "reward": writer.history["reward"][-2],
+                        "next_observation": writer.history["observation"][-1],
+                        "terminal": writer.history["terminal"][-2],
+                    },
+                )
+
+                # Init variables
+                self._episode_reward = 0.0
+                self._episode_steps = 0
+                self._total_episodes += 1
+
+                # Init environment
+                self._last_obs = self._env.reset()
+                self._last_obs = self._normalize(self._last_obs)
+
+                # Interrupt the rollout
+                break
+
+            # Super critical !!!
+            self._last_obs = new_obs
+
+        writer.flush()
+
     def run(self):
-        self._total_steps = 0
         self._total_episodes = 0
         self._episode_reward = 0.0
         self._episode_steps = 0
@@ -151,8 +222,12 @@ class Agent:
         self._last_obs = self._env.reset()
         self._last_obs = self._normalize(self._last_obs)
 
-        # hlavny cyklus hry
+        # spojenie s db
         with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
+            # zahrievacie kola
+            self._collect_rollout(self._learning_starts, self._random_action, writer)
+
+            # hlavny cyklus hry
             while not self._stop_agents:
                 # Update agent network
                 self._update_variables()
@@ -161,82 +236,4 @@ class Agent:
                 self._actor.reset_noise()
 
                 # Collect rollouts
-                for _ in range(self._env_steps):
-                    # Select action randomly or using policy network
-                    if self._train_step < self._learning_starts:
-                        # Warmup
-                        action = self._env.action_space.sample()
-                    else:
-                        # Get the noisy action
-                        action = self._get_action(
-                            self._last_obs, deterministic=False
-                        ).numpy()
-
-                    # Step in the environment
-                    new_obs, reward, terminal, _ = self._env.step(action)
-                    new_obs = self._normalize(new_obs)
-
-                    # Update variables
-                    self._episode_reward += reward
-                    self._episode_steps += 1
-                    self._total_steps += 1
-
-                    # Update the replay buffer
-                    writer.append(
-                        {
-                            "observation": self._last_obs,
-                            "action": action,
-                            "reward": np.array([reward], dtype=np.float32),
-                            "terminal": np.array([terminal], dtype=np.float32),
-                        }
-                    )
-
-                    # Ak je v cyklickom bufferi dostatok prikladov
-                    if self._episode_steps > 1:
-                        writer.create_item(
-                            table="experience",
-                            priority=1.0,
-                            trajectory={
-                                "observation": writer.history["observation"][-2],
-                                "action": writer.history["action"][-2],
-                                "reward": writer.history["reward"][-2],
-                                "next_observation": writer.history["observation"][-1],
-                                "terminal": writer.history["terminal"][-2],
-                            },
-                        )
-
-                    # Check the end of episode
-                    if terminal:
-                        self._log_train()
-
-                        # Write the final state !!!
-                        writer.append({"observation": new_obs})
-                        writer.create_item(
-                            table="experience",
-                            priority=1.0,
-                            trajectory={
-                                "observation": writer.history["observation"][-2],
-                                "action": writer.history["action"][-2],
-                                "reward": writer.history["reward"][-2],
-                                "next_observation": writer.history["observation"][-1],
-                                "terminal": writer.history["terminal"][-2],
-                            },
-                        )
-
-                        # Init variables
-                        self._episode_reward = 0.0
-                        self._episode_steps = 0
-                        self._total_episodes += 1
-
-                        # Init environment
-                        self._last_obs = self._env.reset()
-                        self._last_obs = self._normalize(self._last_obs)
-
-                        # Interrupt the rollout
-                        break
-
-                    # Super critical !!!
-                    self._last_obs = new_obs
-
-                # Block until the item has been inserted and confirmed by the server
-                writer.flush()
+                self._collect_rollout(self._env_steps, self._policy_action, writer)

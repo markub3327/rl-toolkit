@@ -41,9 +41,9 @@ class Learner:
         buffer_capacity: int = 1000000,
         batch_size: int = 256,
         # ---
-        actor_learning_rate: float = 7.3e-4,
-        critic_learning_rate: float = 7.3e-4,
-        alpha_learning_rate: float = 7.3e-4,
+        actor_learning_rate: float = 3e-4,
+        critic_learning_rate: float = 3e-4,
+        alpha_learning_rate: float = 3e-4,
         # ---
         tau: float = 0.01,
         gamma: float = 0.99,
