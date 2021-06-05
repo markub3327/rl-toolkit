@@ -54,7 +54,7 @@ class Random(Policy):
 
     def run(self):
         self._total_steps = 0
-        self._episode_steps = 0                       
+        self._episode_steps = 0
 
         # spojenie s db
         with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
@@ -122,7 +122,7 @@ class Random(Policy):
                         )
 
                         # Init variables
-                        self._episode_steps = 0                       
+                        self._episode_steps = 0
 
                         # write all trajectories to db
                         writer.end_episode()

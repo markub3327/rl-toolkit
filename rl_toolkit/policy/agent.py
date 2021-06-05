@@ -5,7 +5,6 @@ import reverb
 import wandb
 
 import numpy as np
-import tensorflow as tf
 
 
 class Agent(Policy):
@@ -97,7 +96,9 @@ class Agent(Policy):
                 # Collect rollouts
                 for _ in range(self._env_steps):
                     # Get the action
-                    action = self._get_action(self._last_obs, deterministic=False).numpy()
+                    action = self._get_action(
+                        self._last_obs, deterministic=False
+                    ).numpy()
 
                     # perform action
                     new_obs, reward, terminal, _ = self._env.step(action)

@@ -30,7 +30,7 @@ class Learner(Policy):
         save_path (str): path to the models for saving
         db_path (str): path to the database
         log_wandb (bool): log into WanDB cloud
-    
+
     Paper: https://arxiv.org/pdf/1812.05905.pdf
     """
 

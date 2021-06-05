@@ -5,9 +5,6 @@ import cv2
 import math
 import wandb
 
-import numpy as np
-import tensorflow as tf
-
 
 class Tester(Policy):
     """
