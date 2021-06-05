@@ -1,4 +1,5 @@
 from rl_toolkit.networks import Actor, Critic
+from rl_toolkit.policy import Policy
 
 import os
 import reverb
@@ -7,11 +8,11 @@ import wandb
 import tensorflow as tf
 
 
-class Learner:
+class Learner(Policy):
     """
     Learner (based on Soft Actor-Critic)
     =================
-    Paper: https://arxiv.org/pdf/1812.05905.pdf
+
     Attributes:
         env: the instance of environment object
         max_steps (int): maximum number of interactions do in environment
@@ -29,6 +30,8 @@ class Learner:
         save_path (str): path to the models for saving
         db_path (str): path to the database
         log_wandb (bool): log into WanDB cloud
+    
+    Paper: https://arxiv.org/pdf/1812.05905.pdf
     """
 
     def __init__(
@@ -57,13 +60,13 @@ class Learner:
         log_wandb: bool = False,
         log_interval: int = 64,
     ):
-        self._env = env
+        super(Learner, self).__init__(env, log_wandb)
+
         self._max_steps = max_steps
         self._learning_starts = learning_starts
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
         self._save_path = save_path
-        self._log_wandb = log_wandb
         self._log_interval = log_interval
 
         # init param 'alpha' - Lagrangian constraint
@@ -121,36 +124,6 @@ class Learner:
         else:
             checkpointer = reverb.checkpointers.DefaultCheckpointer(path=db_path)
 
-        # actual training step
-        self._train_step = tf.Variable(
-            0,
-            trainable=False,
-            dtype=tf.int32,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            shape=(),
-        )
-
-        self._stop_agents = tf.Variable(
-            False,
-            trainable=False,
-            dtype=tf.bool,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            shape=(),
-        )
-
-        # prepare variable container
-        self._variables_container = {
-            "train_step": self._train_step,
-            "stop_agents": self._stop_agents,
-            "policy_variables": self._actor.model.variables,
-        }
-
-        # variables signature for variable container table
-        variable_container_signature = tf.nest.map_structure(
-            lambda variable: tf.TensorSpec(variable.shape, dtype=variable.dtype),
-            self._variables_container,
-        )
-
         # Initialize the reverb server
         self.server = reverb.Server(
             tables=[
@@ -185,14 +158,14 @@ class Learner:
                     rate_limiter=reverb.rate_limiters.MinSize(1),
                     max_size=1,
                     max_times_sampled=0,
-                    signature=variable_container_signature,
+                    signature=self._variable_container_signature,
                 ),
             ],
             port=8000,
             checkpointer=checkpointer,
         )
 
-        # Initializes the reverb client
+        # Initializes the reverb client and tf.dataset
         self.client = reverb.Client("localhost:8000")
         self.tf_client = reverb.TFClient(server_address="localhost:8000")
         self.dataset_iterator = iter(
@@ -226,13 +199,6 @@ class Learner:
             net.model.trainable_variables, net_targ.model.trainable_variables
         ):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
-
-    def _push_variables(self):
-        self.tf_client.insert(
-            data=tf.nest.flatten(self._variables_container),
-            tables=tf.constant(["variables"]),
-            priorities=tf.constant([1.0], dtype=tf.float64),
-        )
 
     # -------------------------------- update critic ------------------------------- #
     def _update_critic(self, batch):

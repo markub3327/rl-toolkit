@@ -1,61 +1,38 @@
-from rl_toolkit.networks import Actor
 from rl_toolkit.policy import Policy
 
 import reverb
 import wandb
 
 import numpy as np
-import tensorflow as tf
 
 
-class Agent(Policy):
+class Random(Policy):
     """
-    Agent (based on Soft Actor-Critic)
+    Random agent
     =================
 
     Attributes:
-        db_server (str): database server name (IP or domain name)
         env: the instance of environment object
-        env_steps (int): maximum number of steps in each rollout
-        learning_starts (int): number of interactions before using policy network
+        max_steps (int): maximum number of interactions do in environment
+        model_a_path (str): path to the actor's model
         log_wandb (bool): log into WanDB cloud
-
-    Paper: https://arxiv.org/pdf/1812.05905.pdf
     """
 
     def __init__(
         self,
         # ---
+        env,
+        # ---
         db_server: str,
         # ---
-        env,
-        env_steps: int = 64,
-        learning_starts: int = 10000,
-        # ---
-        log_wandb: bool = False,
+        max_steps: int,
     ):
-        super(Agent, self).__init__(env, log_wandb)
+        super(Random, self).__init__(env, False)
 
-        self._env_steps = env_steps
-        self._learning_starts = learning_starts
-
-        # Actor network (for agent)
-        self._actor = Actor(
-            state_shape=self._env.observation_space.shape,
-            action_shape=self._env.action_space.shape,
-        )
+        self._max_steps = max_steps
 
         # Initializes the reverb client
         self.client = reverb.Client(f"{db_server}:8000")
-        self.tf_client = reverb.TFClient(server_address=f"{db_server}:8000")
-
-        # init Weights & Biases
-        if self._log_wandb:
-            wandb.init(project="rl-toolkit")
-
-            # Settings
-            wandb.config.env_steps = env_steps
-            wandb.config.learning_starts = learning_starts
 
     def _log_train(self):
         print("=============================================")
@@ -72,40 +49,35 @@ class Agent(Policy):
                     "score": self._episode_reward,
                     "steps": self._episode_steps,
                 },
-                step=self._train_step,
+                step=self._total_steps,
             )
 
     def run(self):
-        self._total_episodes = 0
-        self._episode_reward = 0.0
-        self._episode_steps = 0
-
-        # init environment
-        self._last_obs = self._env.reset()
-        self._last_obs = self._normalize(self._last_obs)
+        self._total_steps = 0
+        self._episode_steps = 0                       
 
         # spojenie s db
         with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
             # hlavny cyklus hry
-            while not self._stop_agents:
-                # Update agent network
-                self._update_variables()
+            while self._total_steps < self._max_steps:
+                self._last_obs = self._env.reset()
+                self._last_obs = self._normalize(self._last_obs)
 
-                # Re-new noise matrix before every rollouts
-                self._actor.reset_noise()
-
-                # Collect rollouts
-                for _ in range(self._env_steps):
+                # collect rollout
+                while True:
                     # Get the action
-                    action = self._get_action(self._last_obs, deterministic=False).numpy()
+                    action = self._env.action_space.sample()
 
                     # perform action
                     new_obs, reward, terminal, _ = self._env.step(action)
                     new_obs = self._normalize(new_obs)
 
-                    # Update variables
-                    self._episode_reward += reward
+                    # update variables
                     self._episode_steps += 1
+                    self._total_steps += 1
+
+                    # super critical !!!
+                    self._last_obs = new_obs
 
                     # Update the replay buffer
                     writer.append(
@@ -150,13 +122,7 @@ class Agent(Policy):
                         )
 
                         # Init variables
-                        self._episode_reward = 0.0
-                        self._episode_steps = 0
-                        self._total_episodes += 1
-
-                        # Init environment
-                        self._last_obs = self._env.reset()
-                        self._last_obs = self._normalize(self._last_obs)
+                        self._episode_steps = 0                       
 
                         # write all trajectories to db
                         writer.end_episode()

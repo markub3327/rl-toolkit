@@ -1,4 +1,5 @@
 from rl_toolkit.networks import Actor
+from rl_toolkit.policy import Policy
 
 import cv2
 import math
@@ -8,12 +9,10 @@ import numpy as np
 import tensorflow as tf
 
 
-class Tester:
+class Tester(Policy):
     """
-    Soft Actor-Critic
+    Tester
     =================
-
-    Paper: https://arxiv.org/pdf/1812.05905.pdf
 
     Attributes:
         env: the instance of environment object
@@ -29,24 +28,15 @@ class Tester:
         # ---
         max_steps: int,
         # ---
+        render: bool = False,
+        # ---
         model_a_path: str = None,
         log_wandb: bool = False,
     ):
-        self._env = env
+        super(Tester, self).__init__(env, log_wandb)
+
         self._max_steps = max_steps
-        self._log_wandb = log_wandb
-
-        # check obseration's ranges
-        if np.all(np.isfinite(self._env.observation_space.low)) and np.all(
-            np.isfinite(self._env.observation_space.high)
-        ):
-            self._normalize = self._normalize_fn
-
-            print("Observation will be normalized !\n")
-        else:
-            self._normalize = lambda a: a
-
-            print("Observation cannot be normalized !\n")
+        self._render = render
 
         # Actor network (for agent)
         self._actor = Actor(
@@ -61,15 +51,6 @@ class Tester:
 
             # Settings
             wandb.config.max_steps = max_steps
-
-    @tf.function
-    def _get_action(self, state, deterministic):
-        a, _ = self._actor.predict(
-            tf.expand_dims(state, axis=0),
-            with_logprob=False,
-            deterministic=deterministic,
-        )
-        return tf.squeeze(a, axis=0)  # remove batch_size dim
 
     def _log_test(self):
         print("=============================================")
@@ -91,12 +72,12 @@ class Tester:
                 step=self._total_steps,
             )
 
-    def run(self, render):
+    def run(self):
         self._total_steps = 0
         self._total_episodes = 0
 
         # init video file
-        if render:
+        if self._render:
             video_stream = cv2.VideoWriter(
                 "video/game.avi", cv2.VideoWriter_fourcc(*"MJPG"), 30, (640, 480)
             )
@@ -113,7 +94,7 @@ class Tester:
             # collect rollout
             while not done:
                 # write to stream
-                if render:
+                if self._render:
                     img_array = self._env.render(mode="rgb_array")
                     img_array = cv2.resize(img_array, (640, 480))
                     video_stream.write(img_array)
@@ -140,5 +121,5 @@ class Tester:
             self._log_test()
 
         # Release video file stream
-        if render:
+        if self._render:
             video_stream.release()
