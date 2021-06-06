@@ -49,7 +49,7 @@ docker run -it --rm markub3327/rl-toolkit python3 testing.py [-h] -env ENV_NAME 
   <a href="https://wandb.ai/markub/rl-toolkit?workspace=user-markub" target="_blank"><img src="img/results.png" alt="results"></a>
 </p>
 
-<p align="center"><b>Return from game</b></p>
+<p align="center"><b>Score</b></p>
 
   | Environment              | gSDE | gSDE<br>+ Huber loss |
   | ------------------------ | :---: | :-----------------: |
@@ -59,10 +59,19 @@ docker run -it --rm markub3327/rl-toolkit python3 testing.py [-h] -env ENV_NAME 
   | HalfCheetahBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)  | 2945 ± 95 | **3003 ± 226** |
   | HopperBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)       | 2515 ± 50 | **2555 ± 405** |
   | HumanoidBulletEnv-v0 | - | ** ± ** |
+
+## Actor
+
+<p align="center">
+  <img src="img/actor.png" alt="actor">
+</p>
+
+## Critic
+
+<p align="center">
+  <img src="img/critic.png" alt="critic">
+</p>
+
 ----------------------------------
 
 **Frameworks:** Tensorflow, Reverb, OpenAI Gym, PyBullet, WanDB, OpenCV
-<br>
-**Languages:** Python, Shell
-<br>
-**Author**: Martin Kubovčík
