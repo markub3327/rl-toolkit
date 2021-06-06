@@ -68,7 +68,10 @@ if __name__ == "__main__":
         default=10000,
     )
     my_parser.add_argument(
-        "--update_interval", type=int, help="Interval of updating policy parameters", default=64
+        "--update_interval",
+        type=int,
+        help="Interval of updating policy parameters",
+        default=64,
     )
     my_parser.add_argument(
         "--log_interval", type=int, help="Log into console interval", default=64

@@ -108,17 +108,20 @@ class Agent(Policy):
 
                 # Ak je v cyklickom bufferi dostatok prikladov
                 if self._episode_steps > 1:
-                        writer.create_item(
-                            table="experience",
-                            priority=1.0,
-                            trajectory={
-                                "observation": writer.history["observation"][-2],
-                                "action": writer.history["action"][-2],
-                                "reward": writer.history["reward"][-2],
-                                "next_observation": writer.history["observation"][-1],
-                                "terminal": writer.history["terminal"][-2],
-                            },
-                        )
+                    writer.create_item(
+                        table="experience",
+                        priority=1.0,
+                        trajectory={
+                            "observation": writer.history["observation"][-2],
+                            "action": writer.history["action"][-2],
+                            "reward": writer.history["reward"][-2],
+                            "next_observation": writer.history["observation"][-1],
+                            "terminal": writer.history["terminal"][-2],
+                        },
+                    )
+
+                # Super critical !!!
+                self._last_obs = new_obs
 
                 # Check the end of episode
                 if terminal:
@@ -165,6 +168,3 @@ class Agent(Policy):
 
                     # write all trajectories to db
                     writer.end_episode()
-
-                # Super critical !!!
-                self._last_obs = new_obs
