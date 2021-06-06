@@ -31,7 +31,7 @@ class TwinCritic:
             action_input = Input(shape=action_shape, name="action_input")
 
             merged = Concatenate()([state_input, action_input])
-            
+
             # Critic 1
             c1_h1 = Dense(
                 400, activation="relu", kernel_initializer="he_uniform", name="c1_h1"
