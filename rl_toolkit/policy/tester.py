@@ -59,6 +59,7 @@ class Tester(Policy):
         print(
             f"Testing ... {math.floor(self._total_steps * 100.0 / self._max_steps)} %"
         )
+
         if self._log_wandb:
             wandb.log(
                 {
@@ -97,7 +98,9 @@ class Tester(Policy):
                     video_stream.write(img_array)
 
                 # Get the action
-                action = self._get_action(self._last_obs, deterministic=True).numpy()
+                action = self._actor.get_action(
+                    self._last_obs, deterministic=True
+                ).numpy()
 
                 # perform action
                 new_obs, reward, done, _ = self._env.step(action)

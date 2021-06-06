@@ -1,5 +1,6 @@
 from rl_toolkit.networks import Actor, Critic
 from rl_toolkit.policy import Policy
+from rl_toolkit.utils import VariableContainer
 
 import os
 import reverb
@@ -16,7 +17,7 @@ class Learner(Policy):
     Attributes:
         env: the instance of environment object
         max_steps (int): maximum number of interactions do in environment
-        learning_starts (int): number of interactions before using policy network
+        warmup_steps (int): number of interactions before using policy network
         buffer_capacity (int): the capacity of experiences replay buffer
         batch_size (int): size of mini-batch used for training
         actor_learning_rate (float): learning rate for actor's optimizer
@@ -39,7 +40,7 @@ class Learner(Policy):
         # ---
         env,
         max_steps: int,
-        learning_starts: int = 10000,
+        warmup_steps: int = 10000,
         # ---
         buffer_capacity: int = 1000000,
         batch_size: int = 256,
@@ -63,7 +64,7 @@ class Learner(Policy):
         super(Learner, self).__init__(env, log_wandb)
 
         self._max_steps = max_steps
-        self._learning_starts = learning_starts
+        self._warmup_steps = warmup_steps
         self._gamma = tf.constant(gamma)
         self._tau = tf.constant(tau)
         self._save_path = save_path
@@ -86,6 +87,7 @@ class Learner(Policy):
             learning_rate=actor_learning_rate,
             model_path=model_a_path,
         )
+        self._container = VariableContainer("localhost", self._actor)
 
         # Critic network & target network
         self._critic_1 = Critic(
@@ -131,7 +133,7 @@ class Learner(Policy):
                     name="experience",
                     sampler=reverb.selectors.Uniform(),
                     remover=reverb.selectors.Fifo(),
-                    rate_limiter=reverb.rate_limiters.MinSize(learning_starts),
+                    rate_limiter=reverb.rate_limiters.MinSize(warmup_steps),
                     max_size=buffer_capacity,
                     max_times_sampled=0,
                     signature={
@@ -158,7 +160,7 @@ class Learner(Policy):
                     rate_limiter=reverb.rate_limiters.MinSize(1),
                     max_size=1,
                     max_times_sampled=0,
-                    signature=self._variable_container_signature,
+                    signature=self._container.variable_container_signature,
                 ),
             ],
             port=8000,
@@ -167,13 +169,14 @@ class Learner(Policy):
 
         # Initializes the reverb client and tf.dataset
         self.client = reverb.Client("localhost:8000")
-        self.tf_client = reverb.TFClient(server_address="localhost:8000")
         self.dataset_iterator = iter(
             reverb.TrajectoryDataset.from_table_signature(
                 server_address="localhost:8000",
                 table="experience",
                 max_in_flight_samples_per_worker=10,
-            ).batch(batch_size, drop_remainder=True)
+            )
+            .batch(batch_size, drop_remainder=True)
+            .prefetch(tf.data.experimental.AUTOTUNE)
         )
 
         # init Weights & Biases
@@ -182,7 +185,7 @@ class Learner(Policy):
 
             # Settings
             wandb.config.max_steps = max_steps
-            wandb.config.learning_starts = learning_starts
+            wandb.config.warmup_steps = warmup_steps
             wandb.config.buffer_capacity = buffer_capacity
             wandb.config.batch_size = batch_size
             wandb.config.actor_learning_rate = actor_learning_rate
@@ -192,7 +195,7 @@ class Learner(Policy):
             wandb.config.gamma = gamma
 
         # init actor's params in DB
-        self._push_variables()
+        self._container.push_variables()
 
     def _update_target(self, net, net_targ, tau):
         for source_weight, target_weight in zip(
@@ -312,14 +315,14 @@ class Learner(Policy):
         self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
 
         # Store new actor's params
-        self._push_variables()
+        self._container.push_variables()
 
         return critic_loss, policy_loss, alpha_loss
 
     def run(self):
-        for train_step in range(self._learning_starts, self._max_steps):
+        for train_step in range(self._warmup_steps, self._max_steps):
             # update train_step (otlacok modelov)
-            self._train_step.assign(train_step)
+            self._container.train_step.assign(train_step)
 
             # update models
             critic_loss, policy_loss, alpha_loss = self._update()
@@ -332,8 +335,9 @@ class Learner(Policy):
                 print(f"Policy loss: {policy_loss}")
                 print("=============================================")
                 print(
-                    f"Training ... {tf.floor(self._train_step * 100 / self._max_steps)} %"  # noqa
+                    f"Training ... {tf.floor(train_step * 100 / self._max_steps)} %"  # noqa
                 )
+
             if self._log_wandb:
                 # log of epoch's mean loss
                 wandb.log(
@@ -347,8 +351,8 @@ class Learner(Policy):
                 )
 
         # Stop the agents
-        self._stop_agents.assign(True)
-        self._push_variables()
+        self._container.stop_agents.assign(True)
+        self._container.push_variables()
 
     def save(self):
         if self._save_path is not None:

@@ -74,7 +74,7 @@ class Actor:
 
         self.model.summary()
 
-    @tf.function
+    @tf.function(jit_compile=True)
     def reset_noise(self):
         self._noisy_l.sample_weights()
 
@@ -102,3 +102,12 @@ class Actor:
                 logp_pi = None
 
         return pi_action, logp_pi
+
+    @tf.function(jit_compile=True)
+    def get_action(self, state, deterministic):
+        a, _ = self.predict(
+            tf.expand_dims(state, axis=0),
+            with_logprob=False,
+            deterministic=deterministic,
+        )
+        return tf.squeeze(a, axis=0)  # remove batch_size dim

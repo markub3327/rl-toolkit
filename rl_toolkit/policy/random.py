@@ -6,7 +6,7 @@ import wandb
 import numpy as np
 
 
-class Random(Policy):
+class RandomPolicy(Policy):
     """
     Random agent
     =================
@@ -27,7 +27,7 @@ class Random(Policy):
         # ---
         max_steps: int,
     ):
-        super(Random, self).__init__(env, False)
+        super(RandomPolicy, self).__init__(env, False)
 
         self._max_steps = max_steps
 
@@ -39,7 +39,7 @@ class Random(Policy):
         print(f"Epoch: {self._total_episodes}")
         print(f"Score: {self._episode_reward}")
         print(f"Steps: {self._episode_steps}")
-        print(f"Train step: {self._train_step}")
+        print(f"TotalInteractions: {self._total_steps}")
         print("=============================================")
 
         if self._log_wandb:
@@ -54,17 +54,21 @@ class Random(Policy):
 
     def run(self):
         self._total_steps = 0
-        self._episode_steps = 0
+        self._total_episodes = 0
 
         # spojenie s db
         with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
             # hlavny cyklus hry
             while self._total_steps < self._max_steps:
+                self._episode_reward = 0.0
+                self._episode_steps = 0
+                terminal = False
+
                 self._last_obs = self._env.reset()
                 self._last_obs = self._normalize(self._last_obs)
 
                 # collect rollout
-                while True:
+                while not terminal:
                     # Get the action
                     action = self._env.action_space.sample()
 
@@ -73,11 +77,9 @@ class Random(Policy):
                     new_obs = self._normalize(new_obs)
 
                     # update variables
+                    self._episode_reward += reward
                     self._episode_steps += 1
                     self._total_steps += 1
-
-                    # super critical !!!
-                    self._last_obs = new_obs
 
                     # Update the replay buffer
                     writer.append(
@@ -103,32 +105,28 @@ class Random(Policy):
                             },
                         )
 
-                    # Check the end of episode
-                    if terminal:
-                        self._log_train()
-
-                        # Write the final state !!!
-                        writer.append({"observation": new_obs})
-                        writer.create_item(
-                            table="experience",
-                            priority=1.0,
-                            trajectory={
-                                "observation": writer.history["observation"][-2],
-                                "action": writer.history["action"][-2],
-                                "reward": writer.history["reward"][-2],
-                                "next_observation": writer.history["observation"][-1],
-                                "terminal": writer.history["terminal"][-2],
-                            },
-                        )
-
-                        # Init variables
-                        self._episode_steps = 0
-
-                        # write all trajectories to db
-                        writer.end_episode()
-
-                        # Interrupt the rollout
-                        break
-
-                    # Super critical !!!
+                    # super critical !!!
                     self._last_obs = new_obs
+
+                # increment episode
+                self._total_episodes += 1
+
+                # logovanie
+                self._log_train()
+
+                # Write the final state !!!
+                writer.append({"observation": new_obs})
+                writer.create_item(
+                    table="experience",
+                    priority=1.0,
+                    trajectory={
+                        "observation": writer.history["observation"][-2],
+                        "action": writer.history["action"][-2],
+                        "reward": writer.history["reward"][-2],
+                        "next_observation": writer.history["observation"][-1],
+                        "terminal": writer.history["terminal"][-2],
+                    },
+                )
+
+                # write all trajectories to db
+                writer.end_episode()

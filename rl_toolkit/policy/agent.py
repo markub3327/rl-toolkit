@@ -1,5 +1,6 @@
 from rl_toolkit.networks import Actor
 from rl_toolkit.policy import Policy
+from rl_toolkit.utils import VariableContainer
 
 import reverb
 import wandb
@@ -16,7 +17,6 @@ class Agent(Policy):
         db_server (str): database server name (IP or domain name)
         env: the instance of environment object
         env_steps (int): maximum number of steps in each rollout
-        learning_starts (int): number of interactions before using policy network
         log_wandb (bool): log into WanDB cloud
 
     Paper: https://arxiv.org/pdf/1812.05905.pdf
@@ -29,24 +29,22 @@ class Agent(Policy):
         # ---
         env,
         env_steps: int = 64,
-        learning_starts: int = 10000,
         # ---
         log_wandb: bool = False,
     ):
         super(Agent, self).__init__(env, log_wandb)
 
         self._env_steps = env_steps
-        self._learning_starts = learning_starts
 
         # Actor network (for agent)
         self._actor = Actor(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
         )
+        self._container = VariableContainer(db_server, self._actor)
 
         # Initializes the reverb client
         self.client = reverb.Client(f"{db_server}:8000")
-        self.tf_client = reverb.TFClient(server_address=f"{db_server}:8000")
 
         # init Weights & Biases
         if self._log_wandb:
@@ -54,15 +52,13 @@ class Agent(Policy):
 
             # Settings
             wandb.config.env_steps = env_steps
-            wandb.config.learning_starts = learning_starts
 
     def _log_train(self):
         print("=============================================")
         print(f"Epoch: {self._total_episodes}")
         print(f"Score: {self._episode_reward}")
         print(f"Steps: {self._episode_steps}")
-        print(f"Train step: {self._train_step}")
-        print("=============================================")
+        print(f"Train step: {self._container.train_step.numpy()}")
 
         if self._log_wandb:
             wandb.log(
@@ -71,7 +67,7 @@ class Agent(Policy):
                     "score": self._episode_reward,
                     "steps": self._episode_steps,
                 },
-                step=self._train_step,
+                step=self._container.train_step,
             )
 
     def run(self):
@@ -86,9 +82,9 @@ class Agent(Policy):
         # spojenie s db
         with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
             # hlavny cyklus hry
-            while not self._stop_agents:
+            while not self._container.stop_agents:
                 # Update agent network
-                self._update_variables()
+                self._container.update_variables()
 
                 # Re-new noise matrix before every rollouts
                 self._actor.reset_noise()
@@ -96,7 +92,7 @@ class Agent(Policy):
                 # Collect rollouts
                 for _ in range(self._env_steps):
                     # Get the action
-                    action = self._get_action(
+                    action = self._actor.get_action(
                         self._last_obs, deterministic=False
                     ).numpy()
 

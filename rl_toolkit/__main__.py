@@ -3,7 +3,7 @@ import gym
 import pybullet_envs  # noqa
 
 # policy
-from rl_toolkit.policy import Learner, Agent, Tester
+from rl_toolkit.policy import Learner, Agent, Tester, RandomPolicy
 
 if __name__ == "__main__":
 
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         default=int(1e6),
     )
     my_parser.add_argument(
-        "--learning_starts",
+        "--warmup_steps",
         type=int,
         help="Number of steps before using policy network",
         default=10000,
@@ -107,11 +107,17 @@ if __name__ == "__main__":
             db_server=args.db_server,
             env=env,
             env_steps=args.env_steps,
-            learning_starts=args.learning_starts,
             log_wandb=args.wandb,
         )
 
+        random_agent = RandomPolicy(
+            env=env, db_server=args.db_server, max_steps=args.warmup_steps
+        )
+
         try:
+            # zahrievacie kola
+            random_agent.run()
+
             # run actor process
             agent.run()
         except KeyboardInterrupt:
@@ -125,7 +131,7 @@ if __name__ == "__main__":
         agent = Learner(
             env=env,
             max_steps=args.max_steps,
-            learning_starts=args.learning_starts,
+            warmup_steps=args.warmup_steps,
             buffer_capacity=args.buffer_capacity,
             batch_size=args.batch_size,
             actor_learning_rate=args.learning_rate,
