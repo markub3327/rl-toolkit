@@ -31,12 +31,22 @@ class TwinCritic:
             action_input = Input(shape=action_shape, name="action_input")
 
             merged = Concatenate()([state_input, action_input])
-            h1 = Dense(
-                400, activation="relu", kernel_initializer="he_uniform", name="h1"
+            
+            # Critic 1
+            c1_h1 = Dense(
+                400, activation="relu", kernel_initializer="he_uniform", name="c1_h1"
             )(merged)
-            h2 = Dense(
-                300, activation="relu", kernel_initializer="he_uniform", name="h2"
-            )(h1)
+            c1_h2 = Dense(
+                300, activation="relu", kernel_initializer="he_uniform", name="c1_h2"
+            )(c1_h1)
+
+            # Critic 2
+            c2_h1 = Dense(
+                400, activation="relu", kernel_initializer="he_uniform", name="c2_h1"
+            )(merged)
+            c2_h2 = Dense(
+                300, activation="relu", kernel_initializer="he_uniform", name="c2_h2"
+            )(c2_h1)
 
             # vystupna vrstva   -- Q hodnoty su v intervale (-∞, ∞)
             q1_value = Dense(
@@ -44,13 +54,13 @@ class TwinCritic:
                 activation="linear",
                 name="Q1_value",
                 kernel_initializer=last_kernel_initializer,
-            )(h2)
+            )(c1_h2)
             q2_value = Dense(
                 1,
                 activation="linear",
                 name="Q2_value",
                 kernel_initializer=last_kernel_initializer,
-            )(h2)
+            )(c2_h2)
 
             # output is minimum of Q-values
             output = Minimum(name="Q_value")([q1_value, q2_value])
