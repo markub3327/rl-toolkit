@@ -3,7 +3,7 @@ import gym
 import pybullet_envs  # noqa
 
 # policy
-from rl_toolkit.policy import Learner, Agent, Tester, RandomPolicy
+from rl_toolkit.policy import Learner, Agent, Tester
 
 if __name__ == "__main__":
 
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     my_parser.add_argument(
         "--mode",
         choices=["agent", "learner", "tester"],
-        help="Choose operating mode.",
+        help="Choose operating mode",
         required=True,
     )
     my_parser.add_argument(
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         default=10000,
     )
     my_parser.add_argument(
-        "--env_steps", type=int, help="Num. of environment steps", default=64
+        "--update_interval", type=int, help="Interval of updating policy parameters", default=64
     )
     my_parser.add_argument(
         "--log_interval", type=int, help="Log into console interval", default=64
@@ -77,10 +77,11 @@ if __name__ == "__main__":
         "--render", action="store_true", help="Render the environment"
     )
     my_parser.add_argument("--wandb", action="store_true", help="Log into WanDB cloud")
-    my_parser.add_argument("-s", "--save", type=str, help="Path for saving model files")
-    my_parser.add_argument("--model_a", type=str, help="Actor's model file")
-    my_parser.add_argument("--model_c1", type=str, help="Critic 1's model file")
-    my_parser.add_argument("--model_c2", type=str, help="Critic 2's model file")
+    my_parser.add_argument(
+        "-s", "--save_path", type=str, help="Path for saving model files"
+    )
+    my_parser.add_argument("-a", "--actor_path", type=str, help="Actor's model file")
+    my_parser.add_argument("-c", "--critic_path", type=str, help="Critic's model file")
     my_parser.add_argument("--db_path", type=str, help="DB's checkpoints path")
     my_parser.add_argument(
         "--db_server", type=str, help="DB server name", default="localhost"
@@ -106,18 +107,12 @@ if __name__ == "__main__":
         agent = Agent(
             db_server=args.db_server,
             env=env,
-            env_steps=args.env_steps,
+            update_interval=args.update_interval,
+            warmup_steps=args.warmup_steps,
             log_wandb=args.wandb,
         )
 
-        random_agent = RandomPolicy(
-            env=env, db_server=args.db_server, max_steps=args.warmup_steps
-        )
-
         try:
-            # zahrievacie kola
-            random_agent.run()
-
             # run actor process
             agent.run()
         except KeyboardInterrupt:
@@ -139,11 +134,10 @@ if __name__ == "__main__":
             alpha_learning_rate=args.learning_rate,
             tau=args.tau,
             gamma=args.gamma,
-            model_a_path=args.model_a,
-            model_c1_path=args.model_c1,
-            model_c2_path=args.model_c2,
-            save_path=args.save,
+            actor_path=args.actor_path,
+            critic_path=args.critic_path,
             db_path=args.db_path,
+            save_path=args.save_path,
             log_wandb=args.wandb,
             log_interval=args.log_interval,
         )

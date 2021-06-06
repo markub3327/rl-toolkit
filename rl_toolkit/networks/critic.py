@@ -1,12 +1,12 @@
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Input, Concatenate, Dense
+from tensorflow.keras.layers import Input, Concatenate, Dense, Minimum
 from tensorflow.keras.models import load_model
 
 
-class Critic:
+class TwinCritic:
     """
-    Critic
+    TwinCritic
     ===============
 
     Attributes:
@@ -20,7 +20,7 @@ class Critic:
         self,
         state_shape=None,
         action_shape=None,
-        learning_rate: float = 3e-4,
+        learning_rate: float = None,
         last_kernel_initializer="glorot_uniform",
         model_path: str = None,
     ):
@@ -39,12 +39,21 @@ class Critic:
             )(h1)
 
             # vystupna vrstva   -- Q hodnoty su v intervale (-∞, ∞)
-            output = Dense(
+            q1_value = Dense(
                 1,
                 activation="linear",
-                name="q_val",
+                name="Q1_value",
                 kernel_initializer=last_kernel_initializer,
             )(h2)
+            q2_value = Dense(
+                1,
+                activation="linear",
+                name="Q2_value",
+                kernel_initializer=last_kernel_initializer,
+            )(h2)
+
+            # output is minimum of Q-values
+            output = Minimum(name="Q_value")([q1_value, q2_value])
 
             # Vytvor model
             self.model = Model(inputs=[state_input, action_input], outputs=output)
@@ -54,6 +63,7 @@ class Critic:
             print("Critic loaded from file succesful ...")
 
         # Optimalizator modelu
-        self.optimizer = Adam(learning_rate=learning_rate)
+        if learning_rate is not None:
+            self.optimizer = Adam(learning_rate=learning_rate)
 
         self.model.summary()

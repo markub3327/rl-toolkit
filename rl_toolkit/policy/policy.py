@@ -1,9 +1,7 @@
-from abc import ABC, abstractmethod
-
 import numpy as np
 
 
-class Policy(ABC):
+class Policy:
     """
     Base class for policies
     =================
@@ -39,6 +37,5 @@ class Policy(ABC):
         # Min-max method
         return obs / self._env.observation_space.high
 
-    @abstractmethod
     def run(self):
-        ...
+        pass

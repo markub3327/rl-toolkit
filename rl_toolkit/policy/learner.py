@@ -1,4 +1,4 @@
-from rl_toolkit.networks import Actor, Critic
+from rl_toolkit.networks import Actor, TwinCritic
 from rl_toolkit.policy import Policy
 from rl_toolkit.utils import VariableContainer
 
@@ -25,11 +25,10 @@ class Learner(Policy):
         alpha_learning_rate (float): learning rate for alpha's optimizer
         tau (float): the soft update coefficient for target networks
         gamma (float): the discount factor
-        model_a_path (str): path to the actor's model
-        model_c1_path (str): path to the critic_1's model
-        model_c2_path (str): path to the critic_2's model
+        actor_path (str): path to the actor's model
+        critic_path (str): path to the critic's model
+        db_path (str): path to the database checkpoint
         save_path (str): path to the models for saving
-        db_path (str): path to the database
         log_wandb (bool): log into WanDB cloud
 
     Paper: https://arxiv.org/pdf/1812.05905.pdf
@@ -52,11 +51,10 @@ class Learner(Policy):
         tau: float = 0.01,
         gamma: float = 0.99,
         # ---
-        model_a_path: str = None,
-        model_c1_path: str = None,
-        model_c2_path: str = None,
-        save_path: str = None,
+        actor_path: str = None,
+        critic_path: str = None,
         db_path: str = None,
+        save_path: str = None,
         # ---
         log_wandb: bool = False,
         log_interval: int = 64,
@@ -85,42 +83,24 @@ class Learner(Policy):
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
             learning_rate=actor_learning_rate,
-            model_path=model_a_path,
+            model_path=actor_path,
         )
         self._container = VariableContainer("localhost", self._actor)
 
         # Critic network & target network
-        self._critic_1 = Critic(
+        self._critic = TwinCritic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
             learning_rate=critic_learning_rate,
-            model_path=model_c1_path,
+            model_path=critic_path,
         )
-        self._critic_targ_1 = Critic(
+        self._critic_target = TwinCritic(
             state_shape=self._env.observation_space.shape,
             action_shape=self._env.action_space.shape,
-            learning_rate=critic_learning_rate,
-            model_path=model_c1_path,
         )
+        self._update_target(self._critic, self._critic_target, tau=tf.constant(1.0))
 
-        # Critic network & target network
-        self._critic_2 = Critic(
-            state_shape=self._env.observation_space.shape,
-            action_shape=self._env.action_space.shape,
-            learning_rate=critic_learning_rate,
-            model_path=model_c2_path,
-        )
-        self._critic_targ_2 = Critic(
-            state_shape=self._env.observation_space.shape,
-            action_shape=self._env.action_space.shape,
-            learning_rate=critic_learning_rate,
-            model_path=model_c2_path,
-        )
-
-        # first make a hard copy
-        self._update_target(self._critic_1, self._critic_targ_1, tau=tf.constant(1.0))
-        self._update_target(self._critic_2, self._critic_targ_2, tau=tf.constant(1.0))
-
+        # load db from checkpoint or make a new one
         if db_path is None:
             checkpointer = None
         else:
@@ -208,53 +188,34 @@ class Learner(Policy):
         next_action, next_log_pi = self._actor.predict(batch.data["next_observation"])
 
         # target Q-values
-        next_q_1 = self._critic_targ_1.model(
+        next_q_value = self._critic_target.model(
             [batch.data["next_observation"], next_action]
         )
-        next_q_2 = self._critic_targ_2.model(
-            [batch.data["next_observation"], next_action]
-        )
-        next_q = tf.minimum(next_q_1, next_q_2)
 
         # Bellman Equation
-        Q_targets = tf.stop_gradient(
+        Q_target = tf.stop_gradient(
             batch.data["reward"]
             + (1 - batch.data["terminal"])
             * self._gamma
-            * (next_q - self._alpha * next_log_pi)
+            * (next_q_value - self._alpha * next_log_pi)
         )
 
-        # update critic '1'
+        # update critic
         with tf.GradientTape() as tape:
-            q_values = self._critic_1.model(
+            q_value = self._critic.model(
                 [batch.data["observation"], batch.data["action"]]
             )
             q_losses = tf.losses.huber(  # less sensitive to outliers in batch
-                y_true=Q_targets, y_pred=q_values
+                y_true=Q_target, y_pred=q_value
             )
-            q1_loss = tf.nn.compute_average_loss(q_losses)
+            q_loss = tf.nn.compute_average_loss(q_losses)
 
-        grads = tape.gradient(q1_loss, self._critic_1.model.trainable_variables)
-        self._critic_1.optimizer.apply_gradients(
-            zip(grads, self._critic_1.model.trainable_variables)
+        grads = tape.gradient(q_loss, self._critic.model.trainable_variables)
+        self._critic.optimizer.apply_gradients(
+            zip(grads, self._critic.model.trainable_variables)
         )
 
-        # update critic '2'
-        with tf.GradientTape() as tape:
-            q_values = self._critic_2.model(
-                [batch.data["observation"], batch.data["action"]]
-            )
-            q_losses = tf.losses.huber(  # less sensitive to outliers in batch
-                y_true=Q_targets, y_pred=q_values
-            )
-            q2_loss = tf.nn.compute_average_loss(q_losses)
-
-        grads = tape.gradient(q2_loss, self._critic_2.model.trainable_variables)
-        self._critic_2.optimizer.apply_gradients(
-            zip(grads, self._critic_2.model.trainable_variables)
-        )
-
-        return q1_loss + q2_loss
+        return q_loss
 
     # -------------------------------- update actor ------------------------------- #
     def _update_actor(self, batch):
@@ -263,11 +224,9 @@ class Learner(Policy):
             y_pred, log_pi = self._actor.predict(batch.data["observation"])
 
             # predict q value
-            q_1 = self._critic_1.model([batch.data["observation"], y_pred])
-            q_2 = self._critic_2.model([batch.data["observation"], y_pred])
-            q = tf.minimum(q_1, q_2)
+            q_value = self._critic.model([batch.data["observation"], y_pred])
 
-            policy_losses = self._alpha * log_pi - q
+            policy_losses = self._alpha * log_pi - q_value
             policy_loss = tf.nn.compute_average_loss(policy_losses)
 
         grads = tape.gradient(policy_loss, self._actor.model.trainable_variables)
@@ -311,8 +270,7 @@ class Learner(Policy):
         policy_loss = self._update_actor(sample)
 
         # Soft update target networks
-        self._update_target(self._critic_1, self._critic_targ_1, tau=self._tau)
-        self._update_target(self._critic_2, self._critic_targ_2, tau=self._tau)
+        self._update_target(self._critic, self._critic_target, tau=self._tau)
 
         # Store new actor's params
         self._container.push_variables()
@@ -357,9 +315,8 @@ class Learner(Policy):
     def save(self):
         if self._save_path is not None:
             # store models
-            self._actor.model.save(os.path.join(self._save_path, "model_A.h5"))
-            self._critic_1.model.save(os.path.join(self._save_path, "model_C1.h5"))
-            self._critic_2.model.save(os.path.join(self._save_path, "model_C2.h5"))
+            self._actor.model.save(os.path.join(self._save_path, "actor"))
+            self._critic.model.save(os.path.join(self._save_path, "critic"))
 
         # store checkpoint of DB
         self.client.checkpoint()
