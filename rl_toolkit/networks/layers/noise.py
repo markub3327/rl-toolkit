@@ -5,7 +5,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 
 
-class NoisyLayer(Layer):
+class MultivariateGaussianNoise(Layer):
     """
     Noisy layer (gSDE)
     ===========
@@ -18,7 +18,7 @@ class NoisyLayer(Layer):
     """
 
     def __init__(self, units, log_std_init: float = -3.0, **kwargs):
-        super(NoisyLayer, self).__init__(**kwargs)
+        super(MultivariateGaussianNoise, self).__init__(**kwargs)
         self.units = units
         self.log_std_init = log_std_init
 
@@ -42,7 +42,7 @@ class NoisyLayer(Layer):
         return tf.matmul(inputs, self.exploration_mat)
 
     def get_config(self):
-        config = super(NoisyLayer, self).get_config()
+        config = super(MultivariateGaussianNoise, self).get_config()
         config.update({"units": self.units})
         config.update({"log_std_init": self.log_std_init})
         return config

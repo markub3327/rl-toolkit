@@ -1,2 +1,1 @@
-from .actor import Actor  # noqa
-from .critic import TwinCritic  # noqa
+from .actor_critic import ActorCritic  # noqa

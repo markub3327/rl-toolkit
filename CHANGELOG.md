@@ -1,10 +1,11 @@
 # Changes
 
-## v3.2.1 (June 6, 2021)
+## v3.2.4 (June 6, 2021)
 ### Features 🔊
 - Reverb (+multi-node learning)
 - setup.py (package is available on PyPI)
-- split research process into **agent**, **learner**, **tester** and **random** roles
+- split research process into **agent**, **learner** and **tester** roles
+- Use custom model and layer for defining Actor-Critic
 
 ## v2.0.2 (May 23, 2021)
 ### Bug fixes 🛠️
