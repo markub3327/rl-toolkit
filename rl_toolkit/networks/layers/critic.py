@@ -1,7 +1,7 @@
 from tensorflow.keras.layers import Layer, Dense, Concatenate
 
 
-class Critic():
+class Critic(Layer):
     """
     Critic
     ===============
@@ -9,25 +9,16 @@ class Critic():
     Attributes:
     """
 
-    def __init__(
-        self,
-        **kwargs
-    ):
+    def __init__(self, **kwargs):
         super(Critic, self).__init__(**kwargs)
 
         self.merged = Concatenate()
 
         self.fc1 = Dense(
-            400, 
-            activation="relu", 
-            kernel_initializer="he_uniform", 
-            name="fc1"
+            400, activation="relu", kernel_initializer="he_uniform", name="fc1"
         )
         self.fc2 = Dense(
-            300, 
-            activation="relu", 
-            kernel_initializer="he_uniform", 
-            name="fc2"
+            300, activation="relu", kernel_initializer="he_uniform", name="fc2"
         )
 
         self.q_value = Dense(

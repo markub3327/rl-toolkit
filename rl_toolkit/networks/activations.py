@@ -5,7 +5,7 @@ def clipped_linear(x, clip_value=2.0):
     """
     Clipped linear activation function
     ===============
-    
+
     Attributes:
         x: input tensor
         clip_value (float): the limit value of output value

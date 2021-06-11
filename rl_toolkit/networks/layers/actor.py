@@ -15,25 +15,18 @@ class Actor(Layer):
         num_of_outputs (int): number of outputs
     """
 
-    def __init__(
-        self, 
-        num_of_outputs: int,
-        **kwargs
-    ):
+    def __init__(self, num_of_outputs: int, **kwargs):
         super(Actor, self).__init__(**kwargs)
 
         self.fc1 = Dense(
-                400, 
-                activation="relu", 
-                kernel_initializer="he_uniform", 
-                name="fc1"
+            400, activation="relu", kernel_initializer="he_uniform", name="fc1"
         )
 
         self.latent_sde = Dense(
-                300,
-                activation="relu",
-                kernel_initializer="he_uniform",
-                name="latent_sde",
+            300,
+            activation="relu",
+            kernel_initializer="he_uniform",
+            name="latent_sde",
         )
 
         # Deterministicke akcie
@@ -45,10 +38,7 @@ class Actor(Layer):
         )
 
         # Stochasticke akcie
-        self.noise = MultivariateGaussianNoise(
-            num_of_outputs, 
-            name="noise"
-        )
+        self.noise = MultivariateGaussianNoise(num_of_outputs, name="noise")
 
         # Vystupna prenosova funkcia
         self.bijector = tfp.bijectors.Tanh()

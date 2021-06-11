@@ -7,11 +7,7 @@ import tensorflow as tf
 class ActorCritic(Model):
     """Combines the actor and critic into an end-to-end model for training."""
 
-    def __init__(
-        self,
-        num_of_outputs: int,
-        **kwargs
-    ):
+    def __init__(self, num_of_outputs: int, **kwargs):
         super(ActorCritic, self).__init__(**kwargs)
 
         # Actor
@@ -30,9 +26,7 @@ class ActorCritic(Model):
         # init param 'alpha' - Lagrangian constraint
         self.log_alpha = tf.Variable(0.0, trainable=True, name="log_alpha")
         self.alpha = tf.Variable(0.0, trainable=False, name="alpha")
-        self.target_entropy = tf.cast(
-            -num_of_outputs, dtype=tf.float32
-        )
+        self.target_entropy = tf.cast(-num_of_outputs, dtype=tf.float32)
 
     def train_step(self, data):
         # Re-new noise matrix every update of 'log_std' params
@@ -54,12 +48,8 @@ class ActorCritic(Model):
 
         # target Q-values
         next_Q_values = tf.minimum(
-            self.critic_1_target(
-                [data["next_observation"], next_action]
-            ), 
-            self.critic_2_target(
-                [data["next_observation"], next_action]
-            )
+            self.critic_1_target([data["next_observation"], next_action]),
+            self.critic_2_target([data["next_observation"], next_action]),
         )
 
         # Bellman Equation
@@ -72,9 +62,7 @@ class ActorCritic(Model):
 
         # update 'Critic 1'
         with tf.GradientTape() as tape:
-            Q_values = self.critic_1(
-                [data["observation"], data["action"]]
-            )
+            Q_values = self.critic_1([data["observation"], data["action"]])
             losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_targets, y_pred=Q_values
             )
@@ -87,9 +75,7 @@ class ActorCritic(Model):
 
         # update 'Critic 2'
         with tf.GradientTape() as tape:
-            Q_values = self.critic_2(
-                [data["observation"], data["action"]]
-            )
+            Q_values = self.critic_2([data["observation"], data["action"]])
             losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_targets, y_pred=Q_values
             )
@@ -106,21 +92,26 @@ class ActorCritic(Model):
             y_pred, log_pi = self.actor(data["observation"])
 
             # predict q values
-            Q_values = tf.minimum(self.critic_1([data["observation"], y_pred]), self.critic_2([data["observation"], y_pred]))
+            Q_values = tf.minimum(
+                self.critic_1([data["observation"], y_pred]),
+                self.critic_2([data["observation"], y_pred]),
+            )
 
             losses = self.alpha * log_pi - Q_values
             actor_loss = tf.nn.compute_average_loss(losses)
 
-        grads = tape.gradient(actor_loss, self.actor.trainable_variables)
-        self.actor.optimizer.apply_gradients(
-            zip(grads, self.actor.trainable_variables)
-        )
+        gradients = tape.gradient(actor_loss, self.actor.trainable_variables)
+        self.optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
 
         # Soft update target networks
         self._train_target(self.critic_1, self.critic_1_target, tau=self.tau)
         self._train_target(self.critic_2, self.critic_2_target, tau=self.tau)
 
-        return {"critic_loss": (Q1_loss + Q2_loss), "actor_loss": actor_loss, "alpha_loss": alpha_loss}
+        return {
+            "critic_loss": (Q1_loss + Q2_loss),
+            "actor_loss": actor_loss,
+            "alpha_loss": alpha_loss,
+        }
 
     def _train_target(self, source, target, tau):
         for source_weight, target_weight in zip(
