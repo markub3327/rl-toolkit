@@ -36,6 +36,7 @@ class MultivariateGaussianNoise(Layer):
             name="exploration_mat",
         )
 
+        # Re-new noise matrix every update of 'log_std' params
         self.sample_weights()
 
     def call(self, inputs):

@@ -29,9 +29,6 @@ class ActorCritic(Model):
         self.target_entropy = tf.cast(-num_of_outputs, dtype=tf.float32)
 
     def train_step(self, data):
-        # Re-new noise matrix every update of 'log_std' params
-        self.actor.reset_noise()
-
         with tf.GradientTape(persistent=True) as tape:
             action, log_pi = self.actor(data["observation"], with_log_prob=True)
             next_action, next_log_pi = self.actor(data["next_observation"], with_log_prob=True)
@@ -99,6 +96,9 @@ class ActorCritic(Model):
         # Soft update target networks
         self._train_target(self.critic_1, self.critic_1_target, tau=self.tau)
         self._train_target(self.critic_2, self.critic_2_target, tau=self.tau)
+
+        # Re-new noise matrix every update of 'log_std' params
+        self.actor.reset_noise()
 
         return {
             "critic_loss": (Q1_loss + Q2_loss),

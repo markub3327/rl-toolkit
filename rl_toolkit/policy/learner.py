@@ -72,7 +72,6 @@ class Learner(Policy):
             )
             self._container = VariableContainer("localhost", self.model.actor)
             self.model.compile(optimizer=Adam(learning_rate=learning_rate))
-
         else:
             # Nacitaj model
             self.model = load_model(
