@@ -1,5 +1,5 @@
 from rl_toolkit.networks import ActorCritic
-from rl_toolkit.networks.layers import NoisyLayer
+from rl_toolkit.networks.layers import MultivariateGaussianNoise
 from rl_toolkit.policy import Policy
 from rl_toolkit.utils import VariableContainer
 from tensorflow.keras.models import load_model
@@ -76,7 +76,7 @@ class Learner(Policy):
         else:
             # Nacitaj model
             self.model = load_model(
-                model_path, custom_objects={"NoisyLayer": NoisyLayer}
+                model_path, custom_objects={"MultivariateGaussianNoise": MultivariateGaussianNoise}
             )
             print("Actor loaded from file succesful ...")
 
