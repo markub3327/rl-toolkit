@@ -194,7 +194,7 @@ class Learner(Policy):
                         "actor_loss": losses["actor_loss"],
                         "critic_loss": losses["critic_loss"],
                         "alpha_loss": losses["alpha_loss"],
-                        "alpha": self._alpha,
+                        "alpha": self.alpha,
                     },
                     step=train_step,
                 )
