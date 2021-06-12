@@ -73,7 +73,6 @@ class Learner(Policy):
             )
             self.model = tf.keras.Model(inputs=input_layer, outputs=self.output_layer(input_layer))
             self.model.compile(optimizer=Adam(learning_rate=learning_rate))
-            self._container = VariableContainer("localhost", self.model.actor)
         else:
             # Nacitaj model
             self.model = load_model(
@@ -81,6 +80,8 @@ class Learner(Policy):
                 custom_objects={"MultivariateGaussianNoise": MultivariateGaussianNoise},
             )
             print("Actor loaded from file succesful ...")
+
+        self._container = VariableContainer("localhost", self.output_layer.actor)
 
         # load db from checkpoint or make a new one
         if db_path is None:
