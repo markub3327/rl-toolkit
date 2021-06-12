@@ -49,8 +49,8 @@ class Actor(Layer):
     def call(self, inputs, with_log_prob=False, deterministic=False):
         x = self.fc1(inputs)
         latent_sde = self.latent_sde(x)
-        mean = self.mean(x)
-        noise = self.noise(x)
+        mean = self.mean(latent_sde)
+        noise = self.noise(latent_sde)
 
         if deterministic:
             action = self.bijector.forward(mean)
