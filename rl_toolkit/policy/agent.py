@@ -44,7 +44,7 @@ class Agent(Policy):
         input_layer = tf.keras.layers.Input(shape=self._env.observation_space.shape)
         self.output_layer = Actor(
             num_of_outputs=tf.reduce_prod(self._env.action_space.shape)
-        )
+        )(input_layer)
         self.model = tf.keras.Model(inputs=[input_layer], outputs=[self.output_layer])
 
         # init var container
