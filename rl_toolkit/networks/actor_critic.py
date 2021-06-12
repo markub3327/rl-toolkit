@@ -102,10 +102,10 @@ class ActorCritic(Model):
     def call(self, inputs):
         action, log_pi = self.actor(inputs, with_log_prob=True)
 
-        Q1_value, Q2_value = self.critic([data["observation"], action])
+        Q1_value, Q2_value = self.critic([inputs, action])
         Q_value = tf.minimum(Q1_value, Q2_value)            
         
-        Q1_value, Q2_value = self.critic([data["observation"], action])
+        Q1_value, Q2_value = self.critic([inputs, action])
         Q_value_target = tf.minimum(Q1_value, Q2_value)            
         
         return Q_value, Q_value_target, action, log_pi
