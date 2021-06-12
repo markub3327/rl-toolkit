@@ -32,7 +32,7 @@ class ActorCritic(Model):
         self.target_entropy = tf.cast(-num_of_outputs, dtype=tf.float32)
 
     def train_step(self, data):
-        with tf.GradientTape() as tape:
+        with tf.GradientTape(persistent=True) as tape:
             action, log_pi = self.actor(data["observation"], with_log_prob=True)
             next_action, next_log_pi = self.actor(
                 data["next_observation"], with_log_prob=True
@@ -81,14 +81,22 @@ class ActorCritic(Model):
             losses = self.alpha * log_pi - Q_value
             actor_loss = tf.nn.compute_average_loss(losses)
 
-            # Calculating combined loss
-            loss = alpha_loss + Q1_loss + Q2_loss + actor_loss
-
         # Update parameters
-        gradients = tape.gradient(loss, self.trainable_variables + [self.log_alpha])
+        gradients = tape.gradient(alpha_loss, [self.log_alpha])
+        self.optimizer.apply_gradients(zip(gradients, [self.log_alpha]))
+
+        gradients = tape.gradient(Q1_loss, self.critic_1.trainable_variables)
         self.optimizer.apply_gradients(
-            zip(gradients, self.trainable_variables + [self.log_alpha])
+            zip(gradients, self.critic_1.trainable_variables)
         )
+
+        gradients = tape.gradient(Q2_loss, self.critic_2.trainable_variables)
+        self.optimizer.apply_gradients(
+            zip(gradients, self.critic_2.trainable_variables)
+        )
+
+        gradients = tape.gradient(actor_loss, self.actor.trainable_variables)
+        self.optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
 
         # Soft update target networks
         self._train_target(self.critic_1, self.critic_1_target, tau=self.tau)
@@ -98,11 +106,10 @@ class ActorCritic(Model):
         self.actor.reset_noise()
 
         return {
-            "loss": loss,
+            "alpha_loss": alpha_loss,
             "critic_1_loss": Q1_loss,
             "critic_2_loss": Q2_loss,
             "actor_loss": actor_loss,
-            "alpha_loss": alpha_loss,
         }
 
     def _train_target(self, source, target, tau):
@@ -117,4 +124,8 @@ class ActorCritic(Model):
             self.critic_1([inputs, action]),
             self.critic_2([inputs, action]),
         )
-        return Q_value, action, log_pi
+        Q_value_target = tf.minimum(
+            self.critic_1_target([inputs, action]),
+            self.critic_2_target([inputs, action]),
+        )
+        return Q_value, Q_value_target, action, log_pi

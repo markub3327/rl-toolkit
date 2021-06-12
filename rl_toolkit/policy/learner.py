@@ -185,11 +185,10 @@ class Learner(Policy):
             if (train_step % self._log_interval) == 0:
                 print("=============================================")
                 print(f"Step: {train_step}")
-                print(f"Loss: {losses['loss']}")
+                print(f"Alpha loss: {losses['alpha_loss']}")
                 print(f"Critic 1 loss: {losses['critic_1_loss']}")
                 print(f"Critic 2 loss: {losses['critic_2_loss']}")
                 print(f"Actor loss: {losses['actor_loss']}")
-                print(f"Alpha loss: {losses['alpha_loss']}")
                 print("=============================================")
                 print(
                     f"Training ... {tf.floor(train_step * 100 / self._max_steps)} %"  # noqa
@@ -199,12 +198,11 @@ class Learner(Policy):
                 # log of epoch's mean loss
                 wandb.log(
                     {
-                        "Loss": losses["loss"],
-                        "Actor loss": losses["actor_loss"],
+                        "Alpha": self.model.alpha,
+                        "Alpha loss": losses["alpha_loss"],
                         "Critic 1 loss": losses["critic_1_loss"],
                         "Critic 2 loss": losses["critic_2_loss"],
-                        "Alpha loss": losses["alpha_loss"],
-                        "Alpha": self.model.alpha,
+                        "Actor loss": losses["actor_loss"],
                     },
                     step=train_step,
                 )
