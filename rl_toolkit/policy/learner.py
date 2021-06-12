@@ -70,7 +70,7 @@ class Learner(Policy):
             self.model = ActorCritic(
                 num_of_outputs=tf.reduce_prod(self._env.action_space.shape),
             )
-            self._container = VariableContainer("localhost", self._actor)
+            self._container = VariableContainer("localhost", self.model.actor)
             self.model.compile(optimizer=Adam(learning_rate=learning_rate))
 
         else:
