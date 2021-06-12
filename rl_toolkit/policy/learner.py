@@ -181,7 +181,7 @@ class Learner(Policy):
                 print("=============================================")
                 print(f"Step: {train_step}")
                 print(f"Critic loss: {losses['critic_loss']}")
-                print(f"Policy loss: {losses['policy_loss']}")
+                print(f"Actor loss: {losses['actor_loss']}")
                 print("=============================================")
                 print(
                     f"Training ... {tf.floor(train_step * 100 / self._max_steps)} %"  # noqa
@@ -191,7 +191,7 @@ class Learner(Policy):
                 # log of epoch's mean loss
                 wandb.log(
                     {
-                        "policy_loss": losses["policy_loss"],
+                        "actor_loss": losses["actor_loss"],
                         "critic_loss": losses["critic_loss"],
                         "alpha_loss": losses["alpha_loss"],
                         "alpha": self._alpha,
