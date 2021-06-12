@@ -83,8 +83,7 @@ if __name__ == "__main__":
     my_parser.add_argument(
         "-s", "--save_path", type=str, help="Path for saving model files"
     )
-    my_parser.add_argument("-a", "--actor_path", type=str, help="Actor's model file")
-    my_parser.add_argument("-c", "--critic_path", type=str, help="Critic's model file")
+    my_parser.add_argument("-a", "--model_path", type=str, help="Path to saved model")
     my_parser.add_argument("--db_path", type=str, help="DB's checkpoints path")
     my_parser.add_argument(
         "--db_server", type=str, help="DB server name", default="localhost"
@@ -132,13 +131,10 @@ if __name__ == "__main__":
             warmup_steps=args.warmup_steps,
             buffer_capacity=args.buffer_capacity,
             batch_size=args.batch_size,
-            actor_learning_rate=args.learning_rate,
-            critic_learning_rate=args.learning_rate,
-            alpha_learning_rate=args.learning_rate,
+            learning_rate=args.learning_rate,
             tau=args.tau,
             gamma=args.gamma,
-            actor_path=args.actor_path,
-            critic_path=args.critic_path,
+            model_path=args.model_path,
             db_path=args.db_path,
             save_path=args.save_path,
             log_wandb=args.wandb,
