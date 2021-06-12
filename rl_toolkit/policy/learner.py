@@ -199,7 +199,7 @@ class Learner(Policy):
                     {
                         "Alpha": self.model.alpha,
                         "Alpha loss": losses["alpha_loss"],
-                        "Critic loss": losses["critic_1_loss"],
+                        "Critic loss": losses["critic_loss"],
                         "Actor loss": losses["actor_loss"],
                     },
                     step=train_step,
