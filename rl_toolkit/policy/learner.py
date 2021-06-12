@@ -60,8 +60,6 @@ class Learner(Policy):
 
         self._max_steps = max_steps
         self._warmup_steps = warmup_steps
-        self._gamma = tf.constant(gamma)
-        self._tau = tf.constant(tau)
         self._save_path = save_path
         self._log_interval = log_interval
 
@@ -69,13 +67,16 @@ class Learner(Policy):
             # Actor network (for learner)
             self.model = ActorCritic(
                 num_of_outputs=tf.reduce_prod(self._env.action_space.shape),
+                gamma=gamma,
+                tau=tau,
             )
             self._container = VariableContainer("localhost", self.model.actor)
             self.model.compile(optimizer=Adam(learning_rate=learning_rate))
         else:
             # Nacitaj model
             self.model = load_model(
-                model_path, custom_objects={"MultivariateGaussianNoise": MultivariateGaussianNoise}
+                model_path,
+                custom_objects={"MultivariateGaussianNoise": MultivariateGaussianNoise},
             )
             print("Actor loaded from file succesful ...")
 

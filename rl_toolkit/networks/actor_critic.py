@@ -7,8 +7,11 @@ import tensorflow as tf
 class ActorCritic(Model):
     """Combines the actor and critic into an end-to-end model for training."""
 
-    def __init__(self, num_of_outputs: int, **kwargs):
+    def __init__(self, num_of_outputs: int, gamma: float, tau: float, **kwargs):
         super(ActorCritic, self).__init__(**kwargs)
+
+        self.gamma = tf.constant(gamma)
+        self.tau = tf.constant(tau)
 
         # Actor
         self.actor = Actor(num_of_outputs)
@@ -31,7 +34,9 @@ class ActorCritic(Model):
     def train_step(self, data):
         with tf.GradientTape(persistent=True) as tape:
             action, log_pi = self.actor(data["observation"], with_log_prob=True)
-            next_action, next_log_pi = self.actor(data["next_observation"], with_log_prob=True)
+            next_action, next_log_pi = self.actor(
+                data["next_observation"], with_log_prob=True
+            )
 
             # update 'Alpha'
             self.alpha.assign(tf.exp(self.log_alpha))

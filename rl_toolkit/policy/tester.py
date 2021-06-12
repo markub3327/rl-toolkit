@@ -38,14 +38,16 @@ class Tester(Policy):
         self._render = render
 
         # Actor network (for agent)
-        #self._actor = Actor(
+        # self._actor = Actor(
         #    state_shape=self._env.observation_space.shape,
         #    action_shape=self._env.action_space.shape,
         #    model_path=model_a_path,
-        #)
+        # )
         input_layer = tf.keras.layers.Input(shape=self._env.observation_space.shape)
-        self.output_layer = Actor(num_of_outputs=tf.reduce_prod(self._env.action_space.shape))
-        self.model = tf.keras.Model(inputs=[input_layer], outputs=[output_layer])
+        self.output_layer = Actor(
+            num_of_outputs=tf.reduce_prod(self._env.action_space.shape)
+        )
+        self.model = tf.keras.Model(inputs=[input_layer], outputs=[self.output_layer])
 
         # init Weights & Biases
         if self._log_wandb:

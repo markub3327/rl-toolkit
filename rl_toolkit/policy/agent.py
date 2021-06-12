@@ -42,8 +42,10 @@ class Agent(Policy):
 
         # Actor network (for agent)
         input_layer = tf.keras.layers.Input(shape=self._env.observation_space.shape)
-        self.output_layer = Actor(num_of_outputs=tf.reduce_prod(self._env.action_space.shape))
-        self.model = tf.keras.Model(inputs=[input_layer], outputs=[output_layer])
+        self.output_layer = Actor(
+            num_of_outputs=tf.reduce_prod(self._env.action_space.shape)
+        )
+        self.model = tf.keras.Model(inputs=[input_layer], outputs=[self.output_layer])
 
         # init var container
         self._container = VariableContainer(db_server, self.model)
