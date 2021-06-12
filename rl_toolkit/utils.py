@@ -36,7 +36,7 @@ class VariableContainer:
         self._variables_container = {
             "train_step": self.train_step,
             "stop_agents": self.stop_agents,
-            "policy_variables": actor.model.variables,
+            "policy_variables": actor.variables,
         }
 
         # variables signature for variable container table
