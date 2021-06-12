@@ -1,5 +1,5 @@
 from rl_toolkit.networks.activations import clipped_linear
-from rl_toolkit.networks.layers import MultivariateGaussianNoise
+from .noise import MultivariateGaussianNoise
 from tensorflow.keras.layers import Layer, Dense
 
 import tensorflow as tf
