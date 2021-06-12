@@ -64,14 +64,16 @@ class Learner(Policy):
         self._log_interval = log_interval
 
         if model_path is None:
+            input_layer = tf.keras.layers.Input(shape=self._env.observation_space.shape)
             # Actor network (for learner)
-            self.model = ActorCritic(
+            self.output_layer = ActorCritic(
                 num_of_outputs=tf.reduce_prod(self._env.action_space.shape),
                 gamma=gamma,
                 tau=tau,
             )
-            self._container = VariableContainer("localhost", self.model.actor)
+            self.model = tf.keras.Model(inputs=input_layer, outputs=self.output_layer(input_layer))
             self.model.compile(optimizer=Adam(learning_rate=learning_rate))
+            self._container = VariableContainer("localhost", self.model.actor)
         else:
             # Nacitaj model
             self.model = load_model(
