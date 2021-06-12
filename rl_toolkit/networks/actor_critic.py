@@ -33,8 +33,8 @@ class ActorCritic(Model):
         self.actor.reset_noise()
 
         with tf.GradientTape(persistent=True) as tape:
-            action, log_pi = self.actor(data["observation"])
-            next_action, next_log_pi = self.actor(data["next_observation"])
+            action, log_pi = self.actor(data["observation"], with_log_prob=True)
+            next_action, next_log_pi = self.actor(data["next_observation"], with_log_prob=True)
 
             # update 'Alpha'
             self.alpha.assign(tf.exp(self.log_alpha))

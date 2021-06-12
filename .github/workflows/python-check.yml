@@ -34,3 +34,28 @@ jobs:
       - name: Lint with flake8
         run: |
           flake8 ./ --count --show-source --max-line-length=88 --statistics
+  test:
+    name: Test package
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+    
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install -e .
+
+      - name: Run Learner
+        run: |
+          python3 -m rl_toolkit --mode learner -env AntBulletEnv-v0 -t 1
+    
+      - name: Run Tester
+        run: |
+          python3 -m rl_toolkit --mode tester -env AntBulletEnv-v0 -t 1

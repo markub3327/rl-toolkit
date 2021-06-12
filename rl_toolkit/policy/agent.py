@@ -1,4 +1,4 @@
-from rl_toolkit.networks import Actor
+from rl_toolkit.networks.layers import Actor
 from rl_toolkit.policy import Policy
 from rl_toolkit.utils import VariableContainer
 
@@ -6,6 +6,7 @@ import reverb
 import wandb
 
 import numpy as np
+import tensorflow as tf
 
 
 class Agent(Policy):
@@ -40,11 +41,12 @@ class Agent(Policy):
         self._warmup_steps = warmup_steps
 
         # Actor network (for agent)
-        self._actor = Actor(
-            state_shape=self._env.observation_space.shape,
-            action_shape=self._env.action_space.shape,
-        )
-        self._container = VariableContainer(db_server, self._actor)
+        input_layer = tf.keras.layers.Input(shape=self._env.observation_space.shape)
+        self.output_layer = Actor(num_of_outputs=tf.reduce_prod(self._env.action_space.shape))
+        self.model = tf.keras.Model(inputs=[input_layer], outputs=[output_layer])
+
+        # init var container
+        self._container = VariableContainer(db_server, self.model)
 
         # Initializes the reverb client
         self.client = reverb.Client(f"{db_server}:8000")
@@ -81,11 +83,9 @@ class Agent(Policy):
                         # Update agent network
                         self._container.update_variables()
                         # Re-new noise matrix before every rollouts
-                        self._actor.reset_noise()
+                        self.output_layer.reset_noise()
 
-                    action = self._actor.get_action(
-                        self._last_obs, deterministic=False
-                    ).numpy()
+                    action = self.model(self._last_obs).numpy()
 
                 # perform action
                 new_obs, reward, terminal, _ = self._env.step(action)

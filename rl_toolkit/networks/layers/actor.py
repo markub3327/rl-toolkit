@@ -46,7 +46,7 @@ class Actor(Layer):
     def reset_noise(self):
         self.noise.sample_weights()
 
-    def call(self, inputs, with_log_prob=True, deterministic=False):
+    def call(self, inputs, with_log_prob=False, deterministic=False):
         x = self.fc1(inputs)
         latent_sde = self.latent_sde(x)
         mean = self.mean(x)
