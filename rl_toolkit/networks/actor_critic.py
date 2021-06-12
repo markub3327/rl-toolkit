@@ -1,4 +1,4 @@
-from rl_toolkit.networks.layers import Actor, Critic
+from rl_toolkit.networks.layers import Actor, TwinCritic
 from tensorflow.keras import Model
 
 import tensorflow as tf
@@ -13,23 +13,18 @@ class ActorCritic(Model):
         self.gamma = tf.constant(gamma)
         self.tau = tf.constant(tau)
 
-        # Actor
-        self.actor = Actor(num_of_outputs)
-
-        # Critic 1
-        self.critic_1 = Critic()
-        self.critic_1_target = Critic()
-        self._train_target(self.critic_1, self.critic_1_target, tau=tf.constant(1.0))
-
-        # Critic 2
-        self.critic_2 = Critic()
-        self.critic_2_target = Critic()
-        self._train_target(self.critic_2, self.critic_2_target, tau=tf.constant(1.0))
-
         # init param 'alpha' - Lagrangian constraint
         self.log_alpha = tf.Variable(0.0, trainable=True, name="log_alpha")
         self.alpha = tf.Variable(0.0, trainable=False, name="alpha")
         self.target_entropy = tf.cast(-num_of_outputs, dtype=tf.float32)
+
+        # Actor
+        self.actor = Actor(num_of_outputs)
+
+        # Critic
+        self.critic = TwinCritic()
+        self.critic_target = TwinCritic()
+        self._train_target(self.critic, self.critic_target, tau=tf.constant(1.0))
 
     def train_step(self, data):
         with tf.GradientTape(persistent=True) as tape:
@@ -46,10 +41,10 @@ class ActorCritic(Model):
             alpha_loss = tf.nn.compute_average_loss(losses)
 
             # target Q-value
-            next_Q_value = tf.minimum(
-                self.critic_1_target([data["next_observation"], next_action]),
-                self.critic_2_target([data["next_observation"], next_action]),
+            next_Q1_value, next_Q2_value = self.critic_target(
+                [data["next_observation"], next_action]
             )
+            next_Q_value = tf.minimum(next_Q1_value, next_Q2_value)
 
             # Bellman Equation
             Q_target = tf.stop_gradient(
@@ -59,25 +54,20 @@ class ActorCritic(Model):
                 * (next_Q_value - self.alpha * next_log_pi)
             )
 
-            # update 'Critic 1'
-            Q_value = self.critic_1([data["observation"], data["action"]])
+            # update 'Critic'
+            Q1_value, Q2_value = self.critic([data["observation"], data["action"]])
             losses = tf.losses.huber(  # less sensitive to outliers in batch
-                y_true=Q_target, y_pred=Q_value
+                y_true=Q_target, y_pred=Q1_value
             )
-            Q1_loss = tf.nn.compute_average_loss(losses)
-
-            # update 'Critic 2'
-            Q_value = self.critic_2([data["observation"], data["action"]])
+            Q_loss = tf.nn.compute_average_loss(losses)
             losses = tf.losses.huber(  # less sensitive to outliers in batch
-                y_true=Q_target, y_pred=Q_value
+                y_true=Q_target, y_pred=Q2_value
             )
-            Q2_loss = tf.nn.compute_average_loss(losses)
+            Q_loss += tf.nn.compute_average_loss(losses)
 
             # update 'Actor'
-            Q_value = tf.minimum(
-                self.critic_1([data["observation"], action]),
-                self.critic_2([data["observation"], action]),
-            )
+            Q1_value, Q2_value = self.critic([data["observation"], action])
+            Q_value = tf.minimum(Q1_value, Q2_value)
             losses = self.alpha * log_pi - Q_value
             actor_loss = tf.nn.compute_average_loss(losses)
 
@@ -85,30 +75,21 @@ class ActorCritic(Model):
         gradients = tape.gradient(alpha_loss, [self.log_alpha])
         self.optimizer.apply_gradients(zip(gradients, [self.log_alpha]))
 
-        gradients = tape.gradient(Q1_loss, self.critic_1.trainable_variables)
-        self.optimizer.apply_gradients(
-            zip(gradients, self.critic_1.trainable_variables)
-        )
-
-        gradients = tape.gradient(Q2_loss, self.critic_2.trainable_variables)
-        self.optimizer.apply_gradients(
-            zip(gradients, self.critic_2.trainable_variables)
-        )
+        gradients = tape.gradient(Q_loss, self.critic.trainable_variables)
+        self.optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
 
         gradients = tape.gradient(actor_loss, self.actor.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
 
         # Soft update target networks
-        self._train_target(self.critic_1, self.critic_1_target, tau=self.tau)
-        self._train_target(self.critic_2, self.critic_2_target, tau=self.tau)
+        self._train_target(self.critic, self.critic_target, tau=self.tau)
 
         # Re-new noise matrix every update of 'log_std' params
         self.actor.reset_noise()
 
         return {
             "alpha_loss": alpha_loss,
-            "critic_1_loss": Q1_loss,
-            "critic_2_loss": Q2_loss,
+            "critic_loss": Q_loss,
             "actor_loss": actor_loss,
         }
 

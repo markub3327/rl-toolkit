@@ -186,8 +186,7 @@ class Learner(Policy):
                 print("=============================================")
                 print(f"Step: {train_step}")
                 print(f"Alpha loss: {losses['alpha_loss']}")
-                print(f"Critic 1 loss: {losses['critic_1_loss']}")
-                print(f"Critic 2 loss: {losses['critic_2_loss']}")
+                print(f"Critic loss: {losses['critic_loss']}")
                 print(f"Actor loss: {losses['actor_loss']}")
                 print("=============================================")
                 print(
@@ -200,8 +199,7 @@ class Learner(Policy):
                     {
                         "Alpha": self.model.alpha,
                         "Alpha loss": losses["alpha_loss"],
-                        "Critic 1 loss": losses["critic_1_loss"],
-                        "Critic 2 loss": losses["critic_2_loss"],
+                        "Critic loss": losses["critic_1_loss"],
                         "Actor loss": losses["actor_loss"],
                     },
                     step=train_step,
