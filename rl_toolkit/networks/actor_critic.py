@@ -45,40 +45,40 @@ class ActorCritic(Model):
             )
             alpha_loss = tf.nn.compute_average_loss(losses)
 
-            # target Q-values
-            next_Q_values = tf.minimum(
+            # target Q-value
+            next_Q_value = tf.minimum(
                 self.critic_1_target([data["next_observation"], next_action]),
                 self.critic_2_target([data["next_observation"], next_action]),
             )
 
             # Bellman Equation
-            Q_targets = tf.stop_gradient(
+            Q_target = tf.stop_gradient(
                 data["reward"]
                 + (1.0 - data["terminal"])
                 * self.gamma
-                * (next_Q_values - self.alpha * next_log_pi)
+                * (next_Q_value - self.alpha * next_log_pi)
             )
 
             # update 'Critic 1'
-            Q_values = self.critic_1([data["observation"], data["action"]])
+            Q_value = self.critic_1([data["observation"], data["action"]])
             losses = tf.losses.huber(  # less sensitive to outliers in batch
-                y_true=Q_targets, y_pred=Q_values
+                y_true=Q_target, y_pred=Q_value
             )
             Q1_loss = tf.nn.compute_average_loss(losses)
 
             # update 'Critic 2'
-            Q_values = self.critic_2([data["observation"], data["action"]])
+            Q_value = self.critic_2([data["observation"], data["action"]])
             losses = tf.losses.huber(  # less sensitive to outliers in batch
-                y_true=Q_targets, y_pred=Q_values
+                y_true=Q_target, y_pred=Q_value
             )
             Q2_loss = tf.nn.compute_average_loss(losses)
 
             # update 'Actor'
-            Q_values = tf.minimum(
+            Q_value = tf.minimum(
                 self.critic_1([data["observation"], action]),
                 self.critic_2([data["observation"], action]),
             )
-            losses = self.alpha * log_pi - Q_values
+            losses = self.alpha * log_pi - Q_value
             actor_loss = tf.nn.compute_average_loss(losses)
 
         # Update parameters
@@ -118,4 +118,9 @@ class ActorCritic(Model):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
     def call(self, inputs):
-        pass
+        action, log_pi = self.actor(inputs, with_log_prob=True)
+        Q_value = tf.minimum(
+            self.critic_1([inputs, action]),
+            self.critic_2([inputs, action]),
+        )
+        return Q_value, action, log_pi

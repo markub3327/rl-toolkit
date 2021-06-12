@@ -23,6 +23,8 @@ class MultivariateGaussianNoise(Layer):
         self.log_std_init = log_std_init
 
     def build(self, input_shape):
+        super(MultivariateGaussianNoise, self).build(input_shape)
+
         self.log_std = self.add_weight(
             shape=(input_shape[-1], self.units),
             initializer=initializers.Constant(value=self.log_std_init),

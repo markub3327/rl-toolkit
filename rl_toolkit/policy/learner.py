@@ -70,7 +70,7 @@ class Learner(Policy):
                 gamma=gamma,
                 tau=tau,
             )
-            self.model.build(self._env.observation_space.shape)
+            self.model.build((None,) + self._env.observation_space.shape)
             self.model.compile(optimizer=Adam(learning_rate=learning_rate))
         else:
             # Nacitaj model
