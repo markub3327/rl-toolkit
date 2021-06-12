@@ -14,13 +14,14 @@ if __name__ == "__main__":
     )
 
     my_parser.add_argument(
-        "-env",
+        "-e",
         "--environment",
         type=str,
         help="Only OpenAI Gym/PyBullet environments are available!",
         required=True,
     )
     my_parser.add_argument(
+        "-m",
         "--mode",
         choices=["agent", "learner", "tester"],
         help="Choose operating mode",
@@ -53,7 +54,7 @@ if __name__ == "__main__":
         default=7.3e-4,
     )
     my_parser.add_argument(
-        "--batch_size", type=int, help="Size of the mini-batch", default=256
+        "-bs", "--batch_size", type=int, help="Size of the mini-batch", default=256
     )
     my_parser.add_argument(
         "--buffer_capacity",
@@ -83,7 +84,7 @@ if __name__ == "__main__":
     my_parser.add_argument(
         "-s", "--save_path", type=str, help="Path for saving model files"
     )
-    my_parser.add_argument("-a", "--model_path", type=str, help="Path to saved model")
+    my_parser.add_argument("-f", "--model_path", type=str, help="Path to saved model")
     my_parser.add_argument("--db_path", type=str, help="DB's checkpoints path")
     my_parser.add_argument(
         "--db_server", type=str, help="DB server name", default="localhost"
@@ -158,7 +159,7 @@ if __name__ == "__main__":
         agent = Tester(
             env=env,
             max_steps=args.max_steps,
-            model_a_path=args.model_a,
+            model_path=args.model_path,
             log_wandb=args.wandb,
         )
 

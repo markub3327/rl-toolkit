@@ -16,7 +16,7 @@ class Tester(Policy):
     Attributes:
         env: the instance of environment object
         max_steps (int): maximum number of interactions do in environment
-        model_a_path (str): path to the actor's model
+        model_path (str): path to the model
         log_wandb (bool): log into WanDB cloud
     """
 
@@ -29,7 +29,7 @@ class Tester(Policy):
         # ---
         render: bool = False,
         # ---
-        model_a_path: str = None,
+        model_path: str = None,
         log_wandb: bool = False,
     ):
         super(Tester, self).__init__(env, log_wandb)
