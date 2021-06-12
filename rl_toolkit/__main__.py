@@ -159,13 +159,14 @@ if __name__ == "__main__":
         agent = Tester(
             env=env,
             max_steps=args.max_steps,
+            render=args.render,
             model_path=args.model_path,
             log_wandb=args.wandb,
         )
 
         try:
             # run actor process
-            agent.run(render=args.render)
+            agent.run()
         except KeyboardInterrupt:
             print("Terminated by user 👋👋👋")
         finally:
