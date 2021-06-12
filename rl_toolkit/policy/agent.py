@@ -87,7 +87,9 @@ class Agent(Policy):
                         # Re-new noise matrix before every rollouts
                         self.output_layer.reset_noise()
 
-                    action = self.model(self._last_obs).numpy()
+                    action = tf.squeeze(  # remove batch_size dim
+                        self.model(tf.expand_dims(self._last_obs, axis=0)), axis=0
+                    ).numpy()
 
                 # perform action
                 new_obs, reward, terminal, _ = self._env.step(action)

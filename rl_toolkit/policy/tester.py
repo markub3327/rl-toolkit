@@ -105,7 +105,9 @@ class Tester(Policy):
                     video_stream.write(img_array)
 
                 # Get the action
-                action = self.model(self._last_obs).numpy()
+                action = tf.squeeze(  # remove batch_size dim
+                    self.model(tf.expand_dims(self._last_obs, axis=0)), axis=0
+                ).numpy()
 
                 # perform action
                 new_obs, reward, done, _ = self._env.step(action)
