@@ -48,7 +48,7 @@ class Agent(Policy):
         self.model = tf.keras.Model(inputs=input_layer, outputs=self.output_layer)
 
         # init var container
-        self._container = VariableContainer(db_server, self.model)
+        self._container = VariableContainer(db_server, self.output_layer)
 
         # Initializes the reverb client
         self.client = reverb.Client(f"{db_server}:8000")
