@@ -64,14 +64,13 @@ class Learner(Policy):
         self._log_interval = log_interval
 
         if model_path is None:
-            input_layer = tf.keras.layers.Input(shape=self._env.observation_space.shape)
             # Actor network (for learner)
-            self.output_layer = ActorCritic(
+            self.model = ActorCritic(
                 num_of_outputs=tf.reduce_prod(self._env.action_space.shape),
                 gamma=gamma,
                 tau=tau,
             )
-            self.model = tf.keras.Model(inputs=input_layer, outputs=self.output_layer(input_layer))
+            self.model.build(self._env.observation_space.shape)
             self.model.compile(optimizer=Adam(learning_rate=learning_rate))
         else:
             # Nacitaj model
@@ -81,7 +80,7 @@ class Learner(Policy):
             )
             print("Actor loaded from file succesful ...")
 
-        self._container = VariableContainer("localhost", self.output_layer.actor)
+        self._container = VariableContainer("localhost", self.model.actor)
 
         # load db from checkpoint or make a new one
         if db_path is None:
