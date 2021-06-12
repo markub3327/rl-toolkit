@@ -80,6 +80,9 @@ class Learner(Policy):
             )
             print("Actor loaded from file succesful ...")
 
+        # Show models details
+        self.model.summary()
+
         self._container = VariableContainer("localhost", self.model.actor)
 
         # load db from checkpoint or make a new one
