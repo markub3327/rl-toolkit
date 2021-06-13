@@ -107,7 +107,7 @@ class ActorCritic(Model):
         action, log_pi = self.actor(inputs, with_log_prob=True)
         Q_value = tf.reduce_min(self.critic([inputs, action]), axis=1)
         Q_value_target = tf.reduce_min(self.critic_target([inputs, action]), axis=1)
-        return Q_value, Q_value_target, action, log_pi
+        return [Q_value, Q_value_target, action, log_pi]
 
     def compile(self, actor_optimizer, critic_optimizer, alpha_optimizer):
         super(ActorCritic, self).compile()
