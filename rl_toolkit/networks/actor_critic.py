@@ -60,10 +60,6 @@ class ActorCritic(Model):
             )
             Q_loss = tf.nn.compute_average_loss(losses)
 
-            tf.print(losses.shape)
-            tf.print(Q_loss.shape)
-            tf.print()
-
             # Update 'Actor'
             Q_value = tf.reduce_min(self.critic([data["observation"], action]), axis=1)
             losses = self.alpha * log_pi - Q_value
