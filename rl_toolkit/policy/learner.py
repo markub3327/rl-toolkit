@@ -23,7 +23,9 @@ class Learner(Policy):
         warmup_steps (int): number of interactions before using policy network
         buffer_capacity (int): the capacity of experiences replay buffer
         batch_size (int): size of mini-batch used for training
-        learning_rate (float): learning rate for gradient optimizer
+        actor_learning_rate (float): the learning rate for Actor's optimizer
+        critic_learning_rate (float): the learning rate for Critic's optimizer
+        alpha_learning_rate (float): the learning rate for Alpha's optimizer
         tau (float): the soft update coefficient for target networks
         gamma (float): the discount factor
         model_path (str): path to the model
@@ -44,7 +46,9 @@ class Learner(Policy):
         buffer_capacity: int = 1000000,
         batch_size: int = 256,
         # ---
-        learning_rate: float = 3e-4,
+        actor_learning_rate: float = 3e-4,
+        critic_learning_rate: float = 3e-4,
+        alpha_learning_rate: float = 3e-4,
         # ---
         tau: float = 0.01,
         gamma: float = 0.99,
@@ -71,7 +75,11 @@ class Learner(Policy):
                 tau=tau,
             )
             self.model.build((None,) + self._env.observation_space.shape)
-            self.model.compile(optimizer=Adam(learning_rate=learning_rate))
+            self.model.compile(
+                actor_optimizer=Adam(learning_rate=actor_learning_rate),
+                critic_optimizer=Adam(learning_rate=critic_learning_rate),
+                alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
+            )
         else:
             # Nacitaj model
             self.model = load_model(
@@ -153,14 +161,16 @@ class Learner(Policy):
             wandb.config.warmup_steps = warmup_steps
             wandb.config.buffer_capacity = buffer_capacity
             wandb.config.batch_size = batch_size
-            wandb.config.learning_rate = learning_rate
+            wandb.config.actor_learning_rate = actor_learning_rate
+            wandb.config.critic_learning_rate = critic_learning_rate
+            wandb.config.alpha_learning_rate = alpha_learning_rate
             wandb.config.tau = tau
             wandb.config.gamma = gamma
 
         # init actor's params in DB
         self._container.push_variables()
 
-    @tf.function
+    @tf.function(jit_compile=True)
     def _train(self):
         # Get data from replay buffer
         sample = self.dataset_iterator.get_next()

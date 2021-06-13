@@ -48,7 +48,6 @@ class VariableContainer:
             lambda spec: spec.dtype, self.variable_container_signature
         )
 
-    @tf.function
     def update_variables(self):
         sample = self.tf_client.sample("variables", data_dtypes=[self.dtypes])
         for variable, value in zip(

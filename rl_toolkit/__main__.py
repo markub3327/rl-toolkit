@@ -47,10 +47,21 @@ if __name__ == "__main__":
         default=0.01,
     )
     my_parser.add_argument(
-        "-lr",
-        "--learning_rate",
+        "--actor_learning_rate",
         type=float,
-        help="Learning rate for policy & critic networks",
+        help="Learning rate for actor network",
+        default=7.3e-4,
+    )
+    my_parser.add_argument(
+        "--critic_learning_rate",
+        type=float,
+        help="Learning rate for critic network",
+        default=7.3e-4,
+    )
+    my_parser.add_argument(
+        "--alpha_learning_rate",
+        type=float,
+        help="Learning rate for alpha parameter",
         default=7.3e-4,
     )
     my_parser.add_argument(
@@ -132,7 +143,9 @@ if __name__ == "__main__":
             warmup_steps=args.warmup_steps,
             buffer_capacity=args.buffer_capacity,
             batch_size=args.batch_size,
-            learning_rate=args.learning_rate,
+            actor_learning_rate=args.actor_learning_rate,
+            critic_learning_rate=args.critic_learning_rate,
+            alpha_learning_rate=args.alpha_learning_rate,
             tau=args.tau,
             gamma=args.gamma,
             model_path=args.model_path,

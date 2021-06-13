@@ -72,4 +72,4 @@ class Actor(Layer):
             else:
                 log_prob = None
 
-        return action, log_prob
+        return [action, log_prob]

@@ -1,4 +1,4 @@
-from rl_toolkit.networks.layers import Actor, TwinCritic
+from rl_toolkit.networks.layers import Actor, MultiCritic
 from tensorflow.keras import Model
 
 import tensorflow as tf
@@ -22,8 +22,8 @@ class ActorCritic(Model):
         self.actor = Actor(num_of_outputs)
 
         # Critic
-        self.critic = TwinCritic()
-        self.critic_target = TwinCritic()
+        self.critic = MultiCritic(2)
+        self.critic_target = MultiCritic(2)
         self._train_target(self.critic, self.critic_target, tau=tf.constant(1.0))
 
     def train_step(self, data):
@@ -33,7 +33,7 @@ class ActorCritic(Model):
                 data["next_observation"], with_log_prob=True
             )
 
-            # update 'Alpha'
+            # Update 'Alpha'
             self.alpha.assign(tf.exp(self.log_alpha))
             losses = -1.0 * (
                 self.log_alpha * tf.stop_gradient(log_pi + self.target_entropy)
@@ -41,10 +41,9 @@ class ActorCritic(Model):
             alpha_loss = tf.nn.compute_average_loss(losses)
 
             # target Q-value
-            next_Q1_value, next_Q2_value = self.critic_target(
-                [data["next_observation"], next_action]
+            next_Q_value = tf.reduce_min(
+                self.critic_target([data["next_observation"], next_action]), axis=1
             )
-            next_Q_value = tf.minimum(next_Q1_value, next_Q2_value)
 
             # Bellman Equation
             Q_target = tf.stop_gradient(
@@ -54,32 +53,37 @@ class ActorCritic(Model):
                 * (next_Q_value - self.alpha * next_log_pi)
             )
 
-            # update 'Critic'
-            Q1_value, Q2_value = self.critic([data["observation"], data["action"]])
+            # Update 'Critic'
+            Q_values = self.critic([data["observation"], data["action"]])
             losses = tf.losses.huber(  # less sensitive to outliers in batch
-                y_true=Q_target, y_pred=Q1_value
+                y_true=Q_target[:, tf.newaxis, :], y_pred=Q_values
             )
             Q_loss = tf.nn.compute_average_loss(losses)
-            losses = tf.losses.huber(  # less sensitive to outliers in batch
-                y_true=Q_target, y_pred=Q2_value
-            )
-            Q_loss += tf.nn.compute_average_loss(losses)
 
-            # update 'Actor'
-            Q1_value, Q2_value = self.critic([data["observation"], action])
-            Q_value = tf.minimum(Q1_value, Q2_value)
+            tf.print(losses.shape)
+            tf.print(Q_loss.shape)
+            tf.print()
+
+            # Update 'Actor'
+            Q_value = tf.reduce_min(self.critic([data["observation"], action]), axis=1)
             losses = self.alpha * log_pi - Q_value
             actor_loss = tf.nn.compute_average_loss(losses)
 
-        # Update parameters
+        # Update 'Alpha'
         gradients = tape.gradient(alpha_loss, [self.log_alpha])
-        self.optimizer.apply_gradients(zip(gradients, [self.log_alpha]))
+        self.alpha_optimizer.apply_gradients(zip(gradients, [self.log_alpha]))
 
+        # Update 'Critic'
         gradients = tape.gradient(Q_loss, self.critic.trainable_variables)
-        self.optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
+        self.critic_optimizer.apply_gradients(
+            zip(gradients, self.critic.trainable_variables)
+        )
 
+        # Update 'Actor'
         gradients = tape.gradient(actor_loss, self.actor.trainable_variables)
-        self.optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
+        self.actor_optimizer.apply_gradients(
+            zip(gradients, self.actor.trainable_variables)
+        )
 
         # Soft update target networks
         self._train_target(self.critic, self.critic_target, tau=self.tau)
@@ -88,9 +92,9 @@ class ActorCritic(Model):
         self.actor.reset_noise()
 
         return {
-            "alpha_loss": alpha_loss,
-            "critic_loss": Q_loss,
             "actor_loss": actor_loss,
+            "critic_loss": Q_loss,
+            "alpha_loss": alpha_loss,
         }
 
     def _train_target(self, source, target, tau):
@@ -101,11 +105,12 @@ class ActorCritic(Model):
 
     def call(self, inputs):
         action, log_pi = self.actor(inputs, with_log_prob=True)
-
-        Q1_value, Q2_value = self.critic([inputs, action])
-        Q_value = tf.minimum(Q1_value, Q2_value)            
-        
-        Q1_value, Q2_value = self.critic([inputs, action])
-        Q_value_target = tf.minimum(Q1_value, Q2_value)            
-        
+        Q_value = tf.reduce_min(self.critic([inputs, action]), axis=1)
+        Q_value_target = tf.reduce_min(self.critic_target([inputs, action]), axis=1)
         return Q_value, Q_value_target, action, log_pi
+
+    def compile(self, actor_optimizer, critic_optimizer, alpha_optimizer):
+        super(ActorCritic, self).compile()
+        self.actor_optimizer = actor_optimizer
+        self.critic_optimizer = critic_optimizer
+        self.alpha_optimizer = alpha_optimizer

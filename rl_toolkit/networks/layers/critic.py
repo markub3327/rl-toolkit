@@ -1,43 +1,33 @@
 from tensorflow.keras.layers import Layer, Dense, Concatenate
 
+import tensorflow as tf
 
-class TwinCritic(Layer):
+
+class Critic(Layer):
     """
-    TwinCritic
+    Critic
     ===============
 
     Attributes:
     """
 
     def __init__(self, **kwargs):
-        super(TwinCritic, self).__init__(**kwargs)
+        super(Critic, self).__init__(**kwargs)
 
-        self.merged = Concatenate()
-
-        # Critic 1
-        self.critic_1_fc1 = Dense(
-            400, activation="relu", kernel_initializer="he_uniform", name="critic_1_fc1"
+        self.fc1 = Dense(
+            400,
+            activation="relu",
+            kernel_initializer="he_uniform",
+            name="critic_fc1",
         )
-        self.critic_1_fc2 = Dense(
-            300, activation="relu", kernel_initializer="he_uniform", name="critic_1_fc2"
-        )
-
-        # Critic 2
-        self.critic_2_fc1 = Dense(
-            400, activation="relu", kernel_initializer="he_uniform", name="critic_2_fc1"
-        )
-        self.critic_2_fc2 = Dense(
-            300, activation="relu", kernel_initializer="he_uniform", name="critic_2_fc2"
+        self.fc2 = Dense(
+            300,
+            activation="relu",
+            kernel_initializer="he_uniform",
+            name="critic_fc2",
         )
 
-        self.Q1_value = Dense(
-            1,
-            activation="linear",
-            name="Q_value",
-            kernel_initializer="glorot_uniform",
-        )
-
-        self.Q2_value = Dense(
+        self.Q_value = Dense(
             1,
             activation="linear",
             name="Q_value",
@@ -45,14 +35,32 @@ class TwinCritic(Layer):
         )
 
     def call(self, inputs):
+        x = self.fc1(inputs)
+        x = self.fc2(x)
+        Q_values = self.Q_value(x)
+        return Q_values
+
+
+class MultiCritic(Layer):
+    """
+    MultiCritic
+    ===============
+
+    Attributes:
+        num_of_critics (int): number of critic networks
+    """
+
+    def __init__(self, num_of_critics: int, **kwargs):
+        super(MultiCritic, self).__init__(**kwargs)
+
+        self.merged = Concatenate()
+
+        # Critic
+        self.models = []
+        for i in range(num_of_critics):
+            self.models.append(Critic())
+
+    def call(self, inputs):
         merged = self.merged(inputs)
-
-        x = self.critic_1_fc1(merged)
-        x = self.critic_1_fc2(x)
-        Q1_values = self.Q1_value(x)
-
-        x = self.critic_2_fc1(merged)
-        x = self.critic_2_fc2(x)
-        Q2_values = self.Q2_value(x)
-
-        return Q1_values, Q2_values
+        Q_values = tf.stack(list(model(merged) for model in self.models), axis=1)
+        return Q_values
