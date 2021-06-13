@@ -170,10 +170,16 @@ class Learner(Policy):
         # init actor's params in DB
         self._container.push_variables()
 
-    @tf.function(jit_compile=True)
+    @tf.function
     def _train(self):
+        # Get data from replay buffer
+        sample = self.dataset_iterator.get_next()
+
         # Train the Actor-Critic model
         losses = self.model.train_step(sample.data)
+
+        # Store new actor's params
+        self._container.push_variables()
 
         return losses
 
@@ -182,14 +188,8 @@ class Learner(Policy):
             # update train_step (otlacok modelov)
             self._container.train_step.assign(train_step)
 
-            # Get data from replay buffer
-            sample = self.dataset_iterator.get_next()
-
             # update models
             losses = self._train()
-
-            # Store new actor's params
-            self._container.push_variables()
 
             # log metrics
             if (train_step % self._log_interval) == 0:
