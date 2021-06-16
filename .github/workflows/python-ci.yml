@@ -50,6 +50,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          apt install graphviz
           python3 -m pip install -e .
 
       - name: Run Learner

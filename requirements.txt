@@ -9,6 +9,7 @@ pybullet
 #
 tensorflow
 tensorflow_probability
+pydot
 #
 #
 ###### OpenCV ######
