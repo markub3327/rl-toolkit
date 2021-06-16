@@ -45,8 +45,8 @@ class Critic(Layer):
         # Output layer
         self.Q_value = Dense(
             1,
-            name="Q_value",
             kernel_initializer="glorot_uniform",
+            name="Q_value",
         )
 
     def call(self, inputs):
