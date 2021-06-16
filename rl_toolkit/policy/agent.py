@@ -71,7 +71,6 @@ class Agent(Policy):
 
         # init environment
         self._last_obs = self._env.reset()
-        self._last_obs = self._normalize(self._last_obs)
 
         # spojenie s db
         with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
@@ -94,7 +93,6 @@ class Agent(Policy):
 
                 # perform action
                 new_obs, reward, terminal, _ = self._env.step(action)
-                new_obs = self._normalize(new_obs)
 
                 # Update variables
                 self._episode_reward += reward
@@ -141,9 +139,9 @@ class Agent(Policy):
                     if self._log_wandb:
                         wandb.log(
                             {
-                                "epoch": self._total_episodes,
-                                "score": self._episode_reward,
-                                "steps": self._episode_steps,
+                                "Epoch": self._total_episodes,
+                                "Score": self._episode_reward,
+                                "Steps": self._episode_steps,
                             },
                             step=self._container.train_step.numpy(),
                         )
@@ -169,7 +167,6 @@ class Agent(Policy):
 
                     # Init environment
                     self._last_obs = self._env.reset()
-                    self._last_obs = self._normalize(self._last_obs)
 
                     # write all trajectories to db
                     writer.end_episode()

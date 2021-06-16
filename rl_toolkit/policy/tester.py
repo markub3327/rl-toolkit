@@ -67,9 +67,9 @@ class Tester(Policy):
         if self._log_wandb:
             wandb.log(
                 {
-                    "epoch": self._total_episodes,
-                    "score": self._episode_reward,
-                    "steps": self._episode_steps,
+                    "Epoch": self._total_episodes,
+                    "Score": self._episode_reward,
+                    "Steps": self._episode_steps,
                 },
                 step=self._total_steps,
             )

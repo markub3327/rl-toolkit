@@ -1,11 +1,14 @@
 # Changes
 
-## v3.2.4 (June 6, 2021)
+## v3.2.4 (June XX, 2021)
 ### Features 🔊
 - Reverb (+multi-node learning)
 - setup.py (package is available on PyPI)
-- split research process into **agent**, **learner** and **tester** roles
+- split into **agent**, **learner** and **tester** roles
 - Use custom model and layer for defining Actor-Critic
+- MultiCritic - defining multiple critic networks into one network
+- The quantile regression
+- Better normalization (may used in every gaming environment)
 
 ## v2.0.2 (May 23, 2021)
 ### Bug fixes 🛠️

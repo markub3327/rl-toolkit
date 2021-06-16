@@ -1,5 +1,5 @@
 from tensorflow.keras.layers import Layer
-from tensorflow.keras import initializers
+from tensorflow.keras import initializers, regularizers, constraints
 
 import tensorflow as tf
 import tensorflow_probability as tfp
@@ -14,52 +14,72 @@ class MultivariateGaussianNoise(Layer):
 
     Attributes:
         units (int): number of noisy neurons
-        log_std_init (float): initialization value of standard deviation
+        kernel_initializer (float): initialization value of the `kernel` weights matrix
+        kernel_regularizer: regularizer function applied to the `kernel` weights matrix
+        kernel_constraint: constraint function applied to the `kernel` weights matrix
     """
 
-    def __init__(self, units, log_std_init: float = -3.0, **kwargs):
+    def __init__(
+        self,
+        units,
+        kernel_initializer: float = -3.0,
+        kernel_regularizer=None,
+        kernel_constraint=None,
+        **kwargs
+    ):
         super(MultivariateGaussianNoise, self).__init__(**kwargs)
         self.units = units
-        self.log_std_init = log_std_init
+        self.kernel_initializer = kernel_initializer
+        self.kernel_regularizer = kernel_regularizer
+        self.kernel_constraint = kernel_constraint
 
     def build(self, input_shape):
         super(MultivariateGaussianNoise, self).build(input_shape)
 
-        self.log_std = self.add_weight(
+        self.kernel = self.add_weight(
+            name="kernel",
             shape=(input_shape[-1], self.units),
-            initializer=initializers.Constant(value=self.log_std_init),
+            initializer=initializers.Constant(value=self.kernel_initializer),
+            regularizer=self.kernel_regularizer,
+            constraint=self.kernel_constraint,
             trainable=True,
-            name="log_std",
         )
-        self.exploration_mat = self.add_weight(
+        self.epsilon = self.add_weight(
+            name="epsilon",
             shape=(input_shape[-1], self.units),
             initializer=initializers.Zeros(),
             trainable=False,
-            name="exploration_mat",
         )
 
-        # Re-new noise matrix every update of 'log_std' params
+        # Re-new noise matrix
         self.sample_weights()
 
     def call(self, inputs):
-        return tf.matmul(inputs, self.exploration_mat)
+        return tf.matmul(inputs, self.epsilon)
 
     def get_config(self):
         config = super(MultivariateGaussianNoise, self).get_config()
-        config.update({"units": self.units})
-        config.update({"log_std_init": self.log_std_init})
+        config.update(
+            {
+                "units": self.units,
+                "kernel_initializer": self.kernel_initializer,
+                "kernel_regularizer": regularizers.serialize(self.kernel_regularizer),
+                "kernel_constraint": constraints.serialize(self.kernel_constraint),
+            }
+        )
+
         return config
 
     def get_std(self):
         # expln
         return tf.where(
-            self.log_std <= 0,
-            tf.exp(self.log_std),
-            tf.math.log1p(self.log_std + 1e-6) + 1.0,
+            self.kernel <= 0,
+            tf.exp(self.kernel),
+            tf.math.log1p(self.kernel + 1e-6) + 1.0,
         )
 
     def sample_weights(self):
         w_dist = tfp.distributions.MultivariateNormalDiag(
-            loc=tf.zeros_like(self.log_std), scale_diag=self.get_std()
+            loc=tf.zeros_like(self.kernel), scale_diag=self.get_std()
         )
-        self.exploration_mat.assign(w_dist.sample())
+        self.epsilon.assign(w_dist.sample())

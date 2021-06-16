@@ -11,6 +11,7 @@
   * [**Soft Actor-Critic**](https://arxiv.org/pdf/1812.05905.pdf)
   * [**Generalized State-Dependent Exploration**](https://arxiv.org/pdf/2005.05719.pdf)
   * [**Reverb: A framework for experience replay**](https://arxiv.org/pdf/2102.04736.pdf)
+  * [**CrossNorm: On Normalization for Off-Policy TD Reinforcement Learning**](https://arxiv.org/pdf/1902.05605.pdf)
 
 ## Setting up container
 ```bash

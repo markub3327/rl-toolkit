@@ -220,9 +220,9 @@ class Learner(Policy):
         self._container.push_variables()
 
     def save(self):
+        # store checkpoint of DB
+        self.client.checkpoint()
+
         if self._save_path is not None:
             # save model
             self.model.save(os.path.join(self._save_path, "model"))
-
-        # store checkpoint of DB
-        self.client.checkpoint()
