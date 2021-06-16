@@ -50,7 +50,7 @@ class Critic(Layer):
             name="Q_value",
         )
 
-    def call(self, inputs):
+    def call(self, inputs, training=None):
         x_s = self.input_norm(inputs[0])
 
         x_s = self.fc1_a(x_s)

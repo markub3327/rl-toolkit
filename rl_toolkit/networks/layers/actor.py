@@ -50,7 +50,7 @@ class Actor(Layer):
     def reset_noise(self):
         self.noise.sample_weights()
 
-    def call(self, inputs, with_log_prob=False, deterministic=False):
+    def call(self, inputs, training=None, with_log_prob=False, deterministic=False):
         x = self.input_norm(inputs)
 
         x = self.fc1_a(x)

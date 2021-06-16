@@ -27,10 +27,10 @@ class ActorCritic(Model):
     def train_step(self, data):
         with tf.GradientTape(persistent=True) as tape:
             # Q-value
-            Q_value, action, log_pi = self.call(data["observation"])
+            Q_value, action, log_pi = self(data["observation"], training=True)
 
             # target Q-value
-            next_Q_value, _, next_log_pi = self.call(data["next_observation"])
+            next_Q_value, _, next_log_pi = self(data["next_observation"], training=True)
 
             # Update 'Alpha'
             self.alpha.assign(tf.exp(self.log_alpha))
@@ -50,7 +50,9 @@ class ActorCritic(Model):
             # Update 'Critic'
             losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_target[:, tf.newaxis, :],
-                y_pred=self.critic([data["observation"], data["action"]]),
+                y_pred=self.critic(
+                    [data["observation"], data["action"]], training=True
+                ),
             )
             Q_loss = tf.nn.compute_average_loss(losses)
 
@@ -84,8 +86,8 @@ class ActorCritic(Model):
         }
 
     def call(self, inputs):
-        action, log_pi = self.actor(inputs, with_log_prob=True)
-        Q_value = tf.reduce_min(self.critic([inputs, action]), axis=1)
+        action, log_pi = self.actor(inputs, with_log_prob=True, training=True)
+        Q_value = tf.reduce_min(self.critic([inputs, action], training=True), axis=1)
         return [Q_value, action, log_pi]
 
     def compile(self, actor_optimizer, critic_optimizer, alpha_optimizer):
