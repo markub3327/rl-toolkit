@@ -128,7 +128,24 @@ class Agent(Policy):
 
                 # Check the end of episode
                 if terminal:
-                    # logovanie do konzoly
+                    # Write the final state !!!
+                    writer.append({"observation": new_obs})
+                    writer.create_item(
+                        table="experience",
+                        priority=1.0,
+                        trajectory={
+                            "observation": writer.history["observation"][-2],
+                            "action": writer.history["action"][-2],
+                            "reward": writer.history["reward"][-2],
+                            "next_observation": writer.history["observation"][-1],
+                            "terminal": writer.history["terminal"][-2],
+                        },
+                    )
+                    
+                    # write all trajectories to db
+                    writer.end_episode()
+
+                    # logovanie
                     print("=============================================")
                     print(f"Epoch: {self._total_episodes}")
                     print(f"Score: {self._episode_reward}")
@@ -146,20 +163,6 @@ class Agent(Policy):
                             step=self._container.train_step.numpy(),
                         )
 
-                    # Write the final state !!!
-                    writer.append({"observation": new_obs})
-                    writer.create_item(
-                        table="experience",
-                        priority=1.0,
-                        trajectory={
-                            "observation": writer.history["observation"][-2],
-                            "action": writer.history["action"][-2],
-                            "reward": writer.history["reward"][-2],
-                            "next_observation": writer.history["observation"][-1],
-                            "terminal": writer.history["terminal"][-2],
-                        },
-                    )
-
                     # Init variables
                     self._episode_reward = 0.0
                     self._episode_steps = 0
@@ -167,6 +170,3 @@ class Agent(Policy):
 
                     # Init environment
                     self._last_obs = self._env.reset()
-
-                    # write all trajectories to db
-                    writer.end_episode()

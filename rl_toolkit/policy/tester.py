@@ -53,27 +53,6 @@ class Tester(Policy):
             # Settings
             wandb.config.max_steps = max_steps
 
-    def _log_test(self):
-        print("=============================================")
-        print(f"Epoch: {self._total_episodes}")
-        print(f"Score: {self._episode_reward}")
-        print(f"Steps: {self._episode_steps}")
-        print(f"TotalInteractions: {self._total_steps}")
-        print("=============================================")
-        print(
-            f"Testing ... {math.floor(self._total_steps * 100.0 / self._max_steps)} %"
-        )
-
-        if self._log_wandb:
-            wandb.log(
-                {
-                    "Epoch": self._total_episodes,
-                    "Score": self._episode_reward,
-                    "Steps": self._episode_steps,
-                },
-                step=self._total_steps,
-            )
-
     def run(self):
         self._total_steps = 0
         self._total_episodes = 0
@@ -86,42 +65,57 @@ class Tester(Policy):
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
-            self._episode_reward = 0.0
-            self._episode_steps = 0
-            done = False
+            # write to stream
+            if self._render:
+                img_array = self._env.render(mode="rgb_array")
+                img_array = cv2.resize(img_array, (640, 480))
+                video_stream.write(img_array)
 
-            self._last_obs = self._env.reset()
-            self._last_obs = self._normalize(self._last_obs)
+            # Get the action
+            action, _ = self.model(tf.expand_dims(self._last_obs, axis=0))
+            action = tf.squeeze(action, axis=0).numpy()
 
-            # collect rollout
-            while not done:
-                # write to stream
-                if self._render:
-                    img_array = self._env.render(mode="rgb_array")
-                    img_array = cv2.resize(img_array, (640, 480))
-                    video_stream.write(img_array)
+            # perform action
+            new_obs, reward, terminal, _ = self._env.step(action)
 
-                # Get the action
-                action, _ = self.model(tf.expand_dims(self._last_obs, axis=0))
-                action = tf.squeeze(action, axis=0).numpy()
+            # update variables
+            self._episode_reward += reward
+            self._episode_steps += 1
+            self._total_steps += 1
 
-                # perform action
-                new_obs, reward, done, _ = self._env.step(action)
-                new_obs = self._normalize(new_obs)
+            # super critical !!!
+            self._last_obs = new_obs
 
-                # update variables
-                self._episode_reward += reward
-                self._episode_steps += 1
-                self._total_steps += 1
+            # Check the end of episode
+            if terminal:
+                # logovanie
+                print("=============================================")
+                print(f"Epoch: {self._total_episodes}")
+                print(f"Score: {self._episode_reward}")
+                print(f"Steps: {self._episode_steps}")
+                print(f"TotalInteractions: {self._total_steps}")
+                print("=============================================")
+                print(
+                    f"Testing ... {math.floor(self._total_steps * 100.0 / self._max_steps)} %"
+                )
 
-                # super critical !!!
-                self._last_obs = new_obs
+                if self._log_wandb:
+                    wandb.log(
+                        {
+                            "Epoch": self._total_episodes,
+                            "Score": self._episode_reward,
+                            "Steps": self._episode_steps,
+                        },
+                        step=self._total_steps,
+                    )
 
-            # increment episode
-            self._total_episodes += 1
+                # Init variables
+                self._episode_reward = 0.0
+                self._episode_steps = 0
+                self._total_episodes += 1
 
-            # logovanie
-            self._log_test()
+                # Init environment
+                self._last_obs = self._env.reset()
 
         # Release video file stream
         if self._render:
