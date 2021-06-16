@@ -27,10 +27,10 @@ class ActorCritic(Model):
     def train_step(self, data):
         with tf.GradientTape(persistent=True) as tape:
             # Q-value
-            Q_values, action, log_pi = self.call(data["observation"])
+            Q_value, action, log_pi = self.call(data["observation"])
 
             # target Q-value
-            next_Q_values, _, next_log_pi = self.call(data["next_observation"])
+            next_Q_value, _, next_log_pi = self.call(data["next_observation"])
 
             # Update 'Alpha'
             self.alpha.assign(tf.exp(self.log_alpha))
@@ -44,7 +44,7 @@ class ActorCritic(Model):
                 data["reward"]
                 + (1.0 - data["terminal"])
                 * self.gamma
-                * (tf.reduce_min(next_Q_values, axis=1) - self.alpha * next_log_pi)
+                * (next_Q_value - self.alpha * next_log_pi)
             )
 
             # Update 'Critic'
@@ -55,7 +55,7 @@ class ActorCritic(Model):
             Q_loss = tf.nn.compute_average_loss(losses)
 
             # Update 'Actor'
-            losses = self.alpha * log_pi - tf.reduce_min(Q_values, axis=1)
+            losses = self.alpha * log_pi - Q_value
             actor_loss = tf.nn.compute_average_loss(losses)
 
         # Update 'Alpha'

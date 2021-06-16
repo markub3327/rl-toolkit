@@ -18,6 +18,7 @@ class Actor(Layer):
     def __init__(self, num_of_outputs: int, **kwargs):
         super(Actor, self).__init__(**kwargs)
 
+        # normalize input layer
         self.input_norm = LayerNormalization()
 
         self.fc1_a = Dense(400, kernel_initializer="he_uniform", name="fc1_a")

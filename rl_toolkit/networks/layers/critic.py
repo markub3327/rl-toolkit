@@ -14,6 +14,7 @@ class Critic(Layer):
     def __init__(self, **kwargs):
         super(Critic, self).__init__(**kwargs)
 
+        # normalize input layer
         self.input_norm = LayerNormalization()
 
         # 1. layer
