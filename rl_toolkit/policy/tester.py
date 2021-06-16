@@ -96,7 +96,7 @@ class Tester(Policy):
                 print(f"TotalInteractions: {self._total_steps}")
                 print("=============================================")
                 print(
-                    f"Testing ... {math.floor(self._total_steps * 100.0 / self._max_steps)} %"
+                    f"Testing ... {math.floor(self._total_steps * 100.0 / self._max_steps)} %"  # noqa
                 )
 
                 if self._log_wandb:

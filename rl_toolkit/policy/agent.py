@@ -141,7 +141,7 @@ class Agent(Policy):
                             "terminal": writer.history["terminal"][-2],
                         },
                     )
-                    
+
                     # write all trajectories to db
                     writer.end_episode()
 
