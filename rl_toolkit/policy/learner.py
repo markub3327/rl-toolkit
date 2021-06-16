@@ -4,6 +4,7 @@ from rl_toolkit.policy import Policy
 from rl_toolkit.utils import VariableContainer
 from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.utils import plot_model
 
 import os
 import reverb
@@ -79,6 +80,15 @@ class Learner(Policy):
                 actor_optimizer=Adam(learning_rate=actor_learning_rate),
                 critic_optimizer=Adam(learning_rate=critic_learning_rate),
                 alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
+            )
+
+            # save model to png
+            plot_model(
+                self.model,
+                to_file="img/model.png",
+                show_shapes=True,
+                rankdir="LR",
+                expand_nested=True,
             )
         else:
             # Nacitaj model
