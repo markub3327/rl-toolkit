@@ -51,6 +51,7 @@ setup(
         "opencv-python",
         "wandb",
         "dm-reverb",
+        "pydot",
     ],
     python_requires=">=3.7",
     classifiers=[
