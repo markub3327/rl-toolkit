@@ -12,6 +12,7 @@
   * [**Generalized State-Dependent Exploration**](https://arxiv.org/pdf/2005.05719.pdf)
   * [**Reverb: A framework for experience replay**](https://arxiv.org/pdf/2102.04736.pdf)
   * [**CrossNorm: On Normalization for Off-Policy TD Reinforcement Learning**](https://arxiv.org/pdf/1902.05605.pdf)
+  * [**Controlling Overestimation Bias with Truncated Mixture of Continuous Distributional Quantile Critics**](https://arxiv.org/abs/2005.04269)
 
 ## Setting up container
 ```bash
@@ -61,16 +62,10 @@ docker run -it --rm markub3327/rl-toolkit python3 testing.py [-h] -env ENV_NAME 
   | HopperBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)       | 2515 ± 50 | **2555 ± 405** |
   | HumanoidBulletEnv-v0 | - | ** ± ** |
 
-## Actor
+## Model
 
 <p align="center">
-  <img src="img/actor.png" alt="actor">
-</p>
-
-## Critic
-
-<p align="center">
-  <img src="img/critic.png" alt="critic">
+  <img src="img/model.png" alt="model">
 </p>
 
 ----------------------------------

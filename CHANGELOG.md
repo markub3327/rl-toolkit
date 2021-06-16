@@ -3,17 +3,19 @@
 ## v3.2.4 (June XX, 2021)
 ### Features 🔊
 - Reverb (+multi-node learning)
-- setup.py (package is available on PyPI)
+- `setup.py` (package is available on PyPI)
 - split into **agent**, **learner** and **tester** roles
 - Use custom model and layer for defining Actor-Critic
 - MultiCritic - defining multiple critic networks into one network
 - The quantile regression
-- Better normalization (may used in every gaming environment)
+- Normalization layer
+- Without target networks
+- Generating `png` image of the model
 
 ## v2.0.2 (May 23, 2021)
 ### Bug fixes 🛠️
 - update Dockerfile
-- update README.md
+- update `README.md`
 - formatted code by Black & Flake8
 
 ## v2.0.1 (April 27, 2021)
