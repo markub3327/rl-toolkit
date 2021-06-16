@@ -56,6 +56,11 @@ class Tester(Policy):
     def run(self):
         self._total_steps = 0
         self._total_episodes = 0
+        self._episode_reward = 0.0
+        self._episode_steps = 0
+
+        # init environment
+        self._last_obs = self._env.reset()
 
         # init video file
         if self._render:
