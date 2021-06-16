@@ -50,10 +50,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-<<<<<<< HEAD
           sudo apt-get install graphviz
-=======
->>>>>>> master
           python3 -m pip install -e .
 
       - name: Run Learner
