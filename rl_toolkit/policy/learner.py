@@ -81,15 +81,6 @@ class Learner(Policy):
                 critic_optimizer=Adam(learning_rate=critic_learning_rate),
                 alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
             )
-
-            # save model to png
-            plot_model(
-                self.model,
-                to_file="img/model.png",
-                show_shapes=True,
-                rankdir="LR",
-                expand_nested=True,
-            )
         else:
             # Nacitaj model
             self.model = load_model(
@@ -236,3 +227,12 @@ class Learner(Policy):
         if self._save_path is not None:
             # save model
             self.model.save(os.path.join(self._save_path, "model"))
+
+        # save model to png
+        plot_model(
+            self.model,
+            to_file="img/model.png",
+            show_shapes=True,
+            rankdir="LR",
+            expand_nested=True,
+        )

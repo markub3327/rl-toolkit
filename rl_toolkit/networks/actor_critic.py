@@ -85,9 +85,11 @@ class ActorCritic(Model):
             "alpha_loss": alpha_loss,
         }
 
-    def call(self, inputs):
-        action, log_pi = self.actor(inputs, with_log_prob=True, training=True)
-        Q_value = tf.reduce_min(self.critic([inputs, action], training=True), axis=1)
+    def call(self, inputs, training=None):
+        action, log_pi = self.actor(inputs, with_log_prob=True, training=training)
+        Q_value = tf.reduce_min(
+            self.critic([inputs, action], training=training), axis=1
+        )
         return [Q_value, action, log_pi]
 
     def compile(self, actor_optimizer, critic_optimizer, alpha_optimizer):
