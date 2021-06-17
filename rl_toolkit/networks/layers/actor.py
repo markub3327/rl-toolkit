@@ -19,16 +19,16 @@ class Actor(Layer):
         super(Actor, self).__init__(**kwargs)
 
         self.fc1 = Dense(400, kernel_initializer="he_uniform", name="fc1")
-        self.fc1_norm = LayerNormalization()
         self.fc1_activ = Activation("relu")
+        self.fc1_norm = LayerNormalization()
 
         self.latent_sde = Dense(
             300,
             kernel_initializer="he_uniform",
             name="latent_sde",
         )
-        self.latent_sde_norm = LayerNormalization()
         self.latent_sde_activ = Activation("relu")
+        self.latent_sde_norm = LayerNormalization()
 
         # Deterministicke akcie
         self.mean = Dense(
@@ -49,12 +49,12 @@ class Actor(Layer):
 
     def call(self, inputs, training=None, with_log_prob=None, deterministic=None):
         x = self.fc1(inputs)
-        x = self.fc1_norm(x)
         x = self.fc1_activ(x)
+        x = self.fc1_norm(x)
 
         latent_sde = self.latent_sde(x)
-        latent_sde = self.latent_sde_norm(latent_sde)
         latent_sde = self.latent_sde_activ(latent_sde)
+        latent_sde = self.latent_sde_norm(latent_sde)
 
         mean = self.mean(latent_sde)
         noise = self.noise(latent_sde)
