@@ -20,7 +20,6 @@ class Critic(Layer):
         # 1. layer
         self.fc1 = Dense(
             400,
-            use_bias=False,
             kernel_initializer="he_uniform",
             name="critic_fc1",
         )
@@ -30,13 +29,11 @@ class Critic(Layer):
         # 2. layer
         self.fc2_a = Dense(
             300,
-            use_bias=False,
             kernel_initializer="he_uniform",
             name="critic_fc2_a",
         )
         self.fc2_b = Dense(
             300,
-            use_bias=False,
             kernel_initializer="he_uniform",
             name="critic_fc2_b",
         )
