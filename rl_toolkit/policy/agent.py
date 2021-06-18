@@ -129,7 +129,7 @@ class Agent(Policy):
                 # Check the end of episode
                 if terminal:
                     # Write the final state !!!
-                    writer.append({"observation": new_obs})
+                    writer.append({"observation": new_obs.astype(np.float32)})
                     writer.create_item(
                         table="experience",
                         priority=1.0,
