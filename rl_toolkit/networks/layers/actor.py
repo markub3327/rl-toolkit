@@ -22,14 +22,13 @@ class Actor(Layer):
         self.observation_norm = BatchNormalization(scale=False)
 
         self.fc1 = Dense(
-            400, use_bias=False, kernel_initializer="he_uniform", name="fc1"
+            400, kernel_initializer="he_uniform", name="fc1"
         )
         self.fc1_activ = Activation("relu")
         self.fc1_norm = BatchNormalization(scale=False)
 
         self.latent_sde = Dense(
             300,
-            use_bias=False,
             kernel_initializer="he_uniform",
             name="latent_sde",
         )
