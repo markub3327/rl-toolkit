@@ -29,11 +29,11 @@ jobs:
     
       - name: Type check
         run: |
-          pytype -j auto ./
+          pytype -o '-' -j auto ./
 
       - name: Check codestyle
         run: |
-          isort --check --profile black ./
+          isort --check ./
           black --check ./
     
       - name: Lint with flake8
