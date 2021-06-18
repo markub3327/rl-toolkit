@@ -20,7 +20,7 @@ class Policy:
 
     def normalise_obs(self, obs):
         # Normalize observation values to [-1, 1] range
-        return obs / self.env.observation_space.high
+        return obs / self._env.observation_space.high
 
     def run(self):
         pass
