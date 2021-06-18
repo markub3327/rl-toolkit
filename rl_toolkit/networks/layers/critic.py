@@ -24,8 +24,8 @@ class Critic(Layer):
             kernel_initializer="he_uniform",
             name="critic_fc1",
         )
-        self.fc1_norm = BatchNormalization(scale=False)
         self.fc1_activ = Activation("relu")
+        self.fc1_norm = BatchNormalization(scale=False)
 
         # 2. layer
         self.fc2_a = Dense(
@@ -43,8 +43,8 @@ class Critic(Layer):
 
         # Merge state branch and action branch
         self.fc3 = Add()
-        self.fc3_norm = BatchNormalization(scale=False)
         self.fc3_activ = Activation("relu")
+        self.fc3_norm = BatchNormalization(scale=False)
 
         # Output layer
         self.Q_value = Dense(
@@ -57,15 +57,15 @@ class Critic(Layer):
         x_s = self.observation_norm(inputs[0], training)
 
         x_s = self.fc1(x_s)
-        x_s = self.fc1_norm(x_s, training)
         x_s = self.fc1_activ(x_s)
+        x_s = self.fc1_norm(x_s, training)
 
         x_s = self.fc2_a(x_s)
         x_a = self.fc2_b(inputs[1])
 
         x = self.fc3([x_s, x_a])
-        x = self.fc3_norm(x, training)
         x = self.fc3_activ(x)
+        x = self.fc3_norm(x, training)
 
         Q_values = self.Q_value(x)
         return Q_values
