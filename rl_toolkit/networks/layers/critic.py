@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Activation, Add, BatchNormalization, Dense, Layer
+from tensorflow.keras.layers import Activation, Add, Dense, Layer, LayerNormalization
 
 
 class Critic(Layer):
@@ -13,12 +13,6 @@ class Critic(Layer):
     def __init__(self, **kwargs):
         super(Critic, self).__init__(**kwargs)
 
-        # normalize observations
-        self.observation_norm = BatchNormalization(scale=False)
-
-        # normalize actions
-        self.action_norm = BatchNormalization(scale=False)
-
         # 1. layer
         self.fc1 = Dense(
             400,
@@ -26,7 +20,7 @@ class Critic(Layer):
             name="critic_fc1",
         )
         self.fc1_activ = Activation("relu")
-        self.fc1_norm = BatchNormalization(scale=False)
+        self.fc1_norm = LayerNormalization(scale=False)
 
         # 2. layer
         self.fc2_a = Dense(
@@ -43,7 +37,7 @@ class Critic(Layer):
         # Merge state branch and action branch
         self.fc3 = Add()
         self.fc3_activ = Activation("relu")
-        self.fc3_norm = BatchNormalization(scale=False)
+        self.fc3_norm = LayerNormalization(scale=False)
 
         # Output layer
         self.Q_value = Dense(
@@ -53,20 +47,16 @@ class Critic(Layer):
         )
 
     def call(self, inputs, training=None):
-        x_s = self.observation_norm(inputs[0], training)
-
-        x_s = self.fc1(x_s)
+        x_s = self.fc1(inputs[0])
         x_s = self.fc1_activ(x_s)
-        x_s = self.fc1_norm(x_s, training)
+        x_s = self.fc1_norm(x_s)
 
         x_s = self.fc2_a(x_s)
-
-        x_a = self.action_norm(inputs[1], training)
-        x_a = self.fc2_b(x_a)
+        x_a = self.fc2_b(inputs[1])
 
         x = self.fc3([x_s, x_a])
         x = self.fc3_activ(x)
-        x = self.fc3_norm(x, training)
+        x = self.fc3_norm(x)
 
         Q_values = self.Q_value(x)
         return Q_values
