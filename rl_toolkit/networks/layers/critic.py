@@ -17,6 +17,9 @@ class Critic(Layer):
         # normalize observations
         self.observation_norm = BatchNormalization(scale=False)
 
+        # normalize actions
+        self.action_norm = BatchNormalization(scale=False)
+
         # 1. layer
         self.fc1 = Dense(
             400,
@@ -58,7 +61,9 @@ class Critic(Layer):
         x_s = self.fc1_norm(x_s, training)
 
         x_s = self.fc2_a(x_s)
-        x_a = self.fc2_b(inputs[1])
+
+        x_a = self.action_norm(inputs[1], training)
+        x_a = self.fc2_b(x_a)
 
         x = self.fc3([x_s, x_a])
         x = self.fc3_activ(x)
