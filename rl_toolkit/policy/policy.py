@@ -18,5 +18,9 @@ class Policy:
         self._env = env
         self._log_wandb = log_wandb
 
+    def normalise_obs(self, obs):
+        # Normalize observation values to [-1, 1] range
+        return obs / self.env.observation_space.high
+
     def run(self):
         pass
