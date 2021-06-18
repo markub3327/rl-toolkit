@@ -29,7 +29,7 @@ jobs:
     
       - name: Type check
         run: |
-          pytype -o '-' -j auto ./
+          pytype -j auto ./
 
       - name: Check codestyle
         run: |
