@@ -102,8 +102,8 @@ class Agent(Policy):
                 # Update the replay buffer
                 writer.append(
                     {
-                        "observation": self._last_obs,
-                        "action": action,
+                        "observation": self._last_obs.astype(np.float32),
+                        "action": action.astype(np.float32),
                         "reward": np.array([reward], dtype=np.float32),
                         "terminal": np.array([terminal], dtype=np.float32),
                     }
