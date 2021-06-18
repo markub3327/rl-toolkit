@@ -1,16 +1,16 @@
-from rl_toolkit.networks import ActorCritic
-from rl_toolkit.networks.layers import MultivariateGaussianNoise
-from rl_toolkit.policy import Policy
-from rl_toolkit.utils import VariableContainer
+import os
+
+import reverb
+import tensorflow as tf
+import wandb
 from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import plot_model
 
-import os
-import reverb
-import wandb
-
-import tensorflow as tf
+from rl_toolkit.networks import ActorCritic
+from rl_toolkit.networks.layers import MultivariateGaussianNoise
+from rl_toolkit.policy import Policy
+from rl_toolkit.utils import VariableContainer
 
 
 class Learner(Policy):

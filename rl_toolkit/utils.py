@@ -1,6 +1,5 @@
-import tensorflow as tf
-
 import reverb
+import tensorflow as tf
 
 
 class VariableContainer:

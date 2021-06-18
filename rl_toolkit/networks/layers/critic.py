@@ -1,6 +1,5 @@
-from tensorflow.keras.layers import Layer, Dense, Add, Activation, BatchNormalization
-
 import tensorflow as tf
+from tensorflow.keras.layers import Activation, Add, BatchNormalization, Dense, Layer
 
 
 class Critic(Layer):

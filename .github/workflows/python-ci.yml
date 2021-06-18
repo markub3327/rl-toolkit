@@ -25,15 +25,20 @@ jobs:
       - name: Install dependencies
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install black flake8
+          python3 -m pip install black flake8 pytype isort
     
-      - name: Formatting with black
+      - name: Type check
         run: |
+          pytype -j auto
+
+      - name: Check codestyle
+        run: |
+          isort --check --profile black ./
           black --check ./
     
       - name: Lint with flake8
         run: |
-          flake8 ./ --count --show-source --max-line-length=88 --statistics
+          flake8 ./ --count --show-source --statistics
   test:
     name: Test package
     needs: build

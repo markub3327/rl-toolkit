@@ -1,7 +1,7 @@
-from rl_toolkit.networks.layers import Actor, MultiCritic
+import tensorflow as tf
 from tensorflow.keras import Model
 
-import tensorflow as tf
+from rl_toolkit.networks.layers import Actor, MultiCritic
 
 
 class ActorCritic(Model):

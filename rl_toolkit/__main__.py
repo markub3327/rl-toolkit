@@ -1,9 +1,10 @@
 import argparse
+
 import gym
 import pybullet_envs  # noqa
 
 # policy
-from rl_toolkit.policy import Learner, Agent, Tester
+from rl_toolkit.policy import Agent, Learner, Tester
 
 if __name__ == "__main__":
 

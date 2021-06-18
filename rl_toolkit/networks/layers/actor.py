@@ -1,9 +1,10 @@
-from rl_toolkit.networks.activations import clipped_linear
-from .noise import MultivariateGaussianNoise
-from tensorflow.keras.layers import Layer, Dense, Activation  # , BatchNormalization
-
 import tensorflow as tf
 import tensorflow_probability as tfp
+from tensorflow.keras.layers import Activation, Dense, Layer  # , BatchNormalization
+
+from rl_toolkit.networks.activations import clipped_linear
+
+from .noise import MultivariateGaussianNoise
 
 
 class Actor(Layer):

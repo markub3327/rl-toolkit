@@ -1,12 +1,11 @@
+import numpy as np
+import reverb
+import tensorflow as tf
+import wandb
+
 from rl_toolkit.networks.layers import Actor
 from rl_toolkit.policy import Policy
 from rl_toolkit.utils import VariableContainer
-
-import reverb
-import wandb
-
-import numpy as np
-import tensorflow as tf
 
 
 class Agent(Policy):

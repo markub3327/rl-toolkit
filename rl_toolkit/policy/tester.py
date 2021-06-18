@@ -1,11 +1,11 @@
-from rl_toolkit.networks.layers import Actor
-from rl_toolkit.policy import Policy
+import math
 
 import cv2
-import math
+import tensorflow as tf
 import wandb
 
-import tensorflow as tf
+from rl_toolkit.networks.layers import Actor
+from rl_toolkit.policy import Policy
 
 
 class Tester(Policy):
