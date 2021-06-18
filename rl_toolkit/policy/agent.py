@@ -71,6 +71,7 @@ class Agent(Policy):
 
         # init environment
         self._last_obs = self._env.reset()
+        self._last_obs = self.normalise_obs(self._last_obs)
 
         # spojenie s db
         with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
@@ -93,6 +94,7 @@ class Agent(Policy):
 
                 # perform action
                 new_obs, reward, terminal, _ = self._env.step(action)
+                new_obs = self.normalise_obs(new_obs)
 
                 # Update variables
                 self._episode_reward += reward
@@ -170,3 +172,4 @@ class Agent(Policy):
 
                     # Init environment
                     self._last_obs = self._env.reset()
+                    self._last_obs = self.normalise_obs(self._last_obs)
