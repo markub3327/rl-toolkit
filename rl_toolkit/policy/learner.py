@@ -9,8 +9,9 @@ from tensorflow.keras.utils import plot_model
 
 from rl_toolkit.networks import ActorCritic
 from rl_toolkit.networks.layers import MultivariateGaussianNoise
-from rl_toolkit.policy import Policy
 from rl_toolkit.utils import VariableContainer
+
+from .policy import Policy
 
 
 class Learner(Policy):

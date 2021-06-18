@@ -4,8 +4,9 @@ import tensorflow as tf
 import wandb
 
 from rl_toolkit.networks.layers import Actor
-from rl_toolkit.policy import Policy
 from rl_toolkit.utils import VariableContainer
+
+from .policy import Policy
 
 
 class Agent(Policy):

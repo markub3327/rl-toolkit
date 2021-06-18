@@ -25,11 +25,21 @@ docker pull markub3327/rl-toolkit:2.0.2
 
 ## Run
 ```bash
-# Training container (learner)
-docker run -it --rm markub3327/rl-toolkit python3 training.py [-h] -env ENV_NAME -s PATH_TO_MODEL_FOLDER [--wandb]
+# Run learner's container
+docker run -p 8000:8000 -it --rm markub3327/rl-toolkit
 
-# Simulation container (agent)
-docker run -it --rm markub3327/rl-toolkit python3 testing.py [-h] -env ENV_NAME -f PATH_TO_MODEL_FOLDER [--wandb]
+# Run tester's or agent's container
+docker run -it --rm markub3327/rl-toolkit
+
+
+# Learner container
+python3 -m rl_toolkit [-h] --mode learner -e [ENV_NAME] -s [PATH_TO_MODEL] --db_path [PATH_TO_DB] [--wandb]
+
+# Agent container
+python3 -m rl_toolkit [-h] --mode agent -e [ENV_NAME] --db_server [IP_ADDRESS/HOSTNAME] [--wandb]
+
+# Tester container
+python3 -m rl_toolkit [-h] --mode tester -e [ENV_NAME] --model_a [PATH_TO_ACTOR_MODEL] [--render] [--wandb]
 ```
 
 ## Tested environments

@@ -1,5 +1,5 @@
 #!/bin/bash
-#  https://github.com/openai/gym/blob/master/bin/docker_entrypoint
+# Based on https://github.com/openai/gym/blob/master/bin/docker_entrypoint
 
 set -ex
 
@@ -23,6 +23,4 @@ if ! [ -e "$file" ]; then
     exit 1
 fi
 
-# Execute bash
-#exec "$@"
 exec "/bin/bash"

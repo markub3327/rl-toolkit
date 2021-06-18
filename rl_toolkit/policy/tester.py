@@ -5,7 +5,8 @@ import tensorflow as tf
 import wandb
 
 from rl_toolkit.networks.layers import Actor
-from rl_toolkit.policy import Policy
+
+from .policy import Policy
 
 
 class Tester(Policy):

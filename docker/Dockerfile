@@ -32,7 +32,10 @@ RUN apt-get -y update && apt-get install -y \
 ###########################################
 # RL Toolkit
 ###########################################
-RUN python3 -m pip install --no-cache-dir rl-toolkit
+COPY . /root/rl-toolkit
+WORKDIR /root/rl-toolkit
+
+RUN pip3 install --no-cache-dir -e .
 
 ###########################################
 # Entry point
