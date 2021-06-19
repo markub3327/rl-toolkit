@@ -24,7 +24,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install -e .
           python3 -m pip install black flake8 isort
 
       - name: Check codestyle
