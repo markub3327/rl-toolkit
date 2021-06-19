@@ -20,7 +20,7 @@ class Actor(Layer):
         super(Actor, self).__init__(**kwargs)
 
         self.fc1 = Dense(400, kernel_initializer="he_uniform", name="fc1")
-        self.fc1_activ = Activation("relu")
+        self.fc1_activ = Activation("swish")
         self.fc1_norm = LayerNormalization(scale=False)
 
         self.latent_sde = Dense(
@@ -28,7 +28,7 @@ class Actor(Layer):
             kernel_initializer="he_uniform",
             name="latent_sde",
         )
-        self.latent_sde_activ = Activation("relu")
+        self.latent_sde_activ = Activation("swish")
         self.latent_sde_norm = LayerNormalization(scale=False)
 
         # Deterministicke akcie

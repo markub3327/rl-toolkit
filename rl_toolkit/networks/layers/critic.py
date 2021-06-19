@@ -19,7 +19,7 @@ class Critic(Layer):
             kernel_initializer="he_uniform",
             name="critic_fc1",
         )
-        self.fc1_activ = Activation("relu")
+        self.fc1_activ = Activation("swish")
         self.fc1_norm = LayerNormalization(scale=False)
 
         # 2. layer
@@ -36,7 +36,7 @@ class Critic(Layer):
 
         # Merge state branch and action branch
         self.fc3 = Add()
-        self.fc3_activ = Activation("relu")
+        self.fc3_activ = Activation("swish")
         self.fc3_norm = LayerNormalization(scale=False)
 
         # Output layer

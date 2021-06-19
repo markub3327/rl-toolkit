@@ -102,10 +102,10 @@ class Agent(Policy):
                 # Update the replay buffer
                 writer.append(
                     {
-                        "observation": self._last_obs.astype(np.float32),
-                        "action": action.astype(np.float32),
-                        "reward": np.array([reward], dtype=np.float32),
-                        "terminal": np.array([terminal], dtype=np.float32),
+                        "observation": self._last_obs.astype("float32"),
+                        "action": action.astype("float32"),
+                        "reward": np.array([reward], dtype="float32"),
+                        "terminal": np.array([terminal], dtype="float32"),
                     }
                 )
 
@@ -129,7 +129,7 @@ class Agent(Policy):
                 # Check the end of episode
                 if terminal:
                     # Write the final state !!!
-                    writer.append({"observation": new_obs.astype(np.float32)})
+                    writer.append({"observation": new_obs.astype("float32")})
                     writer.create_item(
                         table="experience",
                         priority=1.0,
