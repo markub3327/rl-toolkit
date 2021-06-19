@@ -8,10 +8,10 @@
 ![Size](https://img.shields.io/github/repo-size/markub3327/rl-toolkit)
 
 ## Papers
-  * [**Soft Actor-Critic**](https://arxiv.org/pdf/1812.05905.pdf)
-  * [**Generalized State-Dependent Exploration**](https://arxiv.org/pdf/2005.05719.pdf)
-  * [**Reverb: A framework for experience replay**](https://arxiv.org/pdf/2102.04736.pdf)
-  * [**CrossNorm: On Normalization for Off-Policy TD Reinforcement Learning**](https://arxiv.org/pdf/1902.05605.pdf)
+  * [**Soft Actor-Critic**](https://arxiv.org/abs/1812.05905)
+  * [**Generalized State-Dependent Exploration**](https://arxiv.org/abs/2005.05719)
+  * [**Reverb: A framework for experience replay**](https://arxiv.org/abs/2102.04736)
+  * [**CrossNorm: On Normalization for Off-Policy TD Reinforcement Learning**](https://arxiv.org/abs/1902.05605)
   * [**Controlling Overestimation Bias with Truncated Mixture of Continuous Distributional Quantile Critics**](https://arxiv.org/abs/2005.04269)
 
 ## Setting up container

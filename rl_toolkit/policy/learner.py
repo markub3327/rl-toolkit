@@ -16,7 +16,7 @@ from .policy import Policy
 
 class Learner(Policy):
     """
-    Learner (based on Soft Actor-Critic)
+    Learner
     =================
 
     Attributes:
@@ -28,14 +28,11 @@ class Learner(Policy):
         actor_learning_rate (float): the learning rate for Actor's optimizer
         critic_learning_rate (float): the learning rate for Critic's optimizer
         alpha_learning_rate (float): the learning rate for Alpha's optimizer
-        tau (float): the soft update coefficient for target networks
         gamma (float): the discount factor
         model_path (str): path to the model
         db_path (str): path to the database checkpoint
         save_path (str): path to the models for saving
         log_wandb (bool): log into WanDB cloud
-
-    Paper: https://arxiv.org/pdf/1812.05905.pdf
     """
 
     def __init__(
@@ -52,7 +49,6 @@ class Learner(Policy):
         critic_learning_rate: float = 3e-4,
         alpha_learning_rate: float = 3e-4,
         # ---
-        tau: float = 0.01,
         gamma: float = 0.99,
         # ---
         model_path: str = None,
@@ -74,7 +70,6 @@ class Learner(Policy):
             self.model = ActorCritic(
                 num_of_outputs=tf.reduce_prod(self._env.action_space.shape),
                 gamma=gamma,
-                tau=tau,
             )
             self.model.build((None,) + self._env.observation_space.shape)
             self.model.compile(
@@ -166,7 +161,6 @@ class Learner(Policy):
             wandb.config.actor_learning_rate = actor_learning_rate
             wandb.config.critic_learning_rate = critic_learning_rate
             wandb.config.alpha_learning_rate = alpha_learning_rate
-            wandb.config.tau = tau
             wandb.config.gamma = gamma
 
         # init actor's params in DB

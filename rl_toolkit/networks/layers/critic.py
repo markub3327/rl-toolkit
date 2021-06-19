@@ -8,6 +8,10 @@ class Critic(Layer):
     ===============
 
     Attributes:
+
+    References:
+        - [CrossNorm: On Normalization for Off-Policy TD Reinforcement Learning](https://arxiv.org/abs/1902.05605)
+        - [Controlling Overestimation Bias with Truncated Mixture of Continuous Distributional Quantile Critics](https://arxiv.org/abs/2005.04269)
     """
 
     def __init__(self, **kwargs):
@@ -17,7 +21,6 @@ class Critic(Layer):
         self.fc1 = Dense(
             400,
             kernel_initializer="he_uniform",
-            name="critic_fc1",
         )
         self.fc1_activ = Activation("swish")
         self.fc1_norm = LayerNormalization(scale=False)
@@ -26,18 +29,16 @@ class Critic(Layer):
         self.fc2_a = Dense(
             300,
             kernel_initializer="he_uniform",
-            name="critic_fc2_a",
         )
         self.fc2_b = Dense(
             300,
             kernel_initializer="he_uniform",
-            name="critic_fc2_b",
         )
 
         # Merge state branch and action branch
-        self.fc3 = Add()
-        self.fc3_activ = Activation("swish")
-        self.fc3_norm = LayerNormalization(scale=False)
+        self.fc2 = Add()
+        self.fc2_activ = Activation("swish")
+        self.fc2_norm = LayerNormalization(scale=False)
 
         # Output layer
         self.Q_value = Dense(
@@ -47,17 +48,20 @@ class Critic(Layer):
         )
 
     def call(self, inputs, training=None):
+        # 1. layer
         x_s = self.fc1(inputs[0])
         x_s = self.fc1_activ(x_s)
         x_s = self.fc1_norm(x_s)
 
+        # 2. layer
         x_s = self.fc2_a(x_s)
         x_a = self.fc2_b(inputs[1])
 
-        x = self.fc3([x_s, x_a])
-        x = self.fc3_activ(x)
-        x = self.fc3_norm(x)
+        x = self.fc2([x_s, x_a])
+        x = self.fc2_activ(x)
+        x = self.fc2_norm(x)
 
+        # Output layer
         Q_values = self.Q_value(x)
         return Q_values
 

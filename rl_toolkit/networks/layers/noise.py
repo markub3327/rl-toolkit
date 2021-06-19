@@ -6,31 +6,32 @@ from tensorflow.keras.layers import Layer
 
 class MultivariateGaussianNoise(Layer):
     """
-    Noisy layer (gSDE)
+    Multivariate Gaussian Noise for exploration
     ===========
-
-    Paper: https://arxiv.org/pdf/2005.05719.pdf
 
     Attributes:
         units (int): number of noisy neurons
         kernel_initializer (float): initialization value of the `kernel` weights matrix
         kernel_regularizer: regularizer function applied to the `kernel` weights matrix
         kernel_constraint: constraint function applied to the `kernel` weights matrix
+
+    References:
+        - [Generalized State-Dependent Exploration for Deep Reinforcement Learning in Robotics](https://arxiv.org/abs/2005.05719)
     """
 
     def __init__(
         self,
         units,
-        kernel_initializer: float = -3.0,
+        kernel_initializer,
         kernel_regularizer=None,
         kernel_constraint=None,
         **kwargs
     ):
         super(MultivariateGaussianNoise, self).__init__(**kwargs)
         self.units = units
-        self.kernel_initializer = kernel_initializer
-        self.kernel_regularizer = kernel_regularizer
-        self.kernel_constraint = kernel_constraint
+        self.kernel_initializer = initializers.get(kernel_initializer)
+        self.kernel_regularizer = regularizers.get(kernel_regularizer)
+        self.kernel_constraint = constraints.get(kernel_constraint)
 
     def build(self, input_shape):
         super(MultivariateGaussianNoise, self).build(input_shape)
@@ -38,7 +39,7 @@ class MultivariateGaussianNoise(Layer):
         self.kernel = self.add_weight(
             name="kernel",
             shape=(input_shape[-1], self.units),
-            initializer=initializers.Constant(value=self.kernel_initializer),
+            initializer=self.kernel_initializer,
             regularizer=self.kernel_regularizer,
             constraint=self.kernel_constraint,
             trainable=True,
@@ -61,7 +62,7 @@ class MultivariateGaussianNoise(Layer):
         config.update(
             {
                 "units": self.units,
-                "kernel_initializer": self.kernel_initializer,
+                "kernel_initializer": initializers.serialize(self.kernel_initializer),
                 "kernel_regularizer": regularizers.serialize(self.kernel_regularizer),
                 "kernel_constraint": constraints.serialize(self.kernel_constraint),
             }

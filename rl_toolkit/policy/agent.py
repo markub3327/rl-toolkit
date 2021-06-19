@@ -11,7 +11,7 @@ from .policy import Policy
 
 class Agent(Policy):
     """
-    Agent (based on Soft Actor-Critic)
+    Agent
     =================
 
     Attributes:
@@ -19,8 +19,6 @@ class Agent(Policy):
         env: the instance of environment object
         update_interval (int): interval of updating policy parameters
         log_wandb (bool): log into WanDB cloud
-
-    Paper: https://arxiv.org/pdf/1812.05905.pdf
     """
 
     def __init__(

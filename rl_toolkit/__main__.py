@@ -42,12 +42,6 @@ if __name__ == "__main__":
         default=0.99,
     )
     my_parser.add_argument(
-        "--tau",
-        type=float,
-        help="Parameter for soft target network updates",
-        default=0.01,
-    )
-    my_parser.add_argument(
         "--actor_learning_rate",
         type=float,
         help="Learning rate for actor network",
@@ -147,7 +141,6 @@ if __name__ == "__main__":
             actor_learning_rate=args.actor_learning_rate,
             critic_learning_rate=args.critic_learning_rate,
             alpha_learning_rate=args.alpha_learning_rate,
-            tau=args.tau,
             gamma=args.gamma,
             model_path=args.model_path,
             db_path=args.db_path,

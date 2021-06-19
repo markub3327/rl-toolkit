@@ -14,19 +14,21 @@ class Actor(Layer):
 
     Attributes:
         num_of_outputs (int): number of outputs
+
+    References:
+        - [CrossNorm: On Normalization for Off-Policy TD Reinforcement Learning](https://arxiv.org/abs/1902.05605)
     """
 
     def __init__(self, num_of_outputs: int, **kwargs):
         super(Actor, self).__init__(**kwargs)
 
-        self.fc1 = Dense(400, kernel_initializer="he_uniform", name="fc1")
+        self.fc1 = Dense(400, kernel_initializer="he_uniform")
         self.fc1_activ = Activation("swish")
         self.fc1_norm = LayerNormalization(scale=False)
 
         self.latent_sde = Dense(
             300,
             kernel_initializer="he_uniform",
-            name="latent_sde",
         )
         self.latent_sde_activ = Activation("swish")
         self.latent_sde_norm = LayerNormalization(scale=False)
@@ -40,7 +42,11 @@ class Actor(Layer):
         )
 
         # Stochasticke akcie
-        self.noise = MultivariateGaussianNoise(num_of_outputs, name="noise")
+        self.noise = MultivariateGaussianNoise(
+            num_of_outputs,
+            kernel_initializer=tf.keras.initializers.Constant(value=-3.0),
+            name="noise",
+        )
 
         # Vystupna prenosova funkcia
         self.bijector = tfp.bijectors.Tanh()

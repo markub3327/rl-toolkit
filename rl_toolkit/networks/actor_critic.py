@@ -5,13 +5,22 @@ from rl_toolkit.networks.layers import Actor, MultiCritic
 
 
 class ActorCritic(Model):
-    """Combines the actor and critic into an end-to-end model for training."""
+    """
+    Actor-Critic
+    ===========
 
-    def __init__(self, num_of_outputs: int, gamma: float, tau: float, **kwargs):
+    Attributes:
+        num_of_outputs (int): number of outputs
+        gamma (float): the discount factor
+
+    References:
+        - [Soft Actor-Critic Algorithms and Applications](https://arxiv.org/abs/1812.05905)
+    """
+
+    def __init__(self, num_of_outputs: int, gamma: float, **kwargs):
         super(ActorCritic, self).__init__(**kwargs)
 
         self.gamma = tf.constant(gamma)
-        self.tau = tf.constant(tau)
 
         # init param 'alpha' - Lagrangian constraint
         self.log_alpha = tf.Variable(0.0, trainable=True, name="log_alpha")
