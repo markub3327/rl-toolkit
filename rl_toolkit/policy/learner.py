@@ -223,12 +223,12 @@ class Learner(Policy):
 
         if self._save_path:
             # Save model
-            self.model.save(os.path.join(self._save_path, "model"))
+            self.model.save(os.path.join(self._save_path, "actor_critic"))
 
         # Save model to png
         plot_model(
             self.model,
-            to_file=os.path.join(self._save_path, "model.png"),
+            to_file=os.path.join(self._save_path, "actor_critic.png"),
             show_shapes=True,
             rankdir="LR",
             expand_nested=True,

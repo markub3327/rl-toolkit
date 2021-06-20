@@ -88,10 +88,16 @@ if __name__ == "__main__":
     )
     my_parser.add_argument("--wandb", action="store_true", help="Log into WanDB cloud")
     my_parser.add_argument(
-        "-s", "--save_path", type=str, help="Path for saving model files"
+        "-s",
+        "--save_path",
+        type=str,
+        help="Path for saving model files",
+        default="./save/model",
     )
     my_parser.add_argument("-f", "--model_path", type=str, help="Path to saved model")
-    my_parser.add_argument("--db_path", type=str, help="DB's checkpoints path")
+    my_parser.add_argument(
+        "--db_path", type=str, help="DB's checkpoints path", default="./save/db"
+    )
     my_parser.add_argument(
         "--db_server", type=str, help="DB server name", default="localhost"
     )
