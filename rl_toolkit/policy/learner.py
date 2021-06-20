@@ -180,7 +180,7 @@ class Learner(Policy):
         return losses
 
     def run(self):
-        for train_step in range(self._container.warmup_steps, self._max_steps):
+        for train_step in range(self._container.warmup_steps.numpy(), self._max_steps):
             # update train_step (otlacok modelov)
             self._container.train_step.assign(train_step)
 
