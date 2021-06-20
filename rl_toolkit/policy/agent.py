@@ -27,7 +27,6 @@ class Agent(Policy):
         db_server: str,
         # ---
         env,
-        warmup_steps: int = 10000,
         # ---
         update_interval: int = 64,
         # ---
@@ -36,19 +35,13 @@ class Agent(Policy):
         super(Agent, self).__init__(env, log_wandb)
 
         self._update_interval = update_interval
-        self._warmup_steps = warmup_steps
 
         # Actor network (for agent)
-        input_layer = tf.keras.layers.Input(shape=self._env.observation_space.shape)
-        self.output_layer = Actor(
-            num_of_outputs=tf.reduce_prod(self._env.action_space.shape)
-        )
-        self.model = tf.keras.Model(
-            inputs=input_layer, outputs=self.output_layer(input_layer)
-        )
+        self.actor = Actor(num_of_outputs=tf.reduce_prod(self._env.action_space.shape))
+        self.actor.build((None,) + self._env.observation_space.shape)
 
         # init var container
-        self._container = VariableContainer(db_server, self.output_layer)
+        self._container = VariableContainer(db_server, self.actor, 0)
 
         # Initializes the reverb client
         self.client = reverb.Client(f"{db_server}:8000")
@@ -58,8 +51,11 @@ class Agent(Policy):
             wandb.init(project="rl-toolkit")
 
             # Settings
-            wandb.config.warmup_steps = warmup_steps
             wandb.config.update_interval = update_interval
+
+        # Init agent network & re-new noise matrix
+        self._container.update_variables()
+        self.actor.reset_noise()
 
     def run(self):
         self._total_steps = 0
@@ -75,7 +71,7 @@ class Agent(Policy):
             # hlavny cyklus hry
             while not self._container.stop_agents:
                 # Get the action
-                if self._total_steps < self._warmup_steps:
+                if self._total_steps < self._container.warmup_steps:
                     action = self._env.action_space.sample()
 
                     self._container.train_step.assign(self._total_steps)
@@ -84,9 +80,9 @@ class Agent(Policy):
                         # Update agent network
                         self._container.update_variables()
                         # Re-new noise matrix before every rollouts
-                        self.output_layer.reset_noise()
+                        self.actor.reset_noise()
 
-                    action, _ = self.model(tf.expand_dims(self._last_obs, axis=0))
+                    action, _ = self.actor(tf.expand_dims(self._last_obs, axis=0))
                     action = tf.squeeze(action, axis=0).numpy()
 
                 # perform action

@@ -9,6 +9,8 @@ class VariableContainer:
         db_server: str,
         # ---
         actor,
+        # ---
+        warmup_steps,
     ):
 
         # Initializes the reverb client
@@ -31,10 +33,19 @@ class VariableContainer:
             shape=(),
         )
 
+        self.warmup_steps = tf.Variable(
+            warmup_steps,
+            trainable=False,
+            dtype=tf.int32,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            shape=(),
+        )
+
         # prepare variable container
         self._variables_container = {
             "train_step": self.train_step,
             "stop_agents": self.stop_agents,
+            "warmup_steps": self.warmup_steps,
             "policy_variables": actor.variables,
         }
 

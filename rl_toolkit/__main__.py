@@ -123,7 +123,6 @@ if __name__ == "__main__":
             db_server=args.db_server,
             env=env,
             update_interval=args.update_interval,
-            warmup_steps=args.warmup_steps,
             log_wandb=args.wandb,
         )
 
