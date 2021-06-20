@@ -62,6 +62,7 @@ class Learner(Policy):
 
         self._max_steps = max_steps
         self._warmup_steps = warmup_steps
+        self._db_path = db_path
         self._save_path = save_path
         self._log_interval = log_interval
 
@@ -91,10 +92,10 @@ class Learner(Policy):
         self._container = VariableContainer("localhost", self.model.actor)
 
         # load db from checkpoint or make a new one
-        if db_path is None:
+        if self._db_path is None:
             checkpointer = None
         else:
-            checkpointer = reverb.checkpointers.DefaultCheckpointer(path=db_path)
+            checkpointer = reverb.checkpointers.DefaultCheckpointer(path=self._db_path)
 
         # Initialize the reverb server
         self.server = reverb.Server(
@@ -216,14 +217,15 @@ class Learner(Policy):
         self._container.push_variables()
 
     def save(self):
-        # store checkpoint of DB
-        self.client.checkpoint()
+        if self._db_path:
+            # Save database
+            self.client.checkpoint()
 
-        if self._save_path is not None:
-            # save model
+        if self._save_path:
+            # Save model
             self.model.save(os.path.join(self._save_path, "model"))
 
-        # save model to png
+        # Save model to png
         plot_model(
             self.model,
             to_file="img/model.png",
