@@ -69,7 +69,7 @@ class Learner(Policy):
         if model_path is None:
             # Actor network (for learner)
             self.model = ActorCritic(
-                num_of_outputs=tf.reduce_prod(self._env.action_space.shape),
+                num_of_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),
                 gamma=gamma,
             )
             self.model.build((None,) + self._env.observation_space.shape)
@@ -228,7 +228,7 @@ class Learner(Policy):
         # Save model to png
         plot_model(
             self.model,
-            to_file="img/model.png",
+            to_file=os.path.join(self._save_path, "model.png"),
             show_shapes=True,
             rankdir="LR",
             expand_nested=True,
