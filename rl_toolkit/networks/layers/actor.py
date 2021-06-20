@@ -23,22 +23,22 @@ class Actor(Layer):
         super(Actor, self).__init__(**kwargs)
 
         self.fc1 = Dense(400, kernel_initializer="he_uniform")
-        self.fc1_activ = Activation("sigmoid")
+        self.fc1_activ = Activation("relu")
         self.fc1_norm = LayerNormalization(scale=False)
 
         self.latent_sde = Dense(
             300,
             kernel_initializer="he_uniform",
         )
-        self.latent_sde_activ = Activation("sigmoid")
+        self.latent_sde_activ = Activation("relu")
         self.latent_sde_norm = LayerNormalization(scale=False)
 
         # Deterministicke akcie
         self.mean = Dense(
             num_of_outputs,
             activation=clipped_linear,
-            name="mean",
             kernel_initializer="glorot_uniform",
+            name="mean",
         )
 
         # Stochasticke akcie
