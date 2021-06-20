@@ -1,4 +1,4 @@
-# RL toolkit
+# RL Toolkit
 
 [![Release](https://img.shields.io/github/release/markub3327/rl-toolkit)](https://github.com/markub3327/rl-toolkit/releases)
 ![Tag](https://img.shields.io/github/v/tag/markub3327/rl-toolkit)
