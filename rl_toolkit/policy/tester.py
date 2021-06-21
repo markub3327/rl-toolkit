@@ -3,8 +3,10 @@ import math
 import cv2
 import tensorflow as tf
 import wandb
+from tensorflow.keras.models import load_model
 
-from rl_toolkit.networks.layers import Actor
+from rl_toolkit.networks import ActorCritic
+from rl_toolkit.networks.layers import MultivariateGaussianNoise
 
 from .policy import Policy
 
@@ -38,14 +40,19 @@ class Tester(Policy):
         self._max_steps = max_steps
         self._render = render
 
-        # Actor network (for agent)
-        input_layer = tf.keras.layers.Input(shape=self._env.observation_space.shape)
-        self.output_layer = Actor(
-            num_of_outputs=tf.reduce_prod(self._env.action_space.shape)
-        )
-        self.model = tf.keras.Model(
-            inputs=input_layer, outputs=self.output_layer(input_layer)
-        )
+        if model_path is None:
+            self.model = ActorCritic(
+                num_of_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),
+                gamma=0.0,
+            )
+            self.model.build((None,) + self._env.observation_space.shape)
+            print("Model created succesful ...")
+        else:
+            self.model = load_model(
+                model_path,
+                custom_objects={"MultivariateGaussianNoise": MultivariateGaussianNoise},
+            )
+            print("Model loaded succesful ...")
 
         # init Weights & Biases
         if self._log_wandb:
@@ -78,7 +85,7 @@ class Tester(Policy):
                 video_stream.write(img_array)
 
             # Get the action
-            action, _ = self.model(tf.expand_dims(self._last_obs, axis=0))
+            action, _ = self.model.actor(tf.expand_dims(self._last_obs, axis=0))
             action = tf.squeeze(action, axis=0).numpy()
 
             # perform action

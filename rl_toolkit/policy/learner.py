@@ -66,7 +66,6 @@ class Learner(Policy):
         self._log_interval = log_interval
 
         if model_path is None:
-            # Actor network (for learner)
             self.model = ActorCritic(
                 num_of_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),
                 gamma=gamma,
@@ -77,13 +76,13 @@ class Learner(Policy):
                 critic_optimizer=Adam(learning_rate=critic_learning_rate),
                 alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
             )
+            print("Model created succesful ...")
         else:
-            # Nacitaj model
             self.model = load_model(
                 model_path,
                 custom_objects={"MultivariateGaussianNoise": MultivariateGaussianNoise},
             )
-            print("Actor loaded from file succesful ...")
+            print("Model loaded succesful ...")
 
         # Show models details
         self.model.summary()
