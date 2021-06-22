@@ -60,7 +60,7 @@ class VariableContainer:
 
     def update_variables(self):
         sample = self.tf_client.sample("variables", data_dtypes=[self.dtypes]).data[0]
-        if (sample["train_step"] > self._variables_container["train_step"]):
+        if sample["train_step"] > self._variables_container["train_step"]:
             for variable, value in zip(
                 tf.nest.flatten(self._variables_container), tf.nest.flatten(sample)
             ):

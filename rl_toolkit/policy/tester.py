@@ -86,7 +86,9 @@ class Tester(Policy):
                 video_stream.write(img_array)
 
             # Get the action
-            action, _ = self.model.actor(tf.expand_dims(self._last_obs, axis=0), deterministic=True)
+            action, _ = self.model.actor(
+                tf.expand_dims(self._last_obs, axis=0), deterministic=True
+            )
             action = tf.squeeze(action, axis=0).numpy()
 
             # perform action
