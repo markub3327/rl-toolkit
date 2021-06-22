@@ -83,7 +83,9 @@ class Agent(Policy):
                 else:
                     if (self._total_steps % self._update_interval) == 0:
                         # Update agent network
-                        self._container.update_variables()
+                        if self._container.update_variables() == False:
+                            continue    # skip this iteration
+
                         # Re-new noise matrix before every rollouts
                         self.output_layer.reset_noise()
 

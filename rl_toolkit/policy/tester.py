@@ -73,7 +73,7 @@ class Tester(Policy):
         # init video file
         if self._render:
             video_stream = cv2.VideoWriter(
-                "video/game.avi", cv2.VideoWriter_fourcc(*"MJPG"), 30, (640, 480)
+                "game.avi", cv2.VideoWriter_fourcc(*"MJPG"), 30, (640, 480)
             )
 
         # hlavny cyklus hry
@@ -81,11 +81,12 @@ class Tester(Policy):
             # write to stream
             if self._render:
                 img_array = self._env.render(mode="rgb_array")
+                img_array = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
                 img_array = cv2.resize(img_array, (640, 480))
                 video_stream.write(img_array)
 
             # Get the action
-            action, _ = self.model.actor(tf.expand_dims(self._last_obs, axis=0))
+            action, _ = self.model.actor(tf.expand_dims(self._last_obs, axis=0), deterministic=True)
             action = tf.squeeze(action, axis=0).numpy()
 
             # perform action

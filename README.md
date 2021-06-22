@@ -39,7 +39,7 @@ python3 -m rl_toolkit [-h] --mode learner -e [ENV_NAME] -s [PATH_TO_MODEL] --db_
 python3 -m rl_toolkit [-h] --mode agent -e [ENV_NAME] --db_server [IP_ADDRESS/HOSTNAME] [--wandb]
 
 # Tester container
-python3 -m rl_toolkit [-h] --mode tester -e [ENV_NAME] --model_a [PATH_TO_ACTOR_MODEL] [--render] [--wandb]
+python3 -m rl_toolkit [-h] --mode tester -e [ENV_NAME] --model_path [PATH_TO_MODEL] [--render] [--wandb]
 ```
 
 ## Tested environments
