@@ -24,7 +24,7 @@ class ActorCritic(Model):
 
         # init param 'alpha' - Lagrangian constraint
         self.log_alpha = tf.Variable(0.0, trainable=True, name="log_alpha")
-        self.alpha = tf.Variable(0.0, trainable=False, name="alpha")
+        self.alpha = tf.Variable(1.0, trainable=False, name="alpha")
         self.target_entropy = tf.cast(-num_of_outputs, dtype=tf.float32)
 
         # Actor

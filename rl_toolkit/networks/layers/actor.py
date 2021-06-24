@@ -24,14 +24,14 @@ class Actor(Layer):
 
         self.fc1 = Dense(400, kernel_initializer="he_uniform")
         self.fc1_activ = Activation("relu")
-        self.fc1_norm = LayerNormalization(scale=False)
+        self.fc1_norm = LayerNormalization(center=False, scale=False)
 
         self.latent_sde = Dense(
             300,
             kernel_initializer="he_uniform",
         )
         self.latent_sde_activ = Activation("relu")
-        self.latent_sde_norm = LayerNormalization(scale=False)
+        self.latent_sde_norm = LayerNormalization(center=False, scale=False)
 
         # Deterministicke akcie
         self.mean = Dense(
