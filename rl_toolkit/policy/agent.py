@@ -124,9 +124,6 @@ class Agent(Policy):
                         },
                     )
 
-                # Super critical !!!
-                self._last_obs = new_obs
-
                 # Check the end of episode
                 if terminal:
                     # Write the final state !!!
@@ -171,3 +168,6 @@ class Agent(Policy):
 
                     # Init environment
                     self._last_obs = self._env.reset()
+                else:
+                    # Super critical !!!
+                    self._last_obs = new_obs
