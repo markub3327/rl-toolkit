@@ -77,7 +77,7 @@ class Agent(Policy):
         self._vars_container.update_variables()
 
         # init base class
-        super(Agent, self).__init__(self.env_name.numpy(), log_wandb)
+        super(Agent, self).__init__(self.env_name.numpy().decode('ascii'), log_wandb)
 
         # Actor network (for agent)
         input_layer = tf.keras.layers.Input(shape=self._env.observation_space.shape)
