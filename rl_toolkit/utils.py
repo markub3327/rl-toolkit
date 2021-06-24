@@ -8,46 +8,14 @@ class VariableContainer:
         # ---
         db_server: str,
         # ---
-        actor,
-        # ---
-        warmup_steps,
+        table_name: str,
+        variables_container: dict
     ):
+        self._table_name = table_name
+        self._variables_container = variables_container
 
         # Initializes the reverb client
         self.tf_client = reverb.TFClient(server_address=f"{db_server}:8000")
-
-        # actual training step
-        self.train_step = tf.Variable(
-            0,
-            trainable=False,
-            dtype=tf.int32,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            shape=(),
-        )
-
-        self.stop_agents = tf.Variable(
-            False,
-            trainable=False,
-            dtype=tf.bool,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            shape=(),
-        )
-
-        self.warmup_steps = tf.Variable(
-            warmup_steps,
-            trainable=False,
-            dtype=tf.int32,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            shape=(),
-        )
-
-        # prepare variable container
-        self._variables_container = {
-            "train_step": self.train_step,
-            "stop_agents": self.stop_agents,
-            "warmup_steps": self.warmup_steps,
-            "policy_variables": actor.variables,
-        }
 
         # variables signature for variable container table
         self.variable_container_signature = tf.nest.map_structure(
@@ -59,7 +27,7 @@ class VariableContainer:
         )
 
     def update_variables(self):
-        sample = self.tf_client.sample("variables", data_dtypes=[self.dtypes]).data[0]
+        sample = self.tf_client.sample(self._table_name, data_dtypes=[self.dtypes]).data[0]
         if sample["train_step"] > self._variables_container["train_step"]:
             for variable, value in zip(
                 tf.nest.flatten(self._variables_container), tf.nest.flatten(sample)
@@ -73,6 +41,6 @@ class VariableContainer:
     def push_variables(self):
         self.tf_client.insert(
             data=tf.nest.flatten(self._variables_container),
-            tables=tf.constant(["variables"]),
+            tables=tf.constant([self._table_name]),
             priorities=tf.constant([1.0], dtype=tf.float64),
         )

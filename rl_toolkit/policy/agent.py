@@ -16,7 +16,6 @@ class Agent(Policy):
 
     Attributes:
         db_server (str): database server name (IP or domain name)
-        env: the instance of environment object
         update_interval (int): interval of updating policy parameters
         log_wandb (bool): log into WanDB cloud
     """
@@ -26,27 +25,81 @@ class Agent(Policy):
         # ---
         db_server: str,
         # ---
-        env,
-        # ---
         update_interval: int = 64,
         # ---
         log_wandb: bool = False,
     ):
-        super(Agent, self).__init__(env, log_wandb)
-
         self._update_interval = update_interval
+
+        # Variables
+        self.train_step = tf.Variable(
+            0,
+            trainable=False,
+            dtype=tf.int32,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            shape=(),
+        )
+        self.stop_agents = tf.Variable(
+            False,
+            trainable=False,
+            dtype=tf.bool,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            shape=(),
+        )
+        self.warmup_steps = tf.Variable(
+            0,
+            trainable=False,
+            dtype=tf.int32,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            shape=(),
+        )
+        self.env_name = tf.Variable(
+            "",
+            trainable=False,
+            dtype=tf.string,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            shape=(),
+        )
+
+        # Table for storing variables
+        self._vars_container = VariableContainer(
+            "localhost",
+            "variables",
+            {
+                "train_step": self.train_step,
+                "stop_agents": self.stop_agents,
+                "warmup_steps": self.warmup_steps,
+                "env_name": self.env_name
+            }
+        )
+
+        # load content of variables
+        self._vars_container.update_variables()
+
+        # init base class
+        super(Agent, self).__init__(self.env_name, log_wandb)
 
         # Actor network (for agent)
         input_layer = tf.keras.layers.Input(shape=self._env.observation_space.shape)
         self.output_layer = Actor(
-            num_of_outputs=tf.reduce_prod(self._env.action_space.shape)
+            num_of_outputs=tf.reduce_prod(self._env.action_space.shape).numpy()
         )
         self.model = tf.keras.Model(
             inputs=input_layer, outputs=self.output_layer(input_layer)
         )
 
-        # init var container
-        self._container = VariableContainer(db_server, self.output_layer, 0)
+        # Table for storing models
+        self._models_container = VariableContainer(
+            "localhost",
+            "models",
+            {
+                "policy_variables": self.model.actor.variables,
+            }
+        )
+
+        # Init agent network & re-new noise matrix
+        self._models_container.update_variables()
+        self.output_layer.reset_noise()
 
         # Initializes the reverb client
         self.client = reverb.Client(f"{db_server}:8000")
@@ -57,10 +110,6 @@ class Agent(Policy):
 
             # Settings
             wandb.config.update_interval = update_interval
-
-        # Init agent network & re-new noise matrix
-        self._container.update_variables()
-        self.output_layer.reset_noise()
 
     def run(self):
         self._total_steps = 0
@@ -74,17 +123,17 @@ class Agent(Policy):
         # spojenie s db
         with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
             # hlavny cyklus hry
-            while not self._container.stop_agents:
+            while not self.stop_agents:
                 # Get the action
-                if self._total_steps < self._container.warmup_steps:
+                if self._total_steps < self.warmup_steps:
                     action = self._env.action_space.sample()
 
-                    self._container.train_step.assign(self._total_steps)
+                    self.train_step.assign(self._total_steps)
                 else:
                     if (self._total_steps % self._update_interval) == 0:
                         # Update agent network
-                        if not self._container.update_variables():
-                            continue  # skip this iteration
+                        self._vars_container.update_variables()
+                        self._models_container.update_variables()
 
                         # Re-new noise matrix before every rollouts
                         self.output_layer.reset_noise()
@@ -158,7 +207,7 @@ class Agent(Policy):
                                 "Score": self._episode_reward,
                                 "Steps": self._episode_steps,
                             },
-                            step=self._container.train_step.numpy(),
+                            step=self.train_step.numpy(),
                         )
 
                     # Init variables

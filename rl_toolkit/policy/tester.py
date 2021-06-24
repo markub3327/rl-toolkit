@@ -17,7 +17,7 @@ class Tester(Policy):
     =================
 
     Attributes:
-        env: the instance of environment object
+        env_name (str): the name of environment
         max_steps (int): maximum number of interactions do in environment
         model_path (str): path to the model
         log_wandb (bool): log into WanDB cloud
@@ -26,7 +26,7 @@ class Tester(Policy):
     def __init__(
         self,
         # ---
-        env,
+        env_name: str,
         # ---
         max_steps: int,
         # ---
@@ -35,7 +35,7 @@ class Tester(Policy):
         model_path: str = None,
         log_wandb: bool = False,
     ):
-        super(Tester, self).__init__(env, log_wandb)
+        super(Tester, self).__init__(env_name, log_wandb)
 
         self._max_steps = max_steps
         self._render = render
@@ -45,7 +45,6 @@ class Tester(Policy):
                 num_of_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),
                 gamma=0.0,
             )
-            self.model.build((None,) + self._env.observation_space.shape)
             print("Model created succesful ...")
         else:
             self.model = load_model(

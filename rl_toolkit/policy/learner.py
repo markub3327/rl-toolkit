@@ -20,7 +20,7 @@ class Learner(Policy):
     =================
 
     Attributes:
-        env: the instance of environment object
+        env_name (str): the name of environment
         max_steps (int): maximum number of interactions do in environment
         warmup_steps (int): number of interactions before using policy network
         buffer_capacity (int): the capacity of experiences replay buffer
@@ -38,7 +38,7 @@ class Learner(Policy):
     def __init__(
         self,
         # ---
-        env,
+        env_name: str,
         max_steps: int,
         warmup_steps: int = 10000,
         # ---
@@ -58,7 +58,7 @@ class Learner(Policy):
         log_wandb: bool = False,
         log_interval: int = 64,
     ):
-        super(Learner, self).__init__(env, log_wandb)
+        super(Learner, self).__init__(env_name, log_wandb)
 
         self._max_steps = max_steps
         self._db_path = db_path
@@ -87,7 +87,56 @@ class Learner(Policy):
         # Show models details
         self.model.summary()
 
-        self._container = VariableContainer("localhost", self.model.actor, warmup_steps)
+        # Variables
+        self.train_step = tf.Variable(
+            0,
+            trainable=False,
+            dtype=tf.int32,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            shape=(),
+        )
+        self.stop_agents = tf.Variable(
+            False,
+            trainable=False,
+            dtype=tf.bool,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            shape=(),
+        )
+        self.warmup_steps = tf.Variable(
+            warmup_steps,
+            trainable=False,
+            dtype=tf.int32,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            shape=(),
+        )
+        self.env_name = tf.Variable(
+            env_name,
+            trainable=False,
+            dtype=tf.string,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            shape=(),
+        )
+
+        # Table for storing variables
+        self._vars_container = VariableContainer(
+            "localhost",
+            "variables",
+            {
+                "train_step": self.train_step,
+                "stop_agents": self.stop_agents,
+                "warmup_steps": self.warmup_steps,
+                "env_name": self.env_name
+            }
+        )
+
+        # Table for storing models
+        self._models_container = VariableContainer(
+            "localhost",
+            "models",
+            {
+                "policy_variables": self.model.actor.variables,
+            }
+        )
 
         # load db from checkpoint or make a new one
         if self._db_path is None:
@@ -129,7 +178,16 @@ class Learner(Policy):
                     rate_limiter=reverb.rate_limiters.MinSize(1),
                     max_size=1,
                     max_times_sampled=0,
-                    signature=self._container.variable_container_signature,
+                    signature=self._vars_container.variable_container_signature,
+                ),
+                reverb.Table(  # Models container
+                    name="models",
+                    sampler=reverb.selectors.Uniform(),
+                    remover=reverb.selectors.Fifo(),
+                    rate_limiter=reverb.rate_limiters.MinSize(1),
+                    max_size=1,
+                    max_times_sampled=0,
+                    signature=self._models_container.variable_container_signature,
                 ),
             ],
             port=8000,
@@ -148,6 +206,10 @@ class Learner(Policy):
             .prefetch(tf.data.experimental.AUTOTUNE)
         )
 
+        # init actor's params in DB
+        self._vars_container.push_variables()
+        self._models_container.push_variables()
+
         # init Weights & Biases
         if self._log_wandb:
             wandb.init(project="rl-toolkit")
@@ -162,9 +224,6 @@ class Learner(Policy):
             wandb.config.alpha_learning_rate = alpha_learning_rate
             wandb.config.gamma = gamma
 
-        # init actor's params in DB
-        self._container.push_variables()
-
     @tf.function
     def _train(self):
         # Get data from replay buffer
@@ -174,14 +233,15 @@ class Learner(Policy):
         losses = self.model.train_step(sample.data)
 
         # Store new actor's params
-        self._container.push_variables()
+        self._vars_container.push_variables()
+        self._models_container.push_variables()
 
         return losses
 
     def run(self):
-        for train_step in range(self._container.warmup_steps.numpy(), self._max_steps):
+        for train_step in range(self.warmup_steps.numpy(), self._max_steps):
             # update train_step (otlacok modelov)
-            self._container.train_step.assign(train_step)
+            self.train_step.assign(train_step)
 
             # update models
             losses = self._train()
@@ -211,8 +271,8 @@ class Learner(Policy):
                 )
 
         # Stop the agents
-        self._container.stop_agents.assign(True)
-        self._container.push_variables()
+        self.stop_agents.assign(True)
+        self._vars_container.push_variables()
 
     def save(self):
         if self._db_path:
