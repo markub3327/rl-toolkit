@@ -93,7 +93,7 @@ class Agent(Policy):
             db_server,
             "models",
             {
-                "policy_variables": self.model.actor.variables,
+                "policy_variables": self.output_layer,
             },
         )
 
