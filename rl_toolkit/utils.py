@@ -9,7 +9,7 @@ class VariableContainer:
         db_server: str,
         # ---
         table_name: str,
-        variables_container: dict
+        variables_container: dict,
     ):
         self._table_name = table_name
         self._variables_container = variables_container
@@ -27,16 +27,13 @@ class VariableContainer:
         )
 
     def update_variables(self):
-        sample = self.tf_client.sample(self._table_name, data_dtypes=[self.dtypes]).data[0]
-        if sample["train_step"] > self._variables_container["train_step"]:
-            for variable, value in zip(
-                tf.nest.flatten(self._variables_container), tf.nest.flatten(sample)
-            ):
-                variable.assign(value)
-
-            return True
-        else:
-            return False
+        sample = self.tf_client.sample(
+            self._table_name, data_dtypes=[self.dtypes]
+        ).data[0]
+        for variable, value in zip(
+            tf.nest.flatten(self._variables_container), tf.nest.flatten(sample)
+        ):
+            variable.assign(value)
 
     def push_variables(self):
         self.tf_client.insert(

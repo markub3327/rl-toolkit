@@ -1,8 +1,8 @@
 import argparse
+
 import pybullet_envs  # noqa
 
 from rl_toolkit.policy import Agent, Learner, Tester
-
 
 if __name__ == "__main__":
     my_parser = argparse.ArgumentParser(

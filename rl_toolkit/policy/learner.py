@@ -125,8 +125,8 @@ class Learner(Policy):
                 "train_step": self.train_step,
                 "stop_agents": self.stop_agents,
                 "warmup_steps": self.warmup_steps,
-                "env_name": self.env_name
-            }
+                "env_name": self.env_name,
+            },
         )
 
         # Table for storing models
@@ -135,7 +135,7 @@ class Learner(Policy):
             "models",
             {
                 "policy_variables": self.model.actor.variables,
-            }
+            },
         )
 
         # load db from checkpoint or make a new one

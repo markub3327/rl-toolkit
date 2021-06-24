@@ -1,5 +1,6 @@
 import gym
 
+
 class Policy:
     """
     Base class for policies

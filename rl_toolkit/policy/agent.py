@@ -63,14 +63,14 @@ class Agent(Policy):
 
         # Table for storing variables
         self._vars_container = VariableContainer(
-            "localhost",
+            db_server,
             "variables",
             {
                 "train_step": self.train_step,
                 "stop_agents": self.stop_agents,
                 "warmup_steps": self.warmup_steps,
-                "env_name": self.env_name
-            }
+                "env_name": self.env_name,
+            },
         )
 
         # load content of variables
@@ -90,11 +90,11 @@ class Agent(Policy):
 
         # Table for storing models
         self._models_container = VariableContainer(
-            "localhost",
+            db_server,
             "models",
             {
                 "policy_variables": self.model.actor.variables,
-            }
+            },
         )
 
         # Init agent network & re-new noise matrix
