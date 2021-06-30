@@ -6,7 +6,6 @@ if __name__ == "__main__":
     my_parser = argparse.ArgumentParser(
         prog="python3 -m rl_toolkit",
         description="The RL-Toolkit: A toolkit for developing and comparing your reinforcement learning agents in various games (OpenAI Gym or Pybullet).",  # noqa
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     my_parser.add_argument(
         "-e",
@@ -25,7 +24,11 @@ if __name__ == "__main__":
     )
 
     # create the parser for the "agent" sub-command
-    parser_agent = sub_parsers.add_parser("agent", help="Agent mode")
+    parser_agent = sub_parsers.add_parser(
+        "agent",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        help="Agent mode",
+    )
     parser_agent.add_argument(
         "--db_server", type=str, help="DB server name", default="localhost"
     )
@@ -46,7 +49,11 @@ if __name__ == "__main__":
     )
 
     # create the parser for the "learner" sub-command
-    parser_learner = sub_parsers.add_parser("learner", help="Learner mode")
+    parser_learner = sub_parsers.add_parser(
+        "learner",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        help="Learner mode",
+    )
     parser_learner.add_argument(
         "-t",
         "--max_steps",
@@ -108,7 +115,11 @@ if __name__ == "__main__":
     )
 
     # create the parser for the "tester" sub-command
-    parser_tester = sub_parsers.add_parser("tester", help="Tester mode")
+    parser_tester = sub_parsers.add_parser(
+        "tester",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        help="Tester mode",
+    )
     parser_tester.add_argument(
         "-t",
         "--max_steps",
