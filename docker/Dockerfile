@@ -9,6 +9,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 # nainstaluj python3 a vycisti balicky
 RUN apt-get update && apt-get install -y \
+    curl \
     git \
     python3 \
     python3-dev \
