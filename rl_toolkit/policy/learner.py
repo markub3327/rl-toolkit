@@ -125,7 +125,7 @@ class Learner(Policy):
                     name="experience",
                     sampler=reverb.selectors.Uniform(),
                     remover=reverb.selectors.Fifo(),
-                    rate_limiter=reverb.rate_limiters.MinSize(1),
+                    rate_limiter=reverb.rate_limiters.MinSize(batch_size),
                     max_size=buffer_capacity,
                     max_times_sampled=0,
                     signature={
