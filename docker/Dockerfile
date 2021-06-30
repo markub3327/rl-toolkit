@@ -11,7 +11,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     git \
     python3 \
-    python3-numpy \
+    python3-dev \
     graphviz \
     && rm -rf /var/lib/apt/lists/*
 
