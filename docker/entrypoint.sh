@@ -22,5 +22,3 @@ if ! [ -e "$file" ]; then
     echo "Timing out: $file was not created"
     exit 1
 fi
-
-exec "/bin/bash"

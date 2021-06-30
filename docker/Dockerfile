@@ -43,3 +43,5 @@ RUN pip3 install --no-cache-dir -e .
 COPY docker/entrypoint.sh /root/
 RUN chmod +x /root/entrypoint.sh
 ENTRYPOINT ["/root/entrypoint.sh"]
+
+CMD [ "/bin/bash" ]
