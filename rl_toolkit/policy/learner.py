@@ -221,7 +221,7 @@ class Learner(Policy):
                 # log of epoch's mean loss
                 wandb.log(
                     {
-                        "Alpha": self.model.alpha,
+                        "Alpha": self.model.alpha.numpy(),
                         "Alpha loss": losses["alpha_loss"],
                         "Critic loss": losses["critic_loss"],
                         "Actor loss": losses["actor_loss"],
