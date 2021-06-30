@@ -98,9 +98,6 @@ class Tester(Policy):
             self._episode_steps += 1
             self._total_steps += 1
 
-            # super critical !!!
-            self._last_obs = new_obs
-
             # Check the end of episode
             if terminal:
                 # logovanie
@@ -131,6 +128,9 @@ class Tester(Policy):
 
                 # Init environment
                 self._last_obs = self._env.reset()
+            else:
+                # super critical !!!
+                self._last_obs = new_obs
 
         # Release video file stream
         if self._render:

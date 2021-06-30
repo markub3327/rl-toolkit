@@ -22,7 +22,6 @@ class Learner(Policy):
     Attributes:
         env_name (str): the name of environment
         max_steps (int): maximum number of interactions do in environment
-        warmup_steps (int): number of interactions before using policy network
         buffer_capacity (int): the capacity of experiences replay buffer
         batch_size (int): size of mini-batch used for training
         actor_learning_rate (float): the learning rate for Actor's optimizer
@@ -40,7 +39,6 @@ class Learner(Policy):
         # ---
         env_name: str,
         max_steps: int,
-        warmup_steps: int = 10000,
         # ---
         buffer_capacity: int = 1000000,
         batch_size: int = 256,
@@ -88,52 +86,28 @@ class Learner(Policy):
         self.model.summary()
 
         # Variables
-        self.train_step = tf.Variable(
+        self._train_step = tf.Variable(
             0,
             trainable=False,
-            dtype=tf.int32,
+            dtype=tf.int64,
             aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
             shape=(),
         )
-        self.stop_agents = tf.Variable(
+        self._stop_agents = tf.Variable(
             False,
             trainable=False,
             dtype=tf.bool,
             aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
             shape=(),
         )
-        self.warmup_steps = tf.Variable(
-            warmup_steps,
-            trainable=False,
-            dtype=tf.int32,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            shape=(),
-        )
-        self.env_name = tf.Variable(
-            env_name,
-            trainable=False,
-            dtype=tf.string,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            shape=(),
-        )
 
         # Table for storing variables
-        self._vars_container = VariableContainer(
+        self._variable_container = VariableContainer(
             "localhost",
             "variables",
             {
-                "train_step": self.train_step,
-                "stop_agents": self.stop_agents,
-                "warmup_steps": self.warmup_steps,
-                "env_name": self.env_name,
-            },
-        )
-
-        # Table for storing models
-        self._models_container = VariableContainer(
-            "localhost",
-            "models",
-            {
+                "train_step": self._train_step,
+                "stop_agents": self._stop_agents,
                 "policy_variables": self.model.actor.variables,
             },
         )
@@ -151,7 +125,7 @@ class Learner(Policy):
                     name="experience",
                     sampler=reverb.selectors.Uniform(),
                     remover=reverb.selectors.Fifo(),
-                    rate_limiter=reverb.rate_limiters.MinSize(warmup_steps),
+                    rate_limiter=reverb.rate_limiters.MinSize(1),
                     max_size=buffer_capacity,
                     max_times_sampled=0,
                     signature={
@@ -171,28 +145,22 @@ class Learner(Policy):
                         "terminal": tf.TensorSpec([1], tf.float32),
                     },
                 ),
-                reverb.Table(  # Variable container
+                reverb.Table(  # Variables container
                     name="variables",
                     sampler=reverb.selectors.Uniform(),
                     remover=reverb.selectors.Fifo(),
                     rate_limiter=reverb.rate_limiters.MinSize(1),
                     max_size=1,
                     max_times_sampled=0,
-                    signature=self._vars_container.variable_container_signature,
-                ),
-                reverb.Table(  # Models container
-                    name="models",
-                    sampler=reverb.selectors.Uniform(),
-                    remover=reverb.selectors.Fifo(),
-                    rate_limiter=reverb.rate_limiters.MinSize(1),
-                    max_size=1,
-                    max_times_sampled=0,
-                    signature=self._models_container.variable_container_signature,
+                    signature=self._variable_container.signature,
                 ),
             ],
             port=8000,
             checkpointer=checkpointer,
         )
+
+        # init variable container in DB
+        self.variable_container.push_variables()
 
         # Initializes the reverb client and tf.dataset
         self.client = reverb.Client("localhost:8000")
@@ -206,17 +174,12 @@ class Learner(Policy):
             .prefetch(tf.data.experimental.AUTOTUNE)
         )
 
-        # init actor's params in DB
-        self._vars_container.push_variables()
-        self._models_container.push_variables()
-
         # init Weights & Biases
         if self._log_wandb:
             wandb.init(project="rl-toolkit")
 
             # Settings
             wandb.config.max_steps = max_steps
-            wandb.config.warmup_steps = warmup_steps
             wandb.config.buffer_capacity = buffer_capacity
             wandb.config.batch_size = batch_size
             wandb.config.actor_learning_rate = actor_learning_rate
@@ -233,29 +196,25 @@ class Learner(Policy):
         losses = self.model.train_step(sample.data)
 
         # Store new actor's params
-        self._vars_container.push_variables()
-        self._models_container.push_variables()
+        self.variable_container.push_variables()
 
         return losses
 
     def run(self):
-        for train_step in range(self.warmup_steps.numpy(), self._max_steps):
-            # update train_step (otlacok modelov)
-            self.train_step.assign(train_step)
-
+        while self._train_step.numpy() < self._max_steps:
             # update models
             losses = self._train()
 
             # log metrics
-            if (train_step % self._log_interval) == 0:
+            if (self._train_step.numpy() % self._log_interval) == 0:
                 print("=============================================")
-                print(f"Step: {train_step}")
+                print(f"Step: {self._train_step.numpy()}")
                 print(f"Alpha loss: {losses['alpha_loss']}")
                 print(f"Critic loss: {losses['critic_loss']}")
                 print(f"Actor loss: {losses['actor_loss']}")
                 print("=============================================")
                 print(
-                    f"Training ... {tf.floor(train_step * 100 / self._max_steps)} %"  # noqa
+                    f"Training ... {tf.floor(self._train_step * 100 / self._max_steps)} %"  # noqa
                 )
 
             if self._log_wandb:
@@ -267,12 +226,15 @@ class Learner(Policy):
                         "Critic loss": losses["critic_loss"],
                         "Actor loss": losses["actor_loss"],
                     },
-                    step=train_step,
+                    step=self._train_step.numpy(),
                 )
 
+            # increase the training step
+            self._train_step.assign_add(1)
+
         # Stop the agents
-        self.stop_agents.assign(True)
-        self._vars_container.push_variables()
+        self._stop_agents.assign(True)
+        self.variable_container.push_variables()
 
     def save(self):
         if self._db_path:

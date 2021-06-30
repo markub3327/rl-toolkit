@@ -18,13 +18,11 @@ class VariableContainer:
         self.tf_client = reverb.TFClient(server_address=f"{db_server}:8000")
 
         # variables signature for variable container table
-        self.variable_container_signature = tf.nest.map_structure(
+        self.signature = tf.nest.map_structure(
             lambda variable: tf.TensorSpec(variable.shape, dtype=variable.dtype),
             self._variables_container,
         )
-        self.dtypes = tf.nest.map_structure(
-            lambda spec: spec.dtype, self.variable_container_signature
-        )
+        self.dtypes = tf.nest.map_structure(lambda spec: spec.dtype, self.signature)
 
     def update_variables(self):
         sample = self.tf_client.sample(

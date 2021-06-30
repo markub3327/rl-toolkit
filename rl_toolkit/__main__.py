@@ -8,6 +8,13 @@ if __name__ == "__main__":
         description="The RL-Toolkit: A toolkit for developing and comparing your reinforcement learning agents in various games (OpenAI Gym or Pybullet).",  # noqa
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    my_parser.add_argument(
+        "-e",
+        "--environment",
+        type=str,
+        help="Only OpenAI Gym/PyBullet environments are available!",
+        required=True,
+    )
 
     # create sub-parser for selecting mode
     sub_parsers = my_parser.add_subparsers(
@@ -23,10 +30,16 @@ if __name__ == "__main__":
         "--db_server", type=str, help="DB server name", default="localhost"
     )
     parser_agent.add_argument(
-        "--update_interval",
+        "--env_steps",
         type=int,
-        help="Interval of updating policy parameters",
+        help="Number of steps per rollout",
         default=64,
+    )
+    parser_agent.add_argument(
+        "--warmup_steps",
+        type=int,
+        help="Number of steps before using policy network",
+        default=10000,
     )
     parser_agent.add_argument(
         "--wandb", action="store_true", help="Log into WanDB cloud"
@@ -34,13 +47,6 @@ if __name__ == "__main__":
 
     # create the parser for the "learner" sub-command
     parser_learner = sub_parsers.add_parser("learner", help="Learner mode")
-    parser_learner.add_argument(
-        "-e",
-        "--environment",
-        type=str,
-        help="Only OpenAI Gym/PyBullet environments are available!",
-        required=True,
-    )
     parser_learner.add_argument(
         "-t",
         "--max_steps",
@@ -82,12 +88,6 @@ if __name__ == "__main__":
         default=int(1e6),
     )
     parser_learner.add_argument(
-        "--warmup_steps",
-        type=int,
-        help="Number of steps before using policy network",
-        default=10000,
-    )
-    parser_learner.add_argument(
         "--log_interval", type=int, help="Log into console interval", default=64
     )
     parser_learner.add_argument(
@@ -109,13 +109,6 @@ if __name__ == "__main__":
 
     # create the parser for the "tester" sub-command
     parser_tester = sub_parsers.add_parser("tester", help="Tester mode")
-    parser_tester.add_argument(
-        "-e",
-        "--environment",
-        type=str,
-        help="Only OpenAI Gym/PyBullet environments are available!",
-        required=True,
-    )
     parser_tester.add_argument(
         "-t",
         "--max_steps",
@@ -139,8 +132,10 @@ if __name__ == "__main__":
     # Agent mode
     if args.mode == "agent":
         agent = Agent(
+            env_name=args.environment,
             db_server=args.db_server,
-            update_interval=args.update_interval,
+            warmup_steps=args.warmup_steps,
+            env_steps=args.env_steps,
             log_wandb=args.wandb,
         )
 
@@ -156,7 +151,6 @@ if __name__ == "__main__":
         agent = Learner(
             env_name=args.environment,
             max_steps=args.max_steps,
-            warmup_steps=args.warmup_steps,
             buffer_capacity=args.buffer_capacity,
             batch_size=args.batch_size,
             actor_learning_rate=args.actor_learning_rate,
