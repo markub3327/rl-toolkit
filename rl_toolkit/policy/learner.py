@@ -160,7 +160,7 @@ class Learner(Policy):
         )
 
         # init variable container in DB
-        self.variable_container.push_variables()
+        self._variable_container.push_variables()
 
         # Initializes the reverb client and tf.dataset
         self.client = reverb.Client("localhost:8000")
@@ -196,7 +196,7 @@ class Learner(Policy):
         losses = self.model.train_step(sample.data)
 
         # Store new actor's params
-        self.variable_container.push_variables()
+        self._variable_container.push_variables()
 
         return losses
 
@@ -234,7 +234,7 @@ class Learner(Policy):
 
         # Stop the agents
         self._stop_agents.assign(True)
-        self.variable_container.push_variables()
+        self._variable_container.push_variables()
 
     def save(self):
         if self._db_path:

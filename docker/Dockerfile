@@ -7,30 +7,26 @@ ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 # nastav apt-get
 ARG DEBIAN_FRONTEND=noninteractive
 
-# nainstaluj python3 a vycisti balicky
+###########################################
+# Dependencies
+###########################################
 RUN apt-get update && apt-get install -y \
     curl \
     git \
     python3 \
     python3-dev \
     graphviz \
+    libglu1-mesa-dev \
+    libgl1-mesa-dev \
+    libosmesa6-dev \
+    xvfb \
+    patchelf \
+    ffmpeg \
+    swig \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -O https://bootstrap.pypa.io/get-pip.py
 RUN python3 get-pip.py
-
-###########################################
-# Dependencies
-###########################################
-RUN apt-get -y update && apt-get install -y \
-        libglu1-mesa-dev \
-        libgl1-mesa-dev \
-        libosmesa6-dev \
-        xvfb \
-        patchelf \
-        ffmpeg \
-        swig \
-        && rm -rf /var/lib/apt/lists/*
 
 ###########################################
 # RL Toolkit
