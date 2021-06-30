@@ -41,7 +41,7 @@ class ActorCritic(Model):
         # Update 'Critic'
         with tf.GradientTape() as tape:
             # target Q-value
-            next_Q_value, _, next_log_pi = self(data["next_observation"], training=True)
+            next_Q_value, next_log_pi = self(data["next_observation"], training=True)
 
             # Bellman Equation
             Q_target = tf.stop_gradient(
@@ -68,7 +68,7 @@ class ActorCritic(Model):
         # Update 'Actor'
         with tf.GradientTape() as tape:
             # Q-value
-            Q_value, _, log_pi = self(data["observation"], training=True)
+            Q_value, log_pi = self(data["observation"], training=True)
 
             # Update 'Actor'
             losses = self.alpha * log_pi - Q_value
@@ -105,7 +105,7 @@ class ActorCritic(Model):
         Q_value = tf.reduce_min(
             self.critic([inputs, action], training=training), axis=1
         )
-        return [Q_value, action, log_pi]
+        return [Q_value, log_pi]
 
     def compile(self, actor_optimizer, critic_optimizer, alpha_optimizer):
         super(ActorCritic, self).compile()
