@@ -11,10 +11,12 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     git \
     python3 \
-    python3-pip \
     python3-numpy \
     graphviz \
     && rm -rf /var/lib/apt/lists/*
+
+RUN curl -O https://bootstrap.pypa.io/get-pip.py
+RUN python3 get-pip.py
 
 ###########################################
 # Dependencies
@@ -32,10 +34,11 @@ RUN apt-get -y update && apt-get install -y \
 ###########################################
 # RL Toolkit
 ###########################################
-COPY . /root/rl-toolkit
+WORKDIR /root/
+RUN git clone https://github.com/markub3327/rl-toolkit.git
 WORKDIR /root/rl-toolkit
 
-RUN pip3 install --no-cache-dir -e .
+RUN python3 -mpip install --no-cache-dir -e .
 
 ###########################################
 # Entry point
