@@ -102,7 +102,7 @@ class Agent(Policy):
 
     def collect(self, writer, max_steps, policy):
         # collect the rollout
-        for t in range(max_steps):
+        for _ in range(max_steps):
             # Get the action
             action = policy(self._last_obs)
 
@@ -136,8 +136,6 @@ class Agent(Policy):
                         "terminal": writer.history["terminal"][-2],
                     },
                 )
-
-            print(t)
 
             # Check the end of episode
             if terminal:
