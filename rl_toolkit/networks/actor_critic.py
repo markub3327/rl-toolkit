@@ -36,10 +36,10 @@ class ActorCritic(Model):
     def train_step(self, data):
         with tf.GradientTape(persistent=True) as tape:
             # Q-value
-            Q_value, _, log_pi = self(data["observation"], training=True)
+            Q_value, log_pi = self(data["observation"], training=True)
 
             # target Q-value
-            next_Q_value, _, next_log_pi = self(data["next_observation"], training=True)
+            next_Q_value, next_log_pi = self(data["next_observation"], training=True)
 
             # Update 'Alpha'
             self.alpha.assign(tf.exp(self.log_alpha))
