@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tensorflow_probability as tfp
 from tensorflow.keras import Model
 
 from rl_toolkit.networks.layers import Actor, MultiCritic
@@ -25,7 +24,7 @@ class ActorCritic(Model):
 
         # init param 'alpha' - Lagrangian constraint
         self.log_alpha = tf.Variable(0.0, trainable=True, name="log_alpha")
-        self.alpha = tfp.util.DeferredTensor(self.log_alpha, tf.math.exp)
+        self.alpha = tf.Variable(1.0, trainable=False, name="alpha")
         self.target_entropy = tf.cast(-num_of_outputs, dtype=tf.float32)
 
         # Actor
@@ -37,6 +36,23 @@ class ActorCritic(Model):
     def train_step(self, data):
         # Re-new noise matrix every update of 'log_std' params
         self.actor.reset_noise()
+
+        # Update 'Alpha'
+        self.alpha.assign(tf.exp(self.log_alpha))
+        with tf.GradientTape() as tape:
+            _, log_pi = self.actor(
+                data["observation"], with_log_prob=True, training=True
+            )
+
+            # Compute alpha loss
+            losses = -1.0 * (
+                self.log_alpha * tf.stop_gradient(log_pi + self.target_entropy)
+            )
+            alpha_loss = tf.nn.compute_average_loss(losses)
+
+        # Optimize the alpha
+        gradients = tape.gradient(alpha_loss, [self.log_alpha])
+        self.alpha_optimizer.apply_gradients(zip(gradients, [self.log_alpha]))
 
         # Update 'Critic'
         with tf.GradientTape() as tape:
@@ -51,6 +67,7 @@ class ActorCritic(Model):
                 * (next_Q_value - self.alpha * next_log_pi)
             )
 
+            # Compute critic loss
             losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_target[:, tf.newaxis, :],
                 y_pred=self.critic(
@@ -59,7 +76,7 @@ class ActorCritic(Model):
             )
             Q_loss = tf.nn.compute_average_loss(losses)
 
-        # Apply 'Critic' gradient
+        # Optimize the critic
         gradients = tape.gradient(Q_loss, self.critic.trainable_variables)
         self.critic_optimizer.apply_gradients(
             zip(gradients, self.critic.trainable_variables)
@@ -70,29 +87,15 @@ class ActorCritic(Model):
             # Q-value
             Q_value, log_pi = self(data["observation"], training=True)
 
-            # Update 'Actor'
+            # Compute actor loss
             losses = self.alpha * log_pi - Q_value
             actor_loss = tf.nn.compute_average_loss(losses)
 
-        # Apply 'Actor' gradient
+        # Optimize the actor
         gradients = tape.gradient(actor_loss, self.actor.trainable_variables)
         self.actor_optimizer.apply_gradients(
             zip(gradients, self.actor.trainable_variables)
         )
-
-        # Update 'Alpha'
-        with tf.GradientTape() as tape:
-            # Q-value
-            _, log_pi = self.actor(data["observation"], with_log_prob=True, training=True)
-
-            losses = -1.0 * (
-                self.log_alpha * tf.stop_gradient(log_pi + self.target_entropy)
-            )
-            alpha_loss = tf.nn.compute_average_loss(losses)
-
-        # Apply 'Alpha' gradient
-        gradients = tape.gradient(alpha_loss, [self.log_alpha])
-        self.alpha_optimizer.apply_gradients(zip(gradients, [self.log_alpha]))
 
         return {
             "actor_loss": actor_loss,
