@@ -42,7 +42,10 @@ class ActorCritic(Model):
         # Update 'Alpha'
         with tf.GradientTape() as tape:
             _, log_pi = self.actor(
-                data["observation"], with_log_prob=True, training=True
+                data["observation"],
+                training=True,
+                with_log_prob=True,
+                deterministic=False,
             )
 
             self.alpha.assign(tf.exp(self.log_alpha))
@@ -101,7 +104,9 @@ class ActorCritic(Model):
         }
 
     def call(self, inputs, training=None):
-        action, log_pi = self.actor(inputs, with_log_prob=True, training=training)
+        action, log_pi = self.actor(
+            inputs, training=training, with_log_prob=True, deterministic=False
+        )
         Q_value = tf.reduce_min(
             self.critic([inputs, action], training=training), axis=1
         )
