@@ -41,7 +41,9 @@ class ActorCritic(Model):
 
         # Update 'Alpha'
         with tf.GradientTape() as tape:
-            _, log_pi = self.actor(data["observation"], with_log_prob=True, training=True)
+            _, log_pi = self.actor(
+                data["observation"], with_log_prob=True, training=True
+            )
 
             self.alpha.assign(tf.exp(self.log_alpha))
             losses = -1.0 * (
