@@ -96,6 +96,7 @@ class Agent(Policy):
         action = self._env.action_space.sample()
         return action
 
+    @tf.function
     def collect_policy(self, input):
         action, _ = self.model(tf.expand_dims(input, axis=0))
         return tf.squeeze(action, axis=0).numpy()
