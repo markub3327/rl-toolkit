@@ -85,7 +85,7 @@ class Tester(Policy):
                 video_stream.write(img_array)
 
             # Get the action
-            action, _ = self.model(
+            action, _ = self.model.actor(
                 tf.expand_dims(self._last_obs, axis=0),
                 training=False,
                 with_log_prob=False,

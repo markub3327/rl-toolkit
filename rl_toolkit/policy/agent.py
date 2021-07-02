@@ -44,7 +44,10 @@ class Agent(Policy):
             num_of_outputs=tf.reduce_prod(self._env.action_space.shape).numpy()
         )
         self.model = tf.keras.Model(
-            inputs=input_layer, outputs=self._output_layer(input_layer)
+            inputs=input_layer,
+            outputs=self._output_layer(
+                input_layer, with_log_prob=False, deterministic=False
+            ),
         )
 
         # Show models details
