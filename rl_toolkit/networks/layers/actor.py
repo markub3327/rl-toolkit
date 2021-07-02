@@ -64,12 +64,12 @@ class Actor(Layer):
         latent_sde = self.latent_sde_norm(latent_sde)
 
         mean = self.mean(latent_sde)
+        noise = self.noise(latent_sde)
 
         if deterministic:
             action = self.bijector.forward(mean)
             log_prob = None
         else:
-            noise = self.noise(latent_sde)
             action = self.bijector.forward(mean + noise)
 
             if with_log_prob:
