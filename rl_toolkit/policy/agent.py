@@ -45,7 +45,7 @@ class Agent(Policy):
         )
         self.model = tf.keras.Model(
             inputs=input_layer,
-            outputs=self._output_layer(input_layer),
+            outputs=self._output_layer(input_layer, with_log_prob=False, deterministic=False),
         )
 
         # Show models details
