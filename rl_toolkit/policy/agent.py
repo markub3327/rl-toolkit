@@ -99,7 +99,7 @@ class Agent(Policy):
     @tf.function
     def collect_policy(self, input):
         action, _ = self.model(tf.expand_dims(input, axis=0))
-        return tf.squeeze(action, axis=0).numpy()
+        return tf.squeeze(action, axis=0)
 
     def collect(self, writer, max_steps, policy):
         # collect the rollout
