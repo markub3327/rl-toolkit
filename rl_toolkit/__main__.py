@@ -68,6 +68,12 @@ if __name__ == "__main__":
         default=0.99,
     )
     parser_learner.add_argument(
+        "--init_alpha",
+        type=float,
+        help="Initialization value of alpha (entropy coeff)",
+        default=1.0,
+    )
+    parser_learner.add_argument(
         "--actor_learning_rate",
         type=float,
         help="Learning rate for actor network",
@@ -168,6 +174,7 @@ if __name__ == "__main__":
             critic_learning_rate=args.critic_learning_rate,
             alpha_learning_rate=args.alpha_learning_rate,
             gamma=args.gamma,
+            init_alpha=args.init_alpha,
             model_path=args.model_path,
             db_path=args.db_path,
             save_path=args.save_path,

@@ -17,14 +17,16 @@ class ActorCritic(Model):
         - [Soft Actor-Critic Algorithms and Applications](https://arxiv.org/abs/1812.05905)
     """
 
-    def __init__(self, num_of_outputs: int, gamma: float, **kwargs):
+    def __init__(self, num_of_outputs: int, gamma: float, init_alpha: float, **kwargs):
         super(ActorCritic, self).__init__(**kwargs)
 
         self.gamma = tf.constant(gamma)
 
         # init param 'alpha' - Lagrangian constraint
-        self.log_alpha = tf.Variable(0.0, trainable=True, name="log_alpha")
-        self.alpha = tf.Variable(1.0, trainable=False, name="alpha")
+        self.log_alpha = tf.Variable(
+            tf.log(init_alpha), trainable=True, name="log_alpha"
+        )
+        self.alpha = tf.Variable(init_alpha, trainable=False, name="alpha")
         self.target_entropy = tf.cast(-num_of_outputs, dtype=tf.float32)
 
         # Actor
@@ -34,19 +36,26 @@ class ActorCritic(Model):
         self.critic = MultiCritic(2)
 
     def train_step(self, data):
-        with tf.GradientTape(persistent=True) as tape:
-            # Q-value
-            Q_value, log_pi = self(data["observation"], training=True)
+        # Re-new noise matrix every update of 'log_std' params
+        self.actor.reset_noise()
 
-            # target Q-value
-            next_Q_value, next_log_pi = self(data["next_observation"], training=True)
+        # Update 'Alpha'
+        with tf.GradientTape() as tape:
+            _, log_pi = self.actor(data["observation"], with_log_prob=True, training=True)
 
-            # Update 'Alpha'
             self.alpha.assign(tf.exp(self.log_alpha))
             losses = -1.0 * (
                 self.log_alpha * tf.stop_gradient(log_pi + self.target_entropy)
             )
             alpha_loss = tf.nn.compute_average_loss(losses)
+
+        gradients = tape.gradient(alpha_loss, [self.log_alpha])
+        self.alpha_optimizer.apply_gradients(zip(gradients, [self.log_alpha]))
+
+        # Update 'Critic'
+        with tf.GradientTape() as tape:
+            # target Q-value
+            next_Q_value, next_log_pi = self(data["next_observation"], training=True)
 
             # Bellman Equation
             Q_target = tf.stop_gradient(
@@ -56,7 +65,6 @@ class ActorCritic(Model):
                 * (next_Q_value - self.alpha * next_log_pi)
             )
 
-            # Update 'Critic'
             losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_target[:, tf.newaxis, :],
                 y_pred=self.critic(
@@ -65,28 +73,24 @@ class ActorCritic(Model):
             )
             Q_loss = tf.nn.compute_average_loss(losses)
 
-            # Update 'Actor'
-            losses = self.alpha * log_pi - Q_value
-            actor_loss = tf.nn.compute_average_loss(losses)
-
-        # Update 'Alpha'
-        gradients = tape.gradient(alpha_loss, [self.log_alpha])
-        self.alpha_optimizer.apply_gradients(zip(gradients, [self.log_alpha]))
-
-        # Update 'Critic'
         gradients = tape.gradient(Q_loss, self.critic.trainable_variables)
         self.critic_optimizer.apply_gradients(
             zip(gradients, self.critic.trainable_variables)
         )
 
         # Update 'Actor'
+        with tf.GradientTape() as tape:
+            # Q-value
+            Q_value, log_pi = self(data["observation"], training=True)
+
+            # Update 'Actor'
+            losses = self.alpha * log_pi - Q_value
+            actor_loss = tf.nn.compute_average_loss(losses)
+
         gradients = tape.gradient(actor_loss, self.actor.trainable_variables)
         self.actor_optimizer.apply_gradients(
             zip(gradients, self.actor.trainable_variables)
         )
-
-        # Re-new noise matrix every update of 'log_std' params
-        self.actor.reset_noise()
 
         return {
             "actor_loss": actor_loss,

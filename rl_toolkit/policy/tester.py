@@ -86,10 +86,10 @@ class Tester(Policy):
 
             # Get the action
             action, _ = self.model(
-                tf.expand_dims(self._last_obs, axis=0), 
-                training=False, 
-                with_log_prob=False, 
-                deterministic=True
+                tf.expand_dims(self._last_obs, axis=0),
+                training=False,
+                with_log_prob=False,
+                deterministic=True,
             )
             action = tf.squeeze(action, axis=0).numpy()
 

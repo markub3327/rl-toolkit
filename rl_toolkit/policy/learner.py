@@ -48,6 +48,7 @@ class Learner(Policy):
         alpha_learning_rate: float = 3e-4,
         # ---
         gamma: float = 0.99,
+        init_alpha: float = 1.0,
         # ---
         model_path: str = None,
         db_path: str = None,
@@ -67,6 +68,7 @@ class Learner(Policy):
             self.model = ActorCritic(
                 num_of_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),
                 gamma=gamma,
+                init_alpha=init_alpha,
             )
             self.model.build((None,) + self._env.observation_space.shape)
             self.model.compile(
