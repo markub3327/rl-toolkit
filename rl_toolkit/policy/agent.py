@@ -118,7 +118,7 @@ class Agent(Policy):
             writer.append(
                 {
                     "observation": self._last_obs.astype("float32"),
-                    "action": action.astype("float32"),
+                    "action": action,
                     "reward": np.array([reward], dtype="float32"),
                     "terminal": np.array([terminal], dtype="float32"),
                 }
