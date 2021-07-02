@@ -171,7 +171,7 @@ class Learner(Policy):
                 max_in_flight_samples_per_worker=10,
             )
             .batch(batch_size, drop_remainder=True)
-            .prefetch(tf.data.experimental.AUTOTUNE)
+            .prefetch(tf.data.AUTOTUNE)
         )
 
         # init Weights & Biases

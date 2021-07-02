@@ -23,7 +23,7 @@ class Critic(Layer):
             kernel_initializer="he_uniform",
         )
         self.fc1_activ = Activation("relu")
-        self.fc1_norm = LayerNormalization(center=False, scale=False)
+        self.fc1_norm = LayerNormalization(scale=False)
 
         # 2. layer
         self.fc2_a = Dense(
@@ -38,7 +38,7 @@ class Critic(Layer):
         # Merge state branch and action branch
         self.fc2 = Add()
         self.fc2_activ = Activation("relu")
-        self.fc2_norm = LayerNormalization(center=False, scale=False)
+        self.fc2_norm = LayerNormalization(scale=False)
 
         # Output layer
         self.Q_value = Dense(
