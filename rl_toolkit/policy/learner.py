@@ -188,6 +188,7 @@ class Learner(Policy):
             wandb.config.critic_learning_rate = critic_learning_rate
             wandb.config.alpha_learning_rate = alpha_learning_rate
             wandb.config.gamma = gamma
+            wandb.config.init_alpha = init_alpha
 
     @tf.function
     def _train(self):
