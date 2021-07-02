@@ -107,6 +107,7 @@ class Agent(Policy):
         for _ in range(max_steps):
             # Get the action
             action = policy(self._last_obs)
+            action = np.array(action, dtype="float32")
 
             # perform action
             new_obs, reward, terminal, _ = self._env.step(action)
