@@ -101,7 +101,7 @@ if __name__ == "__main__":
         default=int(1e6),
     )
     parser_learner.add_argument(
-        "--log_interval", type=int, help="Log into console interval", default=64
+        "--log_interval", type=int, help="Log into console interval", default=1000
     )
     parser_learner.add_argument(
         "-f", "--model_path", type=str, help="Path to saved model"
