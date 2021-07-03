@@ -115,6 +115,7 @@ class Agent(Policy):
             # Update variables
             self._episode_reward += reward
             self._episode_steps += 1
+            self._total_steps += 1
 
             # Update the replay buffer
             writer.append(
@@ -142,7 +143,7 @@ class Agent(Policy):
 
             # Check the end of episode
             if terminal:
-                # Write the final state !!!
+                # Write the final interaction !!!
                 writer.append({"observation": new_obs.astype("float32")})
                 writer.create_item(
                     table="experience",
@@ -155,6 +156,8 @@ class Agent(Policy):
                         "terminal": writer.history["terminal"][-2],
                     },
                 )
+                
+                # Block until the item has been inserted and confirmed by the server
                 writer.flush()
 
                 # logovanie
@@ -162,6 +165,7 @@ class Agent(Policy):
                 print(f"Epoch: {self._total_episodes}")
                 print(f"Score: {self._episode_reward}")
                 print(f"Steps: {self._episode_steps}")
+                print(f"TotalInteractions: {self._total_steps}")
                 print(f"Train step: {self._train_step.numpy()}")
                 print("=============================================")
                 if self._log_wandb:
@@ -190,6 +194,7 @@ class Agent(Policy):
         self._episode_reward = 0.0
         self._episode_steps = 0
         self._total_episodes = 0
+        self._total_steps = 0
         self._last_obs = self._env.reset()
 
         # spojenie s db

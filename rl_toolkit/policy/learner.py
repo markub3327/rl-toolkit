@@ -55,7 +55,7 @@ class Learner(Policy):
         save_path: str = None,
         # ---
         log_wandb: bool = False,
-        log_interval: int = 64,
+        log_interval: int = 1000,
     ):
         super(Learner, self).__init__(env_name, log_wandb)
 
@@ -204,20 +204,20 @@ class Learner(Policy):
         return losses
 
     def run(self):
-        while self._train_step.numpy() < self._max_steps:
+        while self._train_step < self._max_steps:
             # update models
             losses = self._train()
 
             # log metrics
-            if (self._train_step.numpy() % self._log_interval) == 0:
+            if (self._train_step % self._log_interval) == 0:
                 print("=============================================")
-                print(f"Step: {self._train_step.numpy()}")
+                print(f"Train step: {self._train_step.numpy()}")
                 print(f"Alpha loss: {losses['alpha_loss']}")
                 print(f"Critic loss: {losses['critic_loss']}")
                 print(f"Actor loss: {losses['actor_loss']}")
                 print("=============================================")
                 print(
-                    f"Training ... {tf.floor(self._train_step * 100 / self._max_steps)} %"  # noqa
+                    f"Training ... {(self._train_step * 100.0) // self._max_steps} %"  # noqa
                 )
 
             if self._log_wandb:
