@@ -156,7 +156,7 @@ class Agent(Policy):
                         "terminal": writer.history["terminal"][-2],
                     },
                 )
-                
+
                 # Block until the item has been inserted and confirmed by the server
                 writer.flush()
 

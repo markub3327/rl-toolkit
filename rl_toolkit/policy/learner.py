@@ -217,7 +217,7 @@ class Learner(Policy):
                 print(f"Actor loss: {losses['actor_loss']}")
                 print("=============================================")
                 print(
-                    f"Training ... {(self._train_step * 100.0) // self._max_steps} %"  # noqa
+                    f"Training ... {(self._train_step * 100) // self._max_steps} %"  # noqa
                 )
 
             if self._log_wandb:
