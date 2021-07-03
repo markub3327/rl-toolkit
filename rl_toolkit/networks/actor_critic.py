@@ -40,6 +40,7 @@ class ActorCritic(Model):
         self.actor.reset_noise()
 
         # Update 'Alpha'
+        self.alpha.assign(tf.exp(self.log_alpha))
         with tf.GradientTape() as tape:
             _, log_pi = self.actor(
                 data["observation"],
@@ -48,7 +49,6 @@ class ActorCritic(Model):
                 deterministic=False,
             )
 
-            self.alpha.assign(tf.exp(self.log_alpha))
             losses = -1.0 * (
                 self.log_alpha * tf.stop_gradient(log_pi + self.target_entropy)
             )
@@ -76,9 +76,9 @@ class ActorCritic(Model):
                     [data["observation"], data["action"]], training=True
                 ),
             )
-            Q_loss = tf.nn.compute_average_loss(losses)
+            critic_loss = tf.nn.compute_average_loss(losses)
 
-        gradients = tape.gradient(Q_loss, self.critic.trainable_variables)
+        gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
         self.critic_optimizer.apply_gradients(
             zip(gradients, self.critic.trainable_variables)
         )
@@ -99,7 +99,7 @@ class ActorCritic(Model):
 
         return {
             "actor_loss": actor_loss,
-            "critic_loss": Q_loss,
+            "critic_loss": critic_loss,
             "alpha_loss": alpha_loss,
         }
 
