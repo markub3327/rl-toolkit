@@ -55,7 +55,7 @@ class Actor(Model):
     def reset_noise(self):
         self.noise.sample_weights()
 
-    def call(self, inputs, with_log_prob=None, deterministic=True):
+    def call(self, inputs, with_log_prob=True, deterministic=None):
         # 1. layer
         x = self.fc1(inputs)
         x = self.fc1_activ(x)
