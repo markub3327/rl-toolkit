@@ -33,26 +33,29 @@ docker run -it --rm markub3327/rl-toolkit
 
 
 # Learner container
-python3 -m rl_toolkit [-h] --mode learner -e [ENV_NAME] -s [PATH_TO_MODEL] --db_path [PATH_TO_DB] [--wandb]
+python3 -m rl_toolkit -e [ENV_NAME] learner --db_server [IP_ADDRESS/HOSTNAME] -s [PATH_TO_MODEL] [--wandb] [-h]
 
 # Agent container
-python3 -m rl_toolkit [-h] --mode agent -e [ENV_NAME] --db_server [IP_ADDRESS/HOSTNAME] [--wandb]
+python3 -m rl_toolkit -e [ENV_NAME] agent --db_server [IP_ADDRESS/HOSTNAME] [--wandb] [-h]
 
 # Tester container
-python3 -m rl_toolkit [-h] --mode tester -e [ENV_NAME] --model_path [PATH_TO_MODEL] [--render] [--wandb]
+python3 -m rl_toolkit -e [ENV_NAME] tester --model_path [PATH_TO_MODEL] [--render] [--wandb] [-h]
+
+# Server container
+python3 -m rl_toolkit -e [ENV_NAME] server --db_path [PATH_TO_DB] [-h]
 ```
 
 ## Tested environments
 
   | Environment              | Observation space | Observation bounds | Action space | Action bounds |
   | ------------------------ | :---------------: | :----------------: | :----------: | :-----------: |
-  | BipedalWalkerHardcore-v3 | (24, ) | [-inf , inf] | (4, ) | [-1.0 , 1.0] |
-  | Walker2DBulletEnv-v0     | (22, ) | [-inf , inf] | (6, ) | [-1.0 , 1.0] |
-  | AntBulletEnv-v0          | (28, ) | [-inf , inf] | (8, ) | [-1.0 , 1.0] |
-  | HalfCheetahBulletEnv-v0  | (26, ) | [-inf , inf] | (6, ) | [-1.0 , 1.0] |
-  | HopperBulletEnv-v0       | (15, ) | [-inf , inf] | (3, ) | [-1.0 , 1.0] |
-  | HumanoidBulletEnv-v0     | (44, ) | [-inf , inf] | (17, ) | [-1.0 , 1.0] |
-
+  | BipedalWalkerHardcore-v3 | (24, ) | [-inf, inf] | (4, ) | [-1.0, 1.0] |
+  | Walker2DBulletEnv-v0     | (22, ) | [-inf, inf] | (6, ) | [-1.0, 1.0] |
+  | AntBulletEnv-v0          | (28, ) | [-inf, inf] | (8, ) | [-1.0, 1.0] |
+  | HalfCheetahBulletEnv-v0  | (26, ) | [-inf, inf] | (6, ) | [-1.0, 1.0] |
+  | HopperBulletEnv-v0       | (15, ) | [-inf, inf] | (3, ) | [-1.0, 1.0] |
+  | HumanoidBulletEnv-v0     | (44, ) | [-inf, inf] | (17, ) | [-1.0, 1.0] |
+  | MinitaurBulletEnv-v0     | (28, ) | [-167.72488, 167.72488] | (8, ) | [-1.0, 1.0] |
 
 ## Results
 
@@ -63,14 +66,14 @@ python3 -m rl_toolkit [-h] --mode tester -e [ENV_NAME] --model_path [PATH_TO_MOD
 
 <p align="center"><b>Score</b></p>
 
-  | Environment              | gSDE | gSDE<br>+ Huber loss |
-  | ------------------------ | :---: | :-----------------: |
+  | Environment              | gSDE | gSDE<br>+ Huber loss | gSDE<br>+ Quantile regression w/o TN |
+  | ------------------------ | :---: | :-----------------: | :---------------------------: |
   | BipedalWalkerHardcore-v3[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | 13 ± 18 | - |
   | Walker2DBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)     | 2270 ± 28 | **2732 ± 96** |
   | AntBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)          | 3106 ± 61 | **3460 ± 119** |
   | HalfCheetahBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)  | 2945 ± 95 | **3003 ± 226** |
   | HopperBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)       | 2515 ± 50 | **2555 ± 405** |
-  | HumanoidBulletEnv-v0 | - | ** ± ** |
+  | HumanoidBulletEnv-v0 | - | - |
 
 ## Model
 
