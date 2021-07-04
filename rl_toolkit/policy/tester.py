@@ -42,7 +42,7 @@ class Tester(Policy):
 
         if model_path is None:
             self.actor = Actor(
-                num_of_outputs=tf.reduce_prod(self._env.action_space.shape).numpy()
+                n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy()
             )
             print("Model created succesful ...")
         else:

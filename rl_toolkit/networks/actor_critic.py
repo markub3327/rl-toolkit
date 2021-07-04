@@ -10,7 +10,7 @@ class ActorCritic(Model):
     ===========
 
     Attributes:
-        num_of_outputs (int): number of outputs
+        n_outputs (int): number of outputs
         gamma (float): the discount factor
 
     References:
@@ -22,7 +22,7 @@ class ActorCritic(Model):
         n_quantiles: int,
         top_quantiles_to_drop: int,
         n_critics: int,
-        num_of_outputs: int,
+        n_outputs: int,
         gamma: float,
         init_alpha: float,
         **kwargs
@@ -39,10 +39,10 @@ class ActorCritic(Model):
             tf.math.log(init_alpha), trainable=True, name="log_alpha"
         )
         self.alpha = tf.Variable(init_alpha, trainable=False, name="alpha")
-        self.target_entropy = tf.cast(-num_of_outputs, dtype=tf.float32)
+        self.target_entropy = tf.cast(-n_outputs, dtype=tf.float32)
 
         # Actor
-        self.actor = Actor(num_of_outputs)
+        self.actor = Actor(n_outputs)
 
         # Critic
         self.critic = MultiCritic(

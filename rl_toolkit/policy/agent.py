@@ -41,7 +41,7 @@ class Agent(Policy):
 
         # Actor network (for agent)
         self.actor = Actor(
-            num_of_outputs=tf.reduce_prod(self._env.action_space.shape).numpy()
+            n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy()
         )
         self.actor.build((None,) + self._env.observation_space.shape)
 

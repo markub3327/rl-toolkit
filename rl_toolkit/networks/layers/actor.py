@@ -14,13 +14,13 @@ class Actor(Model):
     ===============
 
     Attributes:
-        num_of_outputs (int): number of outputs
+        n_outputs (int): number of outputs
 
     References:
         - [CrossNorm: On Normalization for Off-Policy TD Reinforcement Learning](https://arxiv.org/abs/1902.05605)
     """
 
-    def __init__(self, num_of_outputs: int, **kwargs):
+    def __init__(self, n_outputs: int, **kwargs):
         super(Actor, self).__init__(**kwargs)
 
         # 1. layer
@@ -36,7 +36,7 @@ class Actor(Model):
 
         # Deterministicke akcie
         self.mean = Dense(
-            num_of_outputs,
+            n_outputs,
             activation=clipped_linear,
             kernel_initializer="glorot_uniform",
             name="mean",
@@ -44,7 +44,7 @@ class Actor(Model):
 
         # Stochasticke akcie
         self.noise = MultivariateGaussianNoise(
-            num_of_outputs,
+            n_outputs,
             kernel_initializer=tf.keras.initializers.Constant(value=-3.0),
             name="noise",
         )
