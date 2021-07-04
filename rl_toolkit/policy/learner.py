@@ -27,10 +27,10 @@ class Learner(Policy):
         critic_learning_rate (float): the learning rate for Critic's optimizer
         alpha_learning_rate (float): the learning rate for Alpha's optimizer
         gamma (float): the discount factor
-        model_path (str): path to the model
-        db_path (str): path to the database checkpoint
+        init_alpha (float): initialization of alpha param
         save_path (str): path to the models for saving
         log_wandb (bool): log into WanDB cloud
+        log_interval (int): the logging interval to the console
     """
 
     def __init__(
@@ -120,7 +120,6 @@ class Learner(Policy):
                 max_in_flight_samples_per_worker=(2 * batch_size),
             )
             .batch(batch_size, drop_remainder=True)
-            .cache()
             .prefetch(tf.data.AUTOTUNE)
         )
 

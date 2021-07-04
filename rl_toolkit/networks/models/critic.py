@@ -74,8 +74,9 @@ class MultiCritic(Model):
     ===============
 
     Attributes:
-        n_critics (int): number of critic networks
         n_quantiles (int): number of predicted quantiles
+        top_quantiles_to_drop (int): number of quantiles to drop
+        n_critics (int): number of critic networks
     """
 
     def __init__(

@@ -11,7 +11,7 @@ class MultivariateGaussianNoise(Layer):
 
     Attributes:
         units (int): number of noisy units
-        kernel_initializer (float): initialization value of the `kernel` weights matrix
+        kernel_initializer: initialization value of the `kernel` weights matrix
         kernel_regularizer: regularizer function applied to the `kernel` weights matrix
         kernel_constraint: constraint function applied to the `kernel` weights matrix
 
@@ -21,7 +21,7 @@ class MultivariateGaussianNoise(Layer):
 
     def __init__(
         self,
-        units,
+        units: int,
         kernel_initializer,
         kernel_regularizer=None,
         kernel_constraint=None,

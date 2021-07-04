@@ -10,8 +10,12 @@ class ActorCritic(Model):
     ===========
 
     Attributes:
+        n_quantiles (int): number of predicted quantiles
+        top_quantiles_to_drop (int): number of quantiles to drop
+        n_critics (int): number of critic networks
         n_outputs (int): number of outputs
         gamma (float): the discount factor
+        init_alpha (float): initialization of alpha param
 
     References:
         - [Soft Actor-Critic Algorithms and Applications](https://arxiv.org/abs/1812.05905)

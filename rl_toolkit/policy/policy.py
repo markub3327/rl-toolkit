@@ -9,7 +9,6 @@ class Policy:
 
     Attributes:
         env_name (str): the name of environment
-        log_wandb (bool): log into WanDB cloud
     """
 
     def __init__(

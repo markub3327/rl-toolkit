@@ -19,6 +19,7 @@ class Tester(Policy):
     Attributes:
         env_name (str): the name of environment
         max_steps (int): maximum number of interactions do in environment
+        render (bool): enable the rendering into the video file
         model_path (str): path to the model
         log_wandb (bool): log into WanDB cloud
     """
