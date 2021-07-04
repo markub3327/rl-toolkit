@@ -17,10 +17,22 @@ class ActorCritic(Model):
         - [Soft Actor-Critic Algorithms and Applications](https://arxiv.org/abs/1812.05905)
     """
 
-    def __init__(self, num_of_outputs: int, gamma: float, init_alpha: float, **kwargs):
+    def __init__(
+        self,
+        n_quantiles: int,
+        top_quantiles_to_drop: int,
+        n_critics: int,
+        num_of_outputs: int,
+        gamma: float,
+        init_alpha: float,
+        **kwargs
+    ):
         super(ActorCritic, self).__init__(**kwargs)
 
         self.gamma = tf.constant(gamma)
+        self.tau = tf.constant(
+            (2.0 * tf.range(n_quantiles, dtype=tf.float32) + 1.0) / (2.0 * n_quantiles)
+        )
 
         # init param 'alpha' - Lagrangian constraint
         self.log_alpha = tf.Variable(
@@ -33,7 +45,11 @@ class ActorCritic(Model):
         self.actor = Actor(num_of_outputs)
 
         # Critic
-        self.critic = MultiCritic(2)
+        self.critic = MultiCritic(
+            n_quantiles=n_quantiles,
+            top_quantiles_to_drop=top_quantiles_to_drop,
+            n_critics=n_critics,
+        )
 
     def train_step(self, data):
         # Re-new noise matrix every update of 'log_std' params
@@ -56,22 +72,42 @@ class ActorCritic(Model):
             merged_action = tf.concat([data["action"], next_action], axis=0)
 
             # get Q-value
-            Q_value, next_Q_value = tf.split(
+            Z, next_Z = tf.split(
                 self.critic([merged_observation, merged_action], training=True),
                 num_or_size_splits=2,
                 axis=0,
             )
+            sorted_Z = tf.sort(tf.reshape(next_Z, [next_Z.shape[0], -1]))
+            sorted_Z_part = sorted_Z[
+                :, : self.critic.quantiles_total - self.critic.top_quantiles_to_drop
+            ]
 
             # Bellman Equation
-            Q_target = tf.stop_gradient(
+            Z_target = tf.stop_gradient(
                 data["reward"]
                 + (1.0 - data["terminal"])
                 * self.gamma
-                * (tf.reduce_min(next_Q_value, axis=1) - self.alpha * next_log_pi)
+                * (sorted_Z_part - self.alpha * next_log_pi)
             )
 
             # Compute critic loss
-            losses = tf.losses.huber(y_true=Q_target[:, tf.newaxis, :], y_pred=Q_value)
+            pairwise_delta = (
+                Z_target[:, tf.newaxis, tf.newaxis, :] - Z[:, :, :, tf.newaxis]
+            )  # batch x nets x quantiles x samples
+            abs_pairwise_delta = tf.math.abs(pairwise_delta)
+            huber_loss = tf.where(
+                abs_pairwise_delta > 1.0,
+                abs_pairwise_delta - 0.5,
+                pairwise_delta ** 2 * 0.5,
+            )
+
+            losses = (
+                tf.math.abs(
+                    self.tau[tf.newaxis, tf.newaxis, :, tf.newaxis]
+                    - tf.cast(pairwise_delta < 0.0, dtype=tf.float32)
+                )
+                * huber_loss
+            )
             critic_loss = tf.nn.compute_average_loss(losses)
 
         gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
@@ -81,8 +117,8 @@ class ActorCritic(Model):
 
         # Update 'Actor' & 'Alpha'
         with tf.GradientTape(persistent=True) as tape:
-            # Q-value
-            Q_value, log_pi = self(data["observation"])
+            # Z distribution
+            Z, log_pi = self(data["observation"])
 
             # Compute alpha loss
             losses = -1.0 * (
@@ -91,7 +127,9 @@ class ActorCritic(Model):
             alpha_loss = tf.nn.compute_average_loss(losses)
 
             # Compute actor loss
-            losses = self.alpha * log_pi - Q_value
+            losses = self.alpha * log_pi - tf.reduce_mean(
+                tf.reduce_mean(Z, axis=2), axis=1, keepdims=True
+            )
             actor_loss = tf.nn.compute_average_loss(losses)
 
         gradients = tape.gradient(alpha_loss, [self.log_alpha])
@@ -110,8 +148,8 @@ class ActorCritic(Model):
 
     def call(self, inputs):
         action, log_pi = self.actor(inputs, with_log_prob=True, deterministic=False)
-        Q_value = tf.reduce_min(self.critic([inputs, action], training=False), axis=1)
-        return [Q_value, log_pi]
+        Z = self.critic([inputs, action], training=False)
+        return [Z, log_pi]
 
     def compile(self, actor_optimizer, critic_optimizer, alpha_optimizer):
         super(ActorCritic, self).compile()

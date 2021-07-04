@@ -9,18 +9,19 @@ class Critic(Model):
     ===============
 
     Attributes:
+        n_quantiles (int): number of predicted quantiles
 
     References:
         - [CrossNorm: On Normalization for Off-Policy TD Reinforcement Learning](https://arxiv.org/abs/1902.05605)
         - [Controlling Overestimation Bias with Truncated Mixture of Continuous Distributional Quantile Critics](https://arxiv.org/abs/2005.04269)
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, n_quantiles: int, **kwargs):
         super(Critic, self).__init__(**kwargs)
 
         # 1. layer
         self.fc1 = Dense(
-            400,
+            512,
             kernel_initializer="he_uniform",
         )
         self.fc1_activ = Activation("relu")
@@ -28,11 +29,11 @@ class Critic(Model):
 
         # 2. layer
         self.fc2_a = Dense(
-            300,
+            512,
             kernel_initializer="he_uniform",
         )
         self.fc2_b = Dense(
-            300,
+            512,
             kernel_initializer="he_uniform",
         )
 
@@ -41,11 +42,19 @@ class Critic(Model):
         self.fc2_activ = Activation("relu")
         self.fc2_norm = BatchNormalization(momentum=0.0, scale=False)
 
+        # 3. layer
+        self.fc3 = Dense(
+            512,
+            kernel_initializer="he_uniform",
+        )
+        self.fc3_activ = Activation("relu")
+        self.fc3_norm = BatchNormalization(momentum=0.0, scale=False)
+
         # Output layer
-        self.Q_value = Dense(
-            1,
+        self.Z = Dense(
+            n_quantiles,
             kernel_initializer="glorot_uniform",
-            name="Q_value",
+            name="Z",
         )
 
     def call(self, inputs, training=None):
@@ -62,9 +71,14 @@ class Critic(Model):
         x = self.fc2_activ(x)
         x = self.fc2_norm(x, training=training)
 
+        # 3. layer
+        x = self.fc3(x)
+        x = self.fc3_activ(x)
+        x = self.fc3_norm(x, training=training)
+
         # Output layer
-        Q_values = self.Q_value(x)
-        return Q_values
+        Z = self.Z(x)
+        return Z
 
 
 class MultiCritic(Model):
@@ -73,17 +87,24 @@ class MultiCritic(Model):
     ===============
 
     Attributes:
-        num_of_critics (int): number of critic networks
+        n_critics (int): number of critic networks
+        n_quantiles (int): number of predicted quantiles
     """
 
-    def __init__(self, num_of_critics: int, **kwargs):
+    def __init__(
+        self, n_quantiles: int, top_quantiles_to_drop: int, n_critics: int, **kwargs
+    ):
         super(MultiCritic, self).__init__(**kwargs)
 
-        # Critic
+        self.n_quantiles = n_quantiles
+        self.quantiles_total = n_quantiles * n_critics
+        self.top_quantiles_to_drop = top_quantiles_to_drop
+
+        # init critics
         self.models = []
-        for i in range(num_of_critics):
-            self.models.append(Critic())
+        for i in range(n_critics):
+            self.models.append(Critic(n_quantiles))
 
     def call(self, inputs):
-        Q_values = tf.stack(list(model(inputs) for model in self.models), axis=1)
-        return Q_values
+        Z = tf.stack(list(model(inputs) for model in self.models), axis=1)
+        return Z

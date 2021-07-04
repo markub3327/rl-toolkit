@@ -63,7 +63,10 @@ class Learner(Policy):
         self._log_wandb = log_wandb
 
         self.model = ActorCritic(
-            num_of_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),
+            n_quantiles=35,
+            top_quantiles_to_drop=3,
+            n_critics=3,
+            n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),
             gamma=gamma,
             init_alpha=init_alpha,
         )
@@ -75,7 +78,8 @@ class Learner(Policy):
         )
 
         # Show models details
-        self.model.summary()
+        self.model.actor.summary()
+        self.model.critic.summary()
 
         # Variables
         self._train_step = tf.Variable(

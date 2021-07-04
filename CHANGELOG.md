@@ -4,11 +4,11 @@
 ### Features 🔊
 - Reverb (+multi-node learning) ✔️
 - `setup.py` (package is available on PyPI) ✔️
-- split into **agent**, **learner**, **tester** and **server** roles
+- split into **agent**, **learner**, **tester** and **server** roles ✔️
 - Use custom model and layer for defining Actor-Critic ✔️
-- MultiCritic - defining multiple critic networks into one network ✔️
-- The quantile regression
-- Normalization layer ✔️
+- MultiCritic - concatenating multiple critic networks into one network ✔️
+- The quantile regression ✔️
+- Normalization layer (CrossRenorm)
 - Without target networks ✔️
 - Generating `png` image of the model ✔️
 
