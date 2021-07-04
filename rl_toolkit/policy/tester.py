@@ -34,10 +34,11 @@ class Tester(Policy):
         model_path: str = None,
         log_wandb: bool = False,
     ):
-        super(Tester, self).__init__(env_name, log_wandb)
+        super(Tester, self).__init__(env_name)
 
         self._max_steps = max_steps
         self._render = render
+        self._log_wandb = log_wandb
 
         if model_path is None:
             self.actor = Actor(

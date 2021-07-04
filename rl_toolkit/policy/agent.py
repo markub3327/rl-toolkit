@@ -33,10 +33,11 @@ class Agent(Policy):
         # ---
         log_wandb: bool = False,
     ):
-        super(Agent, self).__init__(env_name, log_wandb)
+        super(Agent, self).__init__(env_name)
 
         self._env_steps = env_steps
         self._warmup_steps = warmup_steps
+        self._log_wandb = log_wandb
 
         # Actor network (for agent)
         self.actor = Actor(

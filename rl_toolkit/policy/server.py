@@ -1,3 +1,4 @@
+from .policy import Policy
 import reverb
 import tensorflow as tf
 from tensorflow.keras.models import load_model
@@ -6,7 +7,7 @@ from rl_toolkit.networks.layers import Actor, MultivariateGaussianNoise
 from rl_toolkit.utils import VariableContainer
 
 
-class Server:
+class Server(Policy):
     """
     Server
     =================
@@ -28,6 +29,8 @@ class Server:
         model_path: str = None,
         db_path: str = None,
     ):
+        super(Server, self).__init__(env_name)
+
         self._db_path = db_path
 
         if model_path is None:
@@ -129,6 +132,8 @@ class Server:
         self.server.wait()
 
     def close(self):
+        super(Server, self).close()
+
         if self._db_path:
             # Save database
             self.client.checkpoint()

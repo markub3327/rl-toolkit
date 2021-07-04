@@ -55,11 +55,12 @@ class Learner(Policy):
         log_wandb: bool = False,
         log_interval: int = 1000,
     ):
-        super(Learner, self).__init__(env_name, log_wandb)
+        super(Learner, self).__init__(env_name)
 
         self._max_steps = max_steps
         self._save_path = save_path
         self._log_interval = log_interval
+        self._log_wandb = log_wandb
 
         self.model = ActorCritic(
             num_of_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),

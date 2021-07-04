@@ -16,11 +16,7 @@ class Policy:
         self,
         # ---
         env_name: str,
-        # ---
-        log_wandb: bool = False,
     ):
-        self._log_wandb = log_wandb
-
         # Herne prostredie
         self._env = gym.make(env_name)
 
