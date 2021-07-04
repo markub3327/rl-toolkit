@@ -110,6 +110,14 @@ class ActorCritic(Model):
             )
             critic_loss = tf.nn.compute_average_loss(losses)
 
+        tf.print(f"Z: {Z[0]}")
+        tf.print(f"next_Z: {next_Z[0]}")
+        tf.print(f"sorted_Z_part: {sorted_Z_part[0]}")
+        tf.print(f"Z_target: {Z_target[0]}")
+        tf.print(f"pairwise_delta: {pairwise_delta[0]}")
+        tf.print(f"huber_loss: {huber_loss[0]}")
+        tf.print(f"losses: {losses[0]}")
+
         gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
         self.critic_optimizer.apply_gradients(
             zip(gradients, self.critic.trainable_variables)

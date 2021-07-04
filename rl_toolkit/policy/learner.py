@@ -117,9 +117,10 @@ class Learner(Policy):
             reverb.TrajectoryDataset.from_table_signature(
                 server_address=f"{db_server}:8000",
                 table="experience",
-                max_in_flight_samples_per_worker=(3 * batch_size),
+                max_in_flight_samples_per_worker=(2 * batch_size),
             )
             .batch(batch_size, drop_remainder=True)
+            .cache()
             .prefetch(tf.data.AUTOTUNE)
         )
 
