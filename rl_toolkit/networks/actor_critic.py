@@ -59,8 +59,27 @@ class ActorCritic(Model):
 
         # Update 'Critic'
         with tf.GradientTape() as tape:
-            # target Q-value
-            next_Q_value, next_log_pi = self(data["next_observation"], training=True)
+            # concatenating the two batches
+            merged_observation = tf.concat([data["observation"], data["next_observation"]], axis=0)
+            next_action, next_log_pi = self.actor(
+                data["next_observation"],
+                training=True,
+                with_log_prob=True,
+                deterministic=False,
+            )
+            merged_action = tf.concat([data["action"], next_action], axis=0)
+
+            # get Q-value
+            Q_value, next_Q_value = tf.split(
+                self.critic([merged_observation, merged_action], training=True), 
+                num_or_size_splits=2,
+                axis=0
+            )
+            next_Q_value = tf.reduce_min(
+                next_Q_value, axis=1
+            )
+            tf.print(Q_value.shape)
+            tf.print(next_Q_value.shape)
 
             # Bellman Equation
             Q_target = tf.stop_gradient(
@@ -72,9 +91,7 @@ class ActorCritic(Model):
 
             losses = tf.losses.huber(  # less sensitive to outliers in batch
                 y_true=Q_target[:, tf.newaxis, :],
-                y_pred=self.critic(
-                    [data["observation"], data["action"]], training=True
-                ),
+                y_pred=Q_value
             )
             critic_loss = tf.nn.compute_average_loss(losses)
 
@@ -108,7 +125,7 @@ class ActorCritic(Model):
             inputs, training=training, with_log_prob=True, deterministic=False
         )
         Q_value = tf.reduce_min(
-            self.critic([inputs, action], training=training), axis=1
+            self.critic([inputs, action], training=False), axis=1
         )
         return [Q_value, log_pi]
 
