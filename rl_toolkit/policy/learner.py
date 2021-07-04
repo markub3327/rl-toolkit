@@ -251,6 +251,7 @@ class Learner(Policy):
 
             # Convert the model to TF Lite
             converter = tf.lite.TFLiteConverter.from_keras_model(self.model.actor)
+            converter.optimizations = [tf.lite.Optimize.DEFAULT]
             tflite_model = converter.convert()
             with open(os.path.join(self._save_path, "actor.tflite"), "wb") as f:
                 f.write(tflite_model)

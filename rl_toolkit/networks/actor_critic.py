@@ -85,23 +85,23 @@ class ActorCritic(Model):
             # Q-value
             Q_value, log_pi = self(data["observation"], training=True)
 
-            # Compute actor loss
-            losses = self.alpha * log_pi - Q_value
-            actor_loss = tf.nn.compute_average_loss(losses)
-
             # Compute alpha loss
             losses = -1.0 * (
                 self.log_alpha * tf.stop_gradient(log_pi + self.target_entropy)
             )
             alpha_loss = tf.nn.compute_average_loss(losses)
 
+            # Compute actor loss
+            losses = self.alpha * log_pi - Q_value
+            actor_loss = tf.nn.compute_average_loss(losses)
+
+        gradients = tape.gradient(alpha_loss, [self.log_alpha])
+        self.alpha_optimizer.apply_gradients(zip(gradients, [self.log_alpha]))
+
         gradients = tape.gradient(actor_loss, self.actor.trainable_variables)
         self.actor_optimizer.apply_gradients(
             zip(gradients, self.actor.trainable_variables)
         )
-
-        gradients = tape.gradient(alpha_loss, [self.log_alpha])
-        self.alpha_optimizer.apply_gradients(zip(gradients, [self.log_alpha]))
 
         return {
             "actor_loss": actor_loss,
