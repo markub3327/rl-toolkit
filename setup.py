@@ -53,7 +53,7 @@ setup(
         "dm-reverb",
         "pydot",
     ],
-    python_requires=">=3.7",
+    python_requires=">=3.6",
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Environment :: Console",
@@ -61,6 +61,7 @@ setup(
         "Intended Audience :: Science/Research",
         "Intended Audience :: Education",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
