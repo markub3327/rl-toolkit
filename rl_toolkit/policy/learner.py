@@ -4,7 +4,7 @@ import reverb
 import tensorflow as tf
 import wandb
 from tensorflow.keras.models import load_model
-from tensorflow.keras.optimizers import RMSprop
+from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.utils import plot_model
 
 from rl_toolkit.networks import ActorCritic
@@ -72,9 +72,9 @@ class Learner(Policy):
             )
             self.model.build((None,) + self._env.observation_space.shape)
             self.model.compile(
-                actor_optimizer=RMSprop(learning_rate=actor_learning_rate),
-                critic_optimizer=RMSprop(learning_rate=critic_learning_rate),
-                alpha_optimizer=RMSprop(learning_rate=alpha_learning_rate),
+                actor_optimizer=Adam(learning_rate=actor_learning_rate),
+                critic_optimizer=Adam(learning_rate=critic_learning_rate),
+                alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
             )
             print("Model created succesful ...")
         else:
