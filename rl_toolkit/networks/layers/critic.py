@@ -17,9 +17,6 @@ class Critic(Layer):
     def __init__(self, **kwargs):
         super(Critic, self).__init__(**kwargs)
 
-        # normalize inputs
-        self.input_norm = BatchNormalization(momentum=0.0, scale=False)
-
         # 1. layer
         self.fc1 = Dense(
             400,
@@ -51,10 +48,8 @@ class Critic(Layer):
         )
 
     def call(self, inputs, training=None):
-        x_s = self.input_norm(inputs[0], training=training)
-
         # 1. layer
-        x_s = self.fc1(x_s)
+        x_s = self.fc1(inputs[0])
         x_s = self.fc1_activ(x_s)
         x_s = self.fc1_norm(x_s, training=training)
 
