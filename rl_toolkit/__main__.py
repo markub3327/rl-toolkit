@@ -1,7 +1,6 @@
 import argparse
 
-from rl_toolkit.policy import Agent, Learner, Tester, Server
-
+from rl_toolkit.policy import Agent, Learner, Server, Tester
 
 if __name__ == "__main__":
     my_parser = argparse.ArgumentParser(

@@ -1,10 +1,11 @@
-from .policy import Policy
 import reverb
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 
 from rl_toolkit.networks.layers import Actor, MultivariateGaussianNoise
 from rl_toolkit.utils import VariableContainer
+
+from .policy import Policy
 
 
 class Server(Policy):
@@ -47,7 +48,7 @@ class Server(Policy):
             print("Model loaded succesful ...")
 
         # Show models details
-        self.model.summary()
+        self.actor.summary()
 
         # Variables
         self._train_step = tf.Variable(
@@ -72,7 +73,7 @@ class Server(Policy):
             {
                 "train_step": self._train_step,
                 "stop_agents": self._stop_agents,
-                "policy_variables": self.model.actor.variables,
+                "policy_variables": self.actor.variables,
             },
         )
 
