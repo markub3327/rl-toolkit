@@ -75,16 +75,13 @@ class ActorCritic(Model):
                 num_or_size_splits=2,
                 axis=0
             )
-            next_Q_value = tf.reduce_min(
-                next_Q_value, axis=1
-            )
 
             # Bellman Equation
             Q_target = tf.stop_gradient(
                 data["reward"]
                 + (1.0 - data["terminal"])
                 * self.gamma
-                * (next_Q_value - self.alpha * next_log_pi)
+                * (tf.reduce_min(next_Q_value, axis=1) - self.alpha * next_log_pi)
             )
 
             losses = tf.losses.huber(  # less sensitive to outliers in batch
