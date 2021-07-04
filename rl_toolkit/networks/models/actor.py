@@ -4,7 +4,6 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import Activation, Dense
 
 from rl_toolkit.networks.activations import clipped_linear
-
 from rl_toolkit.networks.layers import MultivariateGaussianNoise
 
 

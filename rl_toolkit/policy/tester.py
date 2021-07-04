@@ -5,7 +5,7 @@ import tensorflow as tf
 import wandb
 from tensorflow.keras.models import load_model
 
-from rl_toolkit.networks.layers import Actor, MultivariateGaussianNoise
+from rl_toolkit.networks.models import Actor, MultivariateGaussianNoise
 
 from .policy import Policy
 

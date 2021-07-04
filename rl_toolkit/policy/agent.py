@@ -3,7 +3,7 @@ import reverb
 import tensorflow as tf
 import wandb
 
-from rl_toolkit.networks.layers import Actor
+from rl_toolkit.networks.models import Actor
 from rl_toolkit.utils import VariableContainer
 
 from .policy import Policy

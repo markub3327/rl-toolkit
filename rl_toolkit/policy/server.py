@@ -2,7 +2,7 @@ import reverb
 import tensorflow as tf
 from tensorflow.keras.models import load_model
 
-from rl_toolkit.networks.layers import Actor, MultivariateGaussianNoise
+from rl_toolkit.networks.models import Actor, MultivariateGaussianNoise
 from rl_toolkit.utils import VariableContainer
 
 from .policy import Policy
