@@ -25,7 +25,7 @@ class ActorCritic(Model):
         n_outputs: int,
         gamma: float,
         init_alpha: float,
-        **kwargs
+        **kwargs,
     ):
         super(ActorCritic, self).__init__(**kwargs)
 
@@ -101,22 +101,15 @@ class ActorCritic(Model):
                 pairwise_delta ** 2 * 0.5,
             )
 
-            losses = (
+            losses = tf.reduce_mean(
                 tf.math.abs(
                     self.tau[tf.newaxis, tf.newaxis, :, tf.newaxis]
                     - tf.cast(pairwise_delta < 0.0, dtype=tf.float32)
                 )
-                * huber_loss
+                * huber_loss,
+                axis=[1, 2, 3],
             )
             critic_loss = tf.nn.compute_average_loss(losses)
-
-        tf.print(f"Z: {Z[0]}")
-        tf.print(f"next_Z: {next_Z[0]}")
-        tf.print(f"sorted_Z_part: {sorted_Z_part[0]}")
-        tf.print(f"Z_target: {Z_target[0]}")
-        tf.print(f"pairwise_delta: {pairwise_delta[0]}")
-        tf.print(f"huber_loss: {huber_loss[0]}")
-        tf.print(f"losses: {losses[0]}")
 
         gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
         self.critic_optimizer.apply_gradients(
