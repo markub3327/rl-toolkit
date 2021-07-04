@@ -1,6 +1,6 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
-from tensorflow.keras.layers import Activation, Dense, Layer, BatchNormalization
+from tensorflow.keras.layers import Activation, Dense, Layer#, BatchNormalization
 
 from rl_toolkit.networks.activations import clipped_linear
 
@@ -23,12 +23,12 @@ class Actor(Layer):
         super(Actor, self).__init__(**kwargs)
 
         # normalize inputs
-        self.input_norm = BatchNormalization(scale=False)
+        #self.input_norm = BatchNormalization(scale=False)
 
         # 1. layer
         self.fc1 = Dense(400, kernel_initializer="he_uniform")
         self.fc1_activ = Activation("relu")
-        self.fc1_norm = BatchNormalization(scale=False)
+        #self.fc1_norm = BatchNormalization(scale=False)
 
         # 2. layer
         self.latent_sde = Dense(
@@ -36,7 +36,7 @@ class Actor(Layer):
             kernel_initializer="he_uniform",
         )
         self.latent_sde_activ = Activation("relu")
-        self.latent_sde_norm = BatchNormalization(scale=False)
+        #self.latent_sde_norm = BatchNormalization(scale=False)
 
         # Deterministicke akcie
         self.mean = Dense(
@@ -60,17 +60,17 @@ class Actor(Layer):
         self.noise.sample_weights()
 
     def call(self, inputs, training=None, with_log_prob=None, deterministic=None):
-        x = self.input_norm(inputs, training=training)
+        #x = self.input_norm(, training=training)
 
         # 1. layer
-        x = self.fc1(x)
+        x = self.fc1(inputs)
         x = self.fc1_activ(x)
-        x = self.fc1_norm(x, training=training)
+        #x = self.fc1_norm(x, training=training)
 
         # 2. layer
         latent_sde = self.latent_sde(x)
         latent_sde = self.latent_sde_activ(latent_sde)
-        latent_sde = self.latent_sde_norm(latent_sde, training=training)
+        #latent_sde = self.latent_sde_norm(latent_sde, training=training)
 
         # Output layer
         mean = self.mean(latent_sde)
