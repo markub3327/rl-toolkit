@@ -78,8 +78,6 @@ class ActorCritic(Model):
             next_Q_value = tf.reduce_min(
                 next_Q_value, axis=1
             )
-            tf.print(Q_value.shape)
-            tf.print(next_Q_value.shape)
 
             # Bellman Equation
             Q_target = tf.stop_gradient(
