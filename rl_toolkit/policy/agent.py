@@ -97,7 +97,6 @@ class Agent(Policy):
     def collect_policy(self, input):
         action, _ = self.actor(
             tf.expand_dims(input, axis=0),
-            training=False,
             with_log_prob=False,
             deterministic=False,
         )

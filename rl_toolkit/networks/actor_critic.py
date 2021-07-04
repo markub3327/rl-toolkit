@@ -50,7 +50,6 @@ class ActorCritic(Model):
             )
             next_action, next_log_pi = self.actor(
                 data["next_observation"],
-                training=True,
                 with_log_prob=True,
                 deterministic=False,
             )
@@ -83,7 +82,7 @@ class ActorCritic(Model):
         # Update 'Actor' & 'Alpha'
         with tf.GradientTape(persistent=True) as tape:
             # Q-value
-            Q_value, log_pi = self(data["observation"], training=True)
+            Q_value, log_pi = self(data["observation"])
 
             # Compute alpha loss
             losses = -1.0 * (
@@ -109,9 +108,9 @@ class ActorCritic(Model):
             "alpha_loss": alpha_loss,
         }
 
-    def call(self, inputs, training=None):
+    def call(self, inputs):
         action, log_pi = self.actor(
-            inputs, training=training, with_log_prob=True, deterministic=False
+            inputs, with_log_prob=True, deterministic=False
         )
         Q_value = tf.reduce_min(self.critic([inputs, action], training=False), axis=1)
         return [Q_value, log_pi]

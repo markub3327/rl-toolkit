@@ -85,7 +85,6 @@ class Tester(Policy):
             # Get the action
             action, _ = self.actor(
                 tf.expand_dims(self._last_obs, axis=0),
-                training=False,
                 with_log_prob=False,
                 deterministic=True,
             )
