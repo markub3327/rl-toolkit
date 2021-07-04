@@ -10,7 +10,7 @@ class MultivariateGaussianNoise(Layer):
     ===========
 
     Attributes:
-        units (int): number of noisy neurons
+        units (int): number of noisy units
         kernel_initializer (float): initialization value of the `kernel` weights matrix
         kernel_regularizer: regularizer function applied to the `kernel` weights matrix
         kernel_constraint: constraint function applied to the `kernel` weights matrix

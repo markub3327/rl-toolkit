@@ -193,13 +193,6 @@ class Learner(Policy):
             self.model.save(os.path.join(self._save_path, "actor_critic"))
             self.model.actor.save(os.path.join(self._save_path, "actor"))
 
-            # Convert the model to TF Lite
-            converter = tf.lite.TFLiteConverter.from_keras_model(self.model.actor)
-            converter.optimizations = [tf.lite.Optimize.DEFAULT]
-            tflite_model = converter.convert()
-            with open(os.path.join(self._save_path, "actor.tflite"), "wb") as f:
-                f.write(tflite_model)
-
             # Save model to png
             plot_model(
                 self.model.actor,

@@ -5,7 +5,7 @@ from tensorflow.keras.layers import Activation, Dense
 
 from rl_toolkit.networks.activations import clipped_linear
 
-from .noise import MultivariateGaussianNoise
+from rl_toolkit.networks.layers import MultivariateGaussianNoise
 
 
 class Actor(Model):
@@ -24,12 +24,12 @@ class Actor(Model):
         super(Actor, self).__init__(**kwargs)
 
         # 1. layer
-        self.fc1 = Dense(400, kernel_initializer="he_uniform")
+        self.fc1 = Dense(512, kernel_initializer="he_uniform")
         self.fc1_activ = Activation("relu")
 
         # 2. layer
         self.latent_sde = Dense(
-            300,
+            512,
             kernel_initializer="he_uniform",
         )
         self.latent_sde_activ = Activation("relu")
