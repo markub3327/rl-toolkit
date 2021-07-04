@@ -247,11 +247,25 @@ class Learner(Policy):
         if self._save_path:
             # Save model
             self.model.save(os.path.join(self._save_path, "actor_critic"))
+            self.model.actor.save(os.path.join(self._save_path, "actor"))
+
+            # Convert the model to TF Lite
+            converter = tf.lite.TFLiteConverter.from_keras_model(self.model.actor)
+            tflite_model = converter.convert()
+            with open(os.path.join(self._save_path, "actor.tflite"), "wb") as f:
+                f.write(tflite_model)
 
             # Save model to png
             plot_model(
-                self.model,
-                to_file=os.path.join(self._save_path, "actor_critic.png"),
+                self.model.actor,
+                to_file=os.path.join(self._save_path, "actor.png"),
+                show_shapes=True,
+                rankdir="LR",
+                expand_nested=True,
+            )
+            plot_model(
+                self.model.critic,
+                to_file=os.path.join(self._save_path, "critic.png"),
                 show_shapes=True,
                 rankdir="LR",
                 expand_nested=True,

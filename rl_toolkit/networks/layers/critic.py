@@ -1,8 +1,9 @@
 import tensorflow as tf
-from tensorflow.keras.layers import Activation, Add, Dense, Layer, BatchNormalization
+from tensorflow.keras import Model
+from tensorflow.keras.layers import Activation, Add, BatchNormalization, Dense
 
 
-class Critic(Layer):
+class Critic(Model):
     """
     Critic
     ===============
@@ -66,7 +67,7 @@ class Critic(Layer):
         return Q_values
 
 
-class MultiCritic(Layer):
+class MultiCritic(Model):
     """
     MultiCritic
     ===============

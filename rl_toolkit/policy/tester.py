@@ -5,8 +5,7 @@ import tensorflow as tf
 import wandb
 from tensorflow.keras.models import load_model
 
-from rl_toolkit.networks import ActorCritic
-from rl_toolkit.networks.layers import MultivariateGaussianNoise
+from rl_toolkit.networks.layers import Actor, MultivariateGaussianNoise
 
 from .policy import Policy
 
@@ -41,13 +40,12 @@ class Tester(Policy):
         self._render = render
 
         if model_path is None:
-            self.model = ActorCritic(
-                num_of_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),
-                gamma=0.0,
+            self.actor = Actor(
+                num_of_outputs=tf.reduce_prod(self._env.action_space.shape).numpy()
             )
             print("Model created succesful ...")
         else:
-            self.model = load_model(
+            self.actor = load_model(
                 model_path,
                 custom_objects={"MultivariateGaussianNoise": MultivariateGaussianNoise},
             )
@@ -85,7 +83,7 @@ class Tester(Policy):
                 video_stream.write(img_array)
 
             # Get the action
-            action, _ = self.model.actor(
+            action, _ = self.actor(
                 tf.expand_dims(self._last_obs, axis=0),
                 training=False,
                 with_log_prob=False,

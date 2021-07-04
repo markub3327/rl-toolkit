@@ -39,17 +39,12 @@ class Agent(Policy):
         self._warmup_steps = warmup_steps
 
         # Actor network (for agent)
-        input_layer = tf.keras.layers.Input(shape=self._env.observation_space.shape)
-        self._output_layer = Actor(
+        self.actor = Actor(
             num_of_outputs=tf.reduce_prod(self._env.action_space.shape).numpy()
-        )
-        self.model = tf.keras.Model(
-            inputs=input_layer,
-            outputs=self._output_layer(input_layer),
         )
 
         # Show models details
-        self.model.summary()
+        self.actor.summary()
 
         # Variables
         self._train_step = tf.Variable(
@@ -74,13 +69,13 @@ class Agent(Policy):
             {
                 "train_step": self._train_step,
                 "stop_agents": self._stop_agents,
-                "policy_variables": self._output_layer.variables,
+                "policy_variables": self.actor.variables,
             },
         )
 
         # load content of variables & re-new noise matrix
         self._variable_container.update_variables()
-        self._output_layer.reset_noise()
+        self.actor.reset_noise()
 
         # Initializes the reverb client
         self.client = reverb.Client(f"{db_server}:8000")
@@ -99,7 +94,12 @@ class Agent(Policy):
 
     @tf.function
     def collect_policy(self, input):
-        action, _ = self.model(tf.expand_dims(input, axis=0))
+        action, _ = self.actor(
+            tf.expand_dims(input, axis=0),
+            training=False,
+            with_log_prob=False,
+            deterministic=False,
+        )
         return tf.squeeze(action, axis=0)
 
     def collect(self, writer, max_steps, policy):
@@ -208,4 +208,4 @@ class Agent(Policy):
 
                 # load content of variables & re-new noise matrix
                 self._variable_container.update_variables()
-                self._output_layer.reset_noise()
+                self.actor.reset_noise()
