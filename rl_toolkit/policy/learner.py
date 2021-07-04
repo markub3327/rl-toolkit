@@ -3,12 +3,10 @@ import os
 import reverb
 import tensorflow as tf
 import wandb
-from tensorflow.keras.models import load_model
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import RMSprop
 from tensorflow.keras.utils import plot_model
 
 from rl_toolkit.networks import ActorCritic
-from rl_toolkit.networks.layers import MultivariateGaussianNoise
 from rl_toolkit.utils import VariableContainer
 
 from .policy import Policy
@@ -21,6 +19,7 @@ class Learner(Policy):
 
     Attributes:
         env_name (str): the name of environment
+        db_server (str): database server name (IP or domain name)
         max_steps (int): maximum number of interactions do in environment
         buffer_capacity (int): the capacity of experiences replay buffer
         batch_size (int): size of mini-batch used for training
@@ -38,6 +37,7 @@ class Learner(Policy):
         self,
         # ---
         env_name: str,
+        db_server: str,
         max_steps: int,
         # ---
         buffer_capacity: int = 1000000,
@@ -50,8 +50,6 @@ class Learner(Policy):
         gamma: float = 0.99,
         init_alpha: float = 1.0,
         # ---
-        model_path: str = None,
-        db_path: str = None,
         save_path: str = None,
         # ---
         log_wandb: bool = False,
@@ -60,29 +58,20 @@ class Learner(Policy):
         super(Learner, self).__init__(env_name, log_wandb)
 
         self._max_steps = max_steps
-        self._db_path = db_path
         self._save_path = save_path
         self._log_interval = log_interval
 
-        if model_path is None:
-            self.model = ActorCritic(
-                num_of_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),
-                gamma=gamma,
-                init_alpha=init_alpha,
-            )
-            self.model.build((None,) + self._env.observation_space.shape)
-            self.model.compile(
-                actor_optimizer=Adam(learning_rate=actor_learning_rate),
-                critic_optimizer=Adam(learning_rate=critic_learning_rate),
-                alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
-            )
-            print("Model created succesful ...")
-        else:
-            self.model = load_model(
-                model_path,
-                custom_objects={"MultivariateGaussianNoise": MultivariateGaussianNoise},
-            )
-            print("Model loaded succesful ...")
+        self.model = ActorCritic(
+            num_of_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),
+            gamma=gamma,
+            init_alpha=init_alpha,
+        )
+        self.model.build((None,) + self._env.observation_space.shape)
+        self.model.compile(
+            actor_optimizer=RMSprop(learning_rate=actor_learning_rate),
+            critic_optimizer=RMSprop(learning_rate=critic_learning_rate),
+            alpha_optimizer=RMSprop(learning_rate=alpha_learning_rate),
+        )
 
         # Show models details
         self.model.summary()
@@ -105,7 +94,7 @@ class Learner(Policy):
 
         # Table for storing variables
         self._variable_container = VariableContainer(
-            "localhost",
+            db_server,
             "variables",
             {
                 "train_step": self._train_step,
@@ -114,61 +103,14 @@ class Learner(Policy):
             },
         )
 
-        # load db from checkpoint or make a new one
-        if self._db_path is None:
-            checkpointer = None
-        else:
-            checkpointer = reverb.checkpointers.DefaultCheckpointer(path=self._db_path)
+        # load content of variables & re-new noise matrix
+        self._variable_container.update_variables()
+        self.model.actor.reset_noise()
 
-        # Initialize the reverb server
-        self.server = reverb.Server(
-            tables=[
-                reverb.Table(  # Replay buffer
-                    name="experience",
-                    sampler=reverb.selectors.Uniform(),
-                    remover=reverb.selectors.Fifo(),
-                    rate_limiter=reverb.rate_limiters.MinSize(batch_size),
-                    max_size=buffer_capacity,
-                    max_times_sampled=0,
-                    signature={
-                        "observation": tf.TensorSpec(
-                            [*self._env.observation_space.shape],
-                            self._env.observation_space.dtype,
-                        ),
-                        "action": tf.TensorSpec(
-                            [*self._env.action_space.shape],
-                            self._env.action_space.dtype,
-                        ),
-                        "reward": tf.TensorSpec([1], tf.float32),
-                        "next_observation": tf.TensorSpec(
-                            [*self._env.observation_space.shape],
-                            self._env.observation_space.dtype,
-                        ),
-                        "terminal": tf.TensorSpec([1], tf.float32),
-                    },
-                ),
-                reverb.Table(  # Variables container
-                    name="variables",
-                    sampler=reverb.selectors.Uniform(),
-                    remover=reverb.selectors.Fifo(),
-                    rate_limiter=reverb.rate_limiters.MinSize(1),
-                    max_size=1,
-                    max_times_sampled=0,
-                    signature=self._variable_container.signature,
-                ),
-            ],
-            port=8000,
-            checkpointer=checkpointer,
-        )
-
-        # init variable container in DB
-        self._variable_container.push_variables()
-
-        # Initializes the reverb client and tf.dataset
-        self.client = reverb.Client("localhost:8000")
+        # Initializes the reverb's dataset
         self.dataset_iterator = iter(
             reverb.TrajectoryDataset.from_table_signature(
-                server_address="localhost:8000",
+                server_address=f"{db_server}:8000",
                 table="experience",
                 max_in_flight_samples_per_worker=10,
             )
@@ -240,10 +182,6 @@ class Learner(Policy):
         self._variable_container.push_variables()
 
     def save(self):
-        if self._db_path:
-            # Save database
-            self.client.checkpoint()
-
         if self._save_path:
             # Save model
             self.model.save(os.path.join(self._save_path, "actor_critic"))

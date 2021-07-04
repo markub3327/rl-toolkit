@@ -1,6 +1,7 @@
 import argparse
 
 from rl_toolkit.policy import Agent, Learner, Tester
+from rl_toolkit.server import Server
 
 if __name__ == "__main__":
     my_parser = argparse.ArgumentParser(
@@ -55,6 +56,9 @@ if __name__ == "__main__":
         help="Learner mode",
     )
     parser_learner.add_argument(
+        "--db_server", type=str, help="DB server name", default="localhost"
+    )
+    parser_learner.add_argument(
         "-t",
         "--max_steps",
         type=int,
@@ -95,16 +99,7 @@ if __name__ == "__main__":
         "-bs", "--batch_size", type=int, help="Size of the mini-batch", default=256
     )
     parser_learner.add_argument(
-        "--buffer_capacity",
-        type=int,
-        help="Maximum capacity of replay memory",
-        default=int(1e6),
-    )
-    parser_learner.add_argument(
         "--log_interval", type=int, help="Log into console interval", default=1000
-    )
-    parser_learner.add_argument(
-        "-f", "--model_path", type=str, help="Path to saved model"
     )
     parser_learner.add_argument(
         "-s",
@@ -112,9 +107,6 @@ if __name__ == "__main__":
         type=str,
         help="Path for saving model files",
         default="./save/model",
-    )
-    parser_learner.add_argument(
-        "--db_path", type=str, help="DB's checkpoints path", default="./save/db"
     )
     parser_learner.add_argument(
         "--wandb", action="store_true", help="Log into WanDB cloud"
@@ -143,6 +135,25 @@ if __name__ == "__main__":
         "--wandb", action="store_true", help="Log into WanDB cloud"
     )
 
+    # create the parser for the "server" sub-command
+    parser_server = sub_parsers.add_parser(
+        "server",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        help="Server mode",
+    )
+    parser_server.add_argument(
+        "--buffer_capacity",
+        type=int,
+        help="Maximum capacity of replay memory",
+        default=int(1e6),
+    )
+    parser_server.add_argument(
+        "-f", "--model_path", type=str, help="Path to saved model"
+    )
+    parser_server.add_argument(
+        "--db_path", type=str, help="DB's checkpoints path", default="./save/db"
+    )
+
     # nacitaj zadane argumenty
     args = my_parser.parse_args()
 
@@ -167,16 +178,14 @@ if __name__ == "__main__":
     elif args.mode == "learner":
         agent = Learner(
             env_name=args.environment,
+            db_server=args.db_server,
             max_steps=args.max_steps,
-            buffer_capacity=args.buffer_capacity,
             batch_size=args.batch_size,
             actor_learning_rate=args.actor_learning_rate,
             critic_learning_rate=args.critic_learning_rate,
             alpha_learning_rate=args.alpha_learning_rate,
             gamma=args.gamma,
             init_alpha=args.init_alpha,
-            model_path=args.model_path,
-            db_path=args.db_path,
             save_path=args.save_path,
             log_wandb=args.wandb,
             log_interval=args.log_interval,
@@ -190,7 +199,7 @@ if __name__ == "__main__":
             agent.save()
             agent.close()
 
-    # Test mode
+    # Tester mode
     elif args.mode == "tester":
         agent = Tester(
             env_name=args.environment,
@@ -206,3 +215,19 @@ if __name__ == "__main__":
             print("Terminated by user 👋👋👋")
         finally:
             agent.close()
+
+    # Server mode
+    elif args.mode == "server":
+        server = Server(
+            env_name=args.environment,
+            buffer_capacity=args.buffer_capacity,
+            model_path=args.model_path,
+            db_path=args.db_path,
+        )
+
+        try:
+            server.run()
+        except KeyboardInterrupt:
+            print("Terminated by user 👋👋👋")
+        finally:
+            server.close()

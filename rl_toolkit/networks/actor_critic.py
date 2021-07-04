@@ -109,9 +109,7 @@ class ActorCritic(Model):
         }
 
     def call(self, inputs):
-        action, log_pi = self.actor(
-            inputs, with_log_prob=True, deterministic=False
-        )
+        action, log_pi = self.actor(inputs, with_log_prob=True, deterministic=False)
         Q_value = tf.reduce_min(self.critic([inputs, action], training=False), axis=1)
         return [Q_value, log_pi]
 
