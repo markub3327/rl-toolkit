@@ -257,15 +257,15 @@ class Learner(Policy):
                 self.model.actor,
                 to_file=os.path.join(self._save_path, "actor.png"),
                 show_shapes=True,
+                show_dtype=True,
                 rankdir="LR",
-                expand_nested=True,
             )
             plot_model(
                 self.model.critic,
                 to_file=os.path.join(self._save_path, "critic.png"),
                 show_shapes=True,
+                show_dtype=True,
                 rankdir="LR",
-                expand_nested=True,
             )
 
     def close(self):
