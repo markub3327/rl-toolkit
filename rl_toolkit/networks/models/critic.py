@@ -25,7 +25,7 @@ class Critic(Model):
 
         # 1. layer
         self.fc1 = Dense(
-            512,
+            400,
             activation="relu",
             kernel_initializer="he_uniform",
         )
@@ -33,19 +33,11 @@ class Critic(Model):
 
         # 2. layer
         self.fc2 = Dense(
-            512,
+            300,
             activation="relu",
             kernel_initializer="he_uniform",
         )
         self.fc2_norm = BatchNormalization(momentum=0.0, scale=False)
-
-        # 3. layer
-        self.fc3 = Dense(
-            512,
-            activation="relu",
-            kernel_initializer="he_uniform",
-        )
-        self.fc3_norm = BatchNormalization(momentum=0.0, scale=False)
 
         # Output layer
         self.quantiles = Dense(
@@ -66,10 +58,6 @@ class Critic(Model):
         # 2. layer
         x = self.fc2(x)
         x = self.fc2_norm(x, training=training)
-
-        # 3. layer
-        x = self.fc3(x)
-        x = self.fc3_norm(x, training=training)
 
         # Output layer
         quantiles = self.quantiles(x)
