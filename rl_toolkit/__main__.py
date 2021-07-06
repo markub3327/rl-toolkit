@@ -105,6 +105,12 @@ if __name__ == "__main__":
         default="./save/model",
     )
     parser_learner.add_argument(
+        "-f", "--model_path", type=str, help="Path to saved model"
+    )
+    parser_learner.add_argument(
+        "--db_path", type=str, help="DB's checkpoints path", default="./save/db"
+    )
+    parser_learner.add_argument(
         "--wandb", action="store_true", help="Log into WanDB cloud"
     )
 
@@ -155,6 +161,8 @@ if __name__ == "__main__":
     elif args.mode == "learner":
         agent = Learner(
             env_name=args.environment,
+            model_path=args.model_path,
+            db_path=args.db_path,
             max_steps=args.max_steps,
             batch_size=args.batch_size,
             actor_learning_rate=args.actor_learning_rate,
