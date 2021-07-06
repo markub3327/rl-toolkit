@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Activation, Dense
+from tensorflow.keras.layers import Dense
 
 from rl_toolkit.networks.activations import clipped_linear
 from rl_toolkit.networks.layers import MultivariateGaussianNoise
@@ -23,15 +23,18 @@ class Actor(Model):
         super(Actor, self).__init__(**kwargs)
 
         # 1. layer
-        self.fc1 = Dense(512, kernel_initializer="he_uniform")
-        self.fc1_activ = Activation("relu")
+        self.fc1 = Dense(
+            400,
+            activation="relu",
+            kernel_initializer="he_uniform",
+        )
 
         # 2. layer
         self.latent_sde = Dense(
-            512,
+            300,
+            activation="relu",
             kernel_initializer="he_uniform",
         )
-        self.latent_sde_activ = Activation("relu")
 
         # Deterministicke akcie
         self.mean = Dense(
@@ -57,11 +60,9 @@ class Actor(Model):
     def call(self, inputs, with_log_prob=True, deterministic=None):
         # 1. layer
         x = self.fc1(inputs)
-        x = self.fc1_activ(x)
 
         # 2. layer
         latent_sde = self.latent_sde(x)
-        latent_sde = self.latent_sde_activ(latent_sde)
 
         # Output layer
         mean = self.mean(latent_sde)

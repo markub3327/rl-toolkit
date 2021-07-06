@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Activation, Add, BatchNormalization, Dense
+from tensorflow.keras.layers import BatchNormalization, Concatenate, Dense
 
 
 class Critic(Model):
@@ -19,53 +19,61 @@ class Critic(Model):
     def __init__(self, n_quantiles: int, **kwargs):
         super(Critic, self).__init__(**kwargs)
 
+        # Input layer
+        self.merged = Concatenate()
+        self.merged_norm = BatchNormalization(momentum=0.0, scale=False)
+
         # 1. layer
         self.fc1 = Dense(
             512,
+            activation="relu",
             kernel_initializer="he_uniform",
         )
-        self.fc1_activ = Activation("relu")
         self.fc1_norm = BatchNormalization(momentum=0.0, scale=False)
 
         # 2. layer
-        self.fc2_a = Dense(
+        self.fc2 = Dense(
             512,
+            activation="relu",
             kernel_initializer="he_uniform",
         )
-        self.fc2_b = Dense(
-            512,
-            kernel_initializer="he_uniform",
-        )
-
-        # Merge state branch and action branch
-        self.fc2 = Add()
-        self.fc2_activ = Activation("relu")
         self.fc2_norm = BatchNormalization(momentum=0.0, scale=False)
 
+        # 3. layer
+        self.fc3 = Dense(
+            512,
+            activation="relu",
+            kernel_initializer="he_uniform",
+        )
+        self.fc3_norm = BatchNormalization(momentum=0.0, scale=False)
+
         # Output layer
-        self.Z = Dense(
+        self.quantiles = Dense(
             n_quantiles,
+            activation="linear",
             kernel_initializer="glorot_uniform",
-            name="Z",
+            name="quantiles",
         )
 
     def call(self, inputs, training=None):
+        x = self.merged(inputs)
+        x = self.merged_norm(x, training=training)
+
         # 1. layer
-        x_s = self.fc1(inputs[0])
-        x_s = self.fc1_activ(x_s)
-        x_s = self.fc1_norm(x_s, training=training)
+        x = self.fc1(x)
+        x = self.fc1_norm(x, training=training)
 
         # 2. layer
-        x_s = self.fc2_a(x_s)
-        x_a = self.fc2_b(inputs[1])
-
-        x = self.fc2([x_s, x_a])
-        x = self.fc2_activ(x)
+        x = self.fc2(x)
         x = self.fc2_norm(x, training=training)
 
+        # 3. layer
+        x = self.fc3(x)
+        x = self.fc3_norm(x, training=training)
+
         # Output layer
-        Z = self.Z(x)
-        return Z
+        quantiles = self.quantiles(x)
+        return quantiles
 
 
 class MultiCritic(Model):
@@ -94,5 +102,5 @@ class MultiCritic(Model):
             self.models.append(Critic(n_quantiles))
 
     def call(self, inputs):
-        Z = tf.stack(list(model(inputs) for model in self.models), axis=1)
-        return Z
+        quantiles = tf.stack(list(model(inputs) for model in self.models), axis=1)
+        return quantiles

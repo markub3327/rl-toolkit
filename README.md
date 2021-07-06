@@ -68,12 +68,13 @@ python3 -m rl_toolkit -e [ENV_NAME] server --db_path [PATH_TO_DB] [-h]
 
   | Environment              | gSDE | gSDE<br>+ Huber loss | gSDE<br>+ Quantile regression w/o TN |
   | ------------------------ | :---: | :-----------------: | :---------------------------: |
-  | BipedalWalkerHardcore-v3[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | 13 ± 18 | - |
-  | Walker2DBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)     | 2270 ± 28 | **2732 ± 96** |
-  | AntBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)          | 3106 ± 61 | **3460 ± 119** |
-  | HalfCheetahBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)  | 2945 ± 95 | **3003 ± 226** |
-  | HopperBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)       | 2515 ± 50 | **2555 ± 405** |
+  | BipedalWalkerHardcore-v3 | 13 ± 18[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | - |
+  | Walker2DBulletEnv-v0     | 2270 ± 28[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | **2732 ± 96** |
+  | AntBulletEnv-v0          | 3106 ± 61[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | **3460 ± 119** |
+  | HalfCheetahBulletEnv-v0  | 2945 ± 95[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | **3003 ± 226** |
+  | HopperBulletEnv-v0       | 2515 ± 50[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | **2555 ± 405** |
   | HumanoidBulletEnv-v0 | - | - |
+  | MinitaurBulletEnv-v0 | - | - |
 
 ## Model
 
