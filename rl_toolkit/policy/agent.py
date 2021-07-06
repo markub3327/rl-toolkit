@@ -39,7 +39,7 @@ class Agent(Policy):
         self._warmup_steps = warmup_steps
         self._log_wandb = log_wandb
 
-        # Actor network (for agent)
+        # Init actor's network
         self.actor = Actor(
             n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy()
         )
