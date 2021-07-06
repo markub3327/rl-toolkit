@@ -175,7 +175,7 @@ class Learner(Policy):
         self.client = reverb.Client("localhost:8000")
         self.dataset_iterator = iter(
             reverb.TrajectoryDataset.from_table_signature(
-                server_address=f"localhost:8000",
+                server_address="localhost:8000",
                 table="experience",
                 max_in_flight_samples_per_worker=(2 * batch_size),
             )
