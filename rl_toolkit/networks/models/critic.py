@@ -12,7 +12,6 @@ class Critic(Model):
         n_quantiles (int): number of predicted quantiles
 
     References:
-        - [CrossNorm: On Normalization for Off-Policy TD Reinforcement Learning](https://arxiv.org/abs/1902.05605)
         - [Controlling Overestimation Bias with Truncated Mixture of Continuous Distributional Quantile Critics](https://arxiv.org/abs/2005.04269)
     """
 
@@ -44,7 +43,7 @@ class Critic(Model):
             name="quantiles",
         )
 
-    def call(self, inputs, training=None):
+    def call(self, inputs):
         x = self.merged(inputs)
 
         # 1. layer

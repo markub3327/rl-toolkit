@@ -16,7 +16,6 @@ class Actor(Model):
         n_outputs (int): number of outputs
 
     References:
-        - [CrossNorm: On Normalization for Off-Policy TD Reinforcement Learning](https://arxiv.org/abs/1902.05605)
     """
 
     def __init__(self, n_outputs: int, **kwargs):

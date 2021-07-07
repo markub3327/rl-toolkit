@@ -11,7 +11,6 @@
   * [**Soft Actor-Critic**](https://arxiv.org/abs/1812.05905)
   * [**Generalized State-Dependent Exploration**](https://arxiv.org/abs/2005.05719)
   * [**Reverb: A framework for experience replay**](https://arxiv.org/abs/2102.04736)
-  * [**CrossNorm: On Normalization for Off-Policy TD Reinforcement Learning**](https://arxiv.org/abs/1902.05605)
   * [**Controlling Overestimation Bias with Truncated Mixture of Continuous Distributional Quantile Critics**](https://arxiv.org/abs/2005.04269)
 
 ## Setting up container
@@ -66,7 +65,7 @@ python3 -m rl_toolkit -e [ENV_NAME] server --db_path [PATH_TO_DB] [-h]
 
 <p align="center"><b>Score</b></p>
 
-  | Environment              | SAC + gSDE | SAC + gSDE<br>+ Huber loss | TQC + gSDE | TQC + gSDE<br>+ CrossNorm w/o TN |
+  | Environment              | SAC + gSDE | SAC + gSDE<br>+ Huber loss | TQC + gSDE | TQC + gSDE<br>+ Reverb |
   | ------------------------ | :--------: | :------------------------: | :--------: | :---------------------------: |
   | BipedalWalkerHardcore-v3 | 13 ± 18[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | - | 228 ± 18[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | - |
   | Walker2DBulletEnv-v0     | 2270 ± 28[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | **2732 ± 96** | 2535 ± 94[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | - |

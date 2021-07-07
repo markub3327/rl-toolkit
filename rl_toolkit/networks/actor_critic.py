@@ -64,9 +64,7 @@ class ActorCritic(Model):
         self._update_target(self.critic, self.critic_target, tau=tf.constant(1.0))
 
     def _update_target(self, net, net_targ, tau):
-        for source_weight, target_weight in zip(
-            net.variables, net_targ.variables
-        ):
+        for source_weight, target_weight in zip(net.variables, net_targ.variables):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
     def train_step(self, data):
