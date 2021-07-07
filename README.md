@@ -53,7 +53,7 @@ docker run -it --rm markub3327/rl-toolkit:2.0.2 python3 testing.py [-h] -alg sac
   | AntBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)          | 3106 ± 61 | **3460 ± 119** |
   | HalfCheetahBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)  | 2945 ± 95 | **3003 ± 226** |
   | HopperBulletEnv-v0[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for)       | 2515 ± 50 | **2555 ± 405** |
-  | HumanoidBulletEnv-v0 | - | ** ± ** |
+  | HumanoidBulletEnv-v0 | - | - |
 ----------------------------------
 
 **Framework:** Tensorflow 2.4.1
