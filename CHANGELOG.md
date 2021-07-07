@@ -2,15 +2,12 @@
 
 ## v3.2.4 (June XX, 2021)
 ### Features 🔊
-- Reverb (+multi-node learning) ✔️
-- `setup.py` (package is available on PyPI) ✔️
-- split into **agent**, **learner**, **tester** and **server** roles ✔️
-- Use custom model and layer for defining Actor-Critic ✔️
-- MultiCritic - concatenating multiple critic networks into one network ✔️
-- Truncated Quantile Critics + Fully Parameterized Quantile
-- Normalization layer (CrossRenorm)
-- Without target networks ✔️
-- Generating `png` image of the model ✔️
+- Reverb
+- `setup.py` (package is available on PyPI)
+- split into **agent**, **learner** and **tester** roles
+- Use custom model and layer for defining Actor-Critic
+- MultiCritic - concatenating multiple critic networks into one network
+- Truncated Quantile Critics
 
 ## v2.0.2 (May 23, 2021)
 ### Bug fixes 🛠️
