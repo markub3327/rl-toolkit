@@ -3,11 +3,9 @@ import os
 import reverb
 import tensorflow as tf
 import wandb
-from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import Adam
 
 from rl_toolkit.networks import ActorCritic
-from rl_toolkit.networks.layers import MultivariateGaussianNoise
 from rl_toolkit.utils import VariableContainer
 
 from .policy import Policy
