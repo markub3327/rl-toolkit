@@ -55,6 +55,20 @@ class ActorCritic(Model):
             n_critics=n_critics,
         )
 
+        # Critic target
+        self.critic_target = MultiCritic(
+            n_quantiles=n_quantiles,
+            top_quantiles_to_drop=top_quantiles_to_drop,
+            n_critics=n_critics,
+        )
+        self._update_target(self.critic, self.critic_target, tau=tf.constant(1.0))
+
+    def _update_target(self, net, net_targ, tau):
+        for source_weight, target_weight in zip(
+            net.model.trainable_variables, net_targ.model.trainable_variables
+        ):
+            target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
+
     def train_step(self, data):
         # Re-new noise matrix every update of 'log_std' params
         self.actor.reset_noise()
@@ -64,23 +78,15 @@ class ActorCritic(Model):
 
         # Update 'Critic'
         with tf.GradientTape() as tape:
-            # concatenating the two batches
-            merged_observation = tf.concat(
-                [data["observation"], data["next_observation"]], axis=0
-            )
+            quantiles = self.critic([data["observation"], data["action"]])
+
             next_action, next_log_pi = self.actor(
                 data["next_observation"],
                 with_log_prob=True,
                 deterministic=False,
             )
-            merged_action = tf.concat([data["action"], next_action], axis=0)
-
-            # get Q-value
-            quantiles, next_quantiles = tf.split(
-                self.critic([merged_observation, merged_action], training=True),
-                num_or_size_splits=2,
-                axis=0,
-            )
+            # target Q-values
+            next_quantiles = self.critic_target([data["next_observation"], next_action])
             next_quantiles = tf.sort(
                 tf.reshape(next_quantiles, [next_quantiles.shape[0], -1])
             )
@@ -148,6 +154,9 @@ class ActorCritic(Model):
         self.actor_optimizer.apply_gradients(
             zip(gradients, self.actor.trainable_variables)
         )
+
+        # -------------------- soft update target networks -------------------- #
+        self._update_target(self.critic, self.critic_target, tau=tf.constant(0.01))
 
         return {
             "actor_loss": actor_loss,

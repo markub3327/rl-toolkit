@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.layers import BatchNormalization, Concatenate, Dense
+from tensorflow.keras.layers import Concatenate, Dense
 
 
 class Critic(Model):
@@ -21,7 +21,6 @@ class Critic(Model):
 
         # Input layer
         self.merged = Concatenate()
-        self.merged_norm = BatchNormalization(momentum=0.0, scale=False)
 
         # 1. layer
         self.fc1 = Dense(
@@ -29,7 +28,6 @@ class Critic(Model):
             activation="relu",
             kernel_initializer="he_uniform",
         )
-        self.fc1_norm = BatchNormalization(momentum=0.0, scale=False)
 
         # 2. layer
         self.fc2 = Dense(
@@ -37,7 +35,6 @@ class Critic(Model):
             activation="relu",
             kernel_initializer="he_uniform",
         )
-        self.fc2_norm = BatchNormalization(momentum=0.0, scale=False)
 
         # Output layer
         self.quantiles = Dense(
@@ -49,15 +46,12 @@ class Critic(Model):
 
     def call(self, inputs, training=None):
         x = self.merged(inputs)
-        x = self.merged_norm(x, training=training)
 
         # 1. layer
         x = self.fc1(x)
-        x = self.fc1_norm(x, training=training)
 
         # 2. layer
         x = self.fc2(x)
-        x = self.fc2_norm(x, training=training)
 
         # Output layer
         quantiles = self.quantiles(x)
