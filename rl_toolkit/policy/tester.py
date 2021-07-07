@@ -45,6 +45,7 @@ class Tester(Policy):
         self.actor = Actor(
             n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy()
         )
+        self.actor.build((None,) + self._env.observation_space.shape)
 
         if model_path is not None:
             load_status = self.actor.load_weights(model_path)
