@@ -15,10 +15,12 @@ class ActorCritic(Model):
         n_critics (int): number of critic networks
         n_outputs (int): number of outputs
         gamma (float): the discount factor
+        tau (float): the soft update coefficient for target networks
         init_alpha (float): initialization of alpha param
 
     References:
         - [Soft Actor-Critic Algorithms and Applications](https://arxiv.org/abs/1812.05905)
+        - [Controlling Overestimation Bias with Truncated Mixture of Continuous Distributional Quantile Critics](https://arxiv.org/abs/2005.04269)
     """
 
     def __init__(
@@ -28,15 +30,17 @@ class ActorCritic(Model):
         n_critics: int,
         n_outputs: int,
         gamma: float,
+        tau: float,
         init_alpha: float,
         **kwargs,
     ):
         super(ActorCritic, self).__init__(**kwargs)
 
         self.gamma = tf.constant(gamma)
-        self.tau = tf.constant(
+        self.tau = tf.constant(tau)
+        self.cum_prob = tf.constant(
             (tf.range(n_quantiles, dtype=tf.float32) + 0.5) / n_quantiles
-        )
+        )[tf.newaxis, tf.newaxis, :, tf.newaxis]
 
         # init param 'alpha' - Lagrangian constraint
         self.log_alpha = tf.Variable(
@@ -64,7 +68,9 @@ class ActorCritic(Model):
         self._update_target(self.critic, self.critic_target, tau=tf.constant(1.0))
 
     def _update_target(self, net, net_targ, tau):
-        for source_weight, target_weight in zip(net.variables, net_targ.variables):
+        for source_weight, target_weight in zip(
+            net.trainable_variables, net_targ.trainable_variables
+        ):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
     def train_step(self, data):
@@ -74,7 +80,7 @@ class ActorCritic(Model):
         # Set 'Alpha'
         self.alpha.assign(tf.exp(self.log_alpha))
 
-        # Update 'Critic'
+        # -------------------- Update 'Critic' -------------------- #
         with tf.GradientTape() as tape:
             quantiles = self.critic([data["observation"], data["action"]])
 
@@ -115,8 +121,7 @@ class ActorCritic(Model):
             critic_loss = tf.nn.compute_average_loss(
                 tf.reduce_mean(
                     tf.math.abs(
-                        self.tau[tf.newaxis, tf.newaxis, :, tf.newaxis]
-                        - tf.cast(pairwise_delta < 0.0, dtype=tf.float32)
+                        self.cum_prob - tf.cast(pairwise_delta < 0.0, dtype=tf.float32)
                     )
                     * huber_loss,
                     axis=[1, 2, 3],
@@ -128,7 +133,7 @@ class ActorCritic(Model):
             zip(gradients, self.critic.trainable_variables)
         )
 
-        # Update 'Actor' & 'Alpha'
+        # -------------------- Update 'Actor' & 'Alpha' -------------------- #
         with tf.GradientTape(persistent=True) as tape:
             quantiles, log_pi = self(data["observation"])
 
@@ -153,8 +158,8 @@ class ActorCritic(Model):
             zip(gradients, self.actor.trainable_variables)
         )
 
-        # -------------------- soft update target networks -------------------- #
-        self._update_target(self.critic, self.critic_target, tau=tf.constant(0.01))
+        # -------------------- Soft update target networks -------------------- #
+        self._update_target(self.critic, self.critic_target, tau=tf.constant(self.tau))
 
         return {
             "actor_loss": actor_loss,
@@ -162,8 +167,10 @@ class ActorCritic(Model):
             "alpha_loss": alpha_loss,
         }
 
-    def call(self, inputs):
-        action, log_pi = self.actor(inputs, with_log_prob=True, deterministic=False)
+    def call(self, inputs, with_log_prob=True, deterministic=None):
+        action, log_pi = self.actor(
+            inputs, with_log_prob=with_log_prob, deterministic=deterministic
+        )
         quantiles = self.critic([inputs, action])
         return [quantiles, log_pi]
 

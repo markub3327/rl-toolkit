@@ -68,6 +68,9 @@ if __name__ == "__main__":
         default=0.99,
     )
     parser_learner.add_argument(
+        "--tau", type=float, help="Soft update rate", default=0.01
+    )
+    parser_learner.add_argument(
         "--init_alpha",
         type=float,
         help="Initialization value of alpha (entropy coeff)",
@@ -169,6 +172,7 @@ if __name__ == "__main__":
             critic_learning_rate=args.critic_learning_rate,
             alpha_learning_rate=args.alpha_learning_rate,
             gamma=args.gamma,
+            tau=args.tau,
             init_alpha=args.init_alpha,
             save_path=args.save_path,
             log_wandb=args.wandb,

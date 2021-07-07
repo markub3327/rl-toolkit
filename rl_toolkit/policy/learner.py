@@ -30,6 +30,7 @@ class Learner(Policy):
         critic_learning_rate (float): the learning rate for Critic's optimizer
         alpha_learning_rate (float): the learning rate for Alpha's optimizer
         gamma (float): the discount factor
+        tau (float): the soft update coefficient for target networks
         init_alpha (float): initialization of alpha param
         save_path (str): path to the models for saving
         log_wandb (bool): log into WanDB cloud
@@ -52,6 +53,7 @@ class Learner(Policy):
         alpha_learning_rate: float = 3e-4,
         # ---
         gamma: float = 0.99,
+        tau: float = 0.01,
         init_alpha: float = 1.0,
         # ---
         save_path: str = None,
@@ -74,9 +76,14 @@ class Learner(Policy):
                 n_critics=2,
                 n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),
                 gamma=gamma,
+                tau=tau,
                 init_alpha=init_alpha,
             )
-            self.model.build((None,) + self._env.observation_space.shape)
+            self.model(
+                tf.zeros([self._env.observation_space.shape]),
+                with_log_prob=False,
+                deterministic=True,
+            )
             self.model.compile(
                 actor_optimizer=Adam(learning_rate=actor_learning_rate),
                 critic_optimizer=Adam(learning_rate=critic_learning_rate),

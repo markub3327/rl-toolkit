@@ -16,6 +16,7 @@ class Actor(Model):
         n_outputs (int): number of outputs
 
     References:
+        - [Soft Actor-Critic Algorithms and Applications](https://arxiv.org/abs/1812.05905)
     """
 
     def __init__(self, n_outputs: int, **kwargs):
