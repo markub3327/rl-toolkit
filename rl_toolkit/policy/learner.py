@@ -90,8 +90,7 @@ class Learner(Policy):
         )
 
         if model_path is not None:
-            load_status = self.model.load_weights(model_path)
-            load_status.assert_consumed()
+            self.model.load_weights(model_path)
 
         # Show models details
         self.model.actor.summary()

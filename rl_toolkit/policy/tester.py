@@ -48,8 +48,7 @@ class Tester(Policy):
         self.actor.build((None,) + self._env.observation_space.shape)
 
         if model_path is not None:
-            load_status = self.actor.load_weights(model_path)
-            load_status.assert_consumed()
+            self.actor.load_weights(model_path)
 
         # init Weights & Biases
         if self._log_wandb:
