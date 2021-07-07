@@ -3,9 +3,7 @@ import math
 import cv2
 import tensorflow as tf
 import wandb
-from tensorflow.keras.models import load_model
 
-from rl_toolkit.networks.layers import MultivariateGaussianNoise
 from rl_toolkit.networks.models import Actor
 
 from .policy import Policy
@@ -42,17 +40,13 @@ class Tester(Policy):
         self._render = render
         self._log_wandb = log_wandb
 
-        if model_path is None:
-            self.actor = Actor(
-                n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy()
-            )
-            print("Model created succesful ...")
-        else:
-            self.actor = load_model(
-                model_path,
-                custom_objects={"MultivariateGaussianNoise": MultivariateGaussianNoise},
-            )
-            print("Model loaded succesful ...")
+        self.actor = Actor(
+            n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy()
+        )
+        self.actor.build((None,) + self._env.observation_space.shape)
+
+        if model_path is not None:
+            self.actor.load_weights(model_path)
 
         # init Weights & Biases
         if self._log_wandb:

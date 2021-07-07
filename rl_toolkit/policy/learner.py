@@ -3,12 +3,9 @@ import os
 import reverb
 import tensorflow as tf
 import wandb
-from tensorflow.keras.models import load_model
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.utils import plot_model
 
 from rl_toolkit.networks import ActorCritic
-from rl_toolkit.networks.layers import MultivariateGaussianNoise
 from rl_toolkit.utils import VariableContainer
 
 from .policy import Policy
@@ -69,36 +66,24 @@ class Learner(Policy):
         self._log_wandb = log_wandb
 
         # Init actor-critic's network
-        if model_path is None:
-            self.model = ActorCritic(
-                n_quantiles=25,
-                top_quantiles_to_drop=2,
-                n_critics=2,
-                n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),
-                gamma=gamma,
-                tau=tau,
-                init_alpha=init_alpha,
-            )
-            self.model(
-                tf.expand_dims(tf.zeros(self._env.observation_space.shape), axis=0),
-            )  # init configuration for training
-            self.model(
-                tf.expand_dims(tf.zeros(self._env.observation_space.shape), axis=0),
-                with_log_prob=False,
-                deterministic=True,
-            )  # init configuration for inference
-            self.model.compile(
-                actor_optimizer=Adam(learning_rate=actor_learning_rate),
-                critic_optimizer=Adam(learning_rate=critic_learning_rate),
-                alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
-            )
-            print("Model created succesful ...")
-        else:
-            self.model = load_model(
-                model_path,
-                custom_objects={"MultivariateGaussianNoise": MultivariateGaussianNoise},
-            )
-            print("Model loaded succesful ...")
+        self.model = ActorCritic(
+            n_quantiles=25,
+            top_quantiles_to_drop=2,
+            n_critics=2,
+            n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),
+            gamma=gamma,
+            tau=tau,
+            init_alpha=init_alpha,
+        )
+        self.model.build((None,) + self._env.observation_space.shape)
+        self.model.compile(
+            actor_optimizer=Adam(learning_rate=actor_learning_rate),
+            critic_optimizer=Adam(learning_rate=critic_learning_rate),
+            alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
+        )
+
+        if model_path is not None:
+            self.model.load_weights(model_path)
 
         # Show models details
         self.model.actor.summary()
@@ -259,22 +244,8 @@ class Learner(Policy):
     def save(self):
         if self._save_path:
             # Save model
-            self.model.save(os.path.join(self._save_path, "actor_critic"))
-            self.model.actor.save(os.path.join(self._save_path, "actor"))
-
-            # Save model to png
-            plot_model(
-                self.model.actor,
-                to_file=os.path.join(self._save_path, "actor.png"),
-                show_shapes=True,
-                show_dtype=True,
-            )
-            plot_model(
-                self.model.critic,
-                to_file=os.path.join(self._save_path, "critic.png"),
-                show_shapes=True,
-                show_dtype=True,
-            )
+            self.model.save_weights(os.path.join(self._save_path, "actor_critic.h5"))
+            self.model.actor.save_weights(os.path.join(self._save_path, "actor.h5"))
 
     def close(self):
         super(Learner, self).close()
