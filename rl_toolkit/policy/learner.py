@@ -81,9 +81,12 @@ class Learner(Policy):
             )
             self.model(
                 tf.expand_dims(tf.zeros(self._env.observation_space.shape), axis=0),
+            )  # init configuration for training
+            self.model(
+                tf.expand_dims(tf.zeros(self._env.observation_space.shape), axis=0),
                 with_log_prob=False,
                 deterministic=True,
-            )
+            )  # init configuration for inference
             self.model.compile(
                 actor_optimizer=Adam(learning_rate=actor_learning_rate),
                 critic_optimizer=Adam(learning_rate=critic_learning_rate),
