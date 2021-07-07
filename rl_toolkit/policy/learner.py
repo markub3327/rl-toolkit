@@ -81,11 +81,6 @@ class Learner(Policy):
             critic_optimizer=Adam(learning_rate=critic_learning_rate),
             alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
         )
-        self.model.compile(
-            actor_optimizer=Adam(learning_rate=actor_learning_rate),
-            critic_optimizer=Adam(learning_rate=critic_learning_rate),
-            alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
-        )
 
         if model_path is not None:
             self.model.load_weights(model_path)
