@@ -77,19 +77,19 @@ if __name__ == "__main__":
         "--actor_learning_rate",
         type=float,
         help="Learning rate for actor network",
-        default=3e-4,
+        default=7.3e-4,
     )
     parser_learner.add_argument(
         "--critic_learning_rate",
         type=float,
         help="Learning rate for critic network",
-        default=3e-4,
+        default=7.3e-4,
     )
     parser_learner.add_argument(
         "--alpha_learning_rate",
         type=float,
         help="Learning rate for alpha parameter",
-        default=3e-4,
+        default=7.3e-4,
     )
     parser_learner.add_argument(
         "-bs", "--batch_size", type=int, help="Size of the mini-batch", default=256

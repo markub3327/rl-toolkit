@@ -69,9 +69,9 @@ class Learner(Policy):
         # Init actor-critic's network
         if model_path is None:
             self.model = ActorCritic(
-                n_quantiles=35,
+                n_quantiles=25,
                 top_quantiles_to_drop=3,
-                n_critics=3,
+                n_critics=2,
                 n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),
                 gamma=gamma,
                 init_alpha=init_alpha,
