@@ -65,7 +65,7 @@ class ActorCritic(Model):
 
     def _update_target(self, net, net_targ, tau):
         for source_weight, target_weight in zip(
-            net.model.trainable_variables, net_targ.model.trainable_variables
+            net.variables, net_targ.variables
         ):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
