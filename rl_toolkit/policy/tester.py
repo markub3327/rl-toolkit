@@ -42,17 +42,13 @@ class Tester(Policy):
         self._render = render
         self._log_wandb = log_wandb
 
-        if model_path is None:
-            self.actor = Actor(
-                n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy()
-            )
-            print("Model created succesful ...")
-        else:
-            self.actor = load_model(
-                model_path,
-                custom_objects={"MultivariateGaussianNoise": MultivariateGaussianNoise},
-            )
-            print("Model loaded succesful ...")
+        self.actor = Actor(
+            n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy()
+        )
+
+        if model_path is not None:
+            load_status = self.actor.load_weights(model_path)
+            load_status.assert_consumed()
 
         # init Weights & Biases
         if self._log_wandb:
