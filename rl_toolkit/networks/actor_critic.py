@@ -166,7 +166,7 @@ class ActorCritic(Model):
 
     def call(self, inputs):
         action, log_pi = self.actor(inputs, with_log_prob=True, deterministic=False)
-        quantiles = self.critic([inputs, action], training=False)
+        quantiles = self.critic([inputs, action])
         return [quantiles, log_pi]
 
     def compile(self, actor_optimizer, critic_optimizer, alpha_optimizer):
