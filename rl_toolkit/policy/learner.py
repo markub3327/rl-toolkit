@@ -80,7 +80,7 @@ class Learner(Policy):
                 init_alpha=init_alpha,
             )
             self.model(
-                tf.zeros((None,) + self._env.observation_space.shape),
+                tf.expand_dims(tf.zeros(self._env.observation_space.shape), axis=0),
                 with_log_prob=False,
                 deterministic=True,
             )
