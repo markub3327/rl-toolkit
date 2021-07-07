@@ -252,8 +252,8 @@ class Learner(Policy):
     def save(self):
         if self._save_path:
             # Save model
-            self.model.save_weights(os.path.join(self._save_path, "actor_critic"))
-            self.model.actor.save_weights(os.path.join(self._save_path, "actor"))
+            self.model.save_weights(os.path.join(self._save_path, "actor_critic.h5"))
+            self.model.actor.save_weights(os.path.join(self._save_path, "actor.h5"))
 
     def close(self):
         super(Learner, self).close()
