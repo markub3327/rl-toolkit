@@ -39,9 +39,6 @@ python3 -m rl_toolkit -e [ENV_NAME] agent --db_server [IP_ADDRESS/HOSTNAME] [--w
 
 # Tester container
 python3 -m rl_toolkit -e [ENV_NAME] tester --model_path [PATH_TO_MODEL] [--render] [--wandb] [-h]
-
-# Server container
-python3 -m rl_toolkit -e [ENV_NAME] server --db_path [PATH_TO_DB] [-h]
 ```
 
 ## Tested environments
