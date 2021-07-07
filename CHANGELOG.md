@@ -1,6 +1,6 @@
 # Changes
 
-## v3.2.4 (June XX, 2021)
+## v3.2.4 (July 7, 2021)
 ### Features 🔊
 - Reverb
 - `setup.py` (package is available on PyPI)
