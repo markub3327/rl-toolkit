@@ -1,9 +1,10 @@
 name: Python CI (publishing)
 
-on: [push, pull_request]
+on:
+  release:
+    types: [published]
 
 jobs:
-
   deploy-img:
     name: Deploy image
     runs-on: ubuntu-latest
