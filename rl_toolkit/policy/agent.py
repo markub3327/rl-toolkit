@@ -158,8 +158,8 @@ class Agent(Policy):
                     },
                 )
 
-                # Block until the item has been inserted and confirmed by the server
-                writer.flush()
+                # Block until all the items have been sent to the server
+                writer.end_episode()
 
                 # logovanie
                 print("=============================================")
