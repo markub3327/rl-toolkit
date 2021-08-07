@@ -10,7 +10,7 @@ with open("CHANGELOG.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="rl-toolkit",
-    version="3.2.5",
+    version="4.0.0",
     description="The RL-Toolkit: A toolkit for developing and comparing your reinforcement learning agents in various games (OpenAI Gym or Pybullet).",  # noqa
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -29,7 +29,6 @@ setup(
         "ml",
         "openai-gym",
         "pybullet",
-        "reverb",
         "docker",
         "rl-agents",
         "rl",
@@ -46,12 +45,8 @@ setup(
         "gym",
         "box2d",
         "pybullet",
-        "tensorflow",
         "tensorflow_probability",
-        "opencv-python",
         "wandb",
-        "dm-reverb",
-        "pydot",
     ],
     python_requires=">=3.6",
     classifiers=[
