@@ -7,7 +7,7 @@ pybullet
 #
 ###### Tensorflow ######
 #
-tensorflow~=2.5.0
+tensorflow~=2.6.0
 tensorflow_probability
 pydot
 #
