@@ -163,7 +163,6 @@ class Agent:
                 print(f"Score: {self._episode_reward}")
                 print(f"Steps: {self._episode_steps}")
                 print(f"TotalInteractions: {self._total_steps}")
-                print(f"Train step: {self._train_step}")
                 print("=============================================")
                 if self._log_wandb:
                     wandb.log(
@@ -172,7 +171,7 @@ class Agent:
                             "Score": self._episode_reward,
                             "Steps": self._episode_steps,
                         },
-                        step=self._train_step,
+                        step=self._total_steps,
                     )
 
                 # Init variables
@@ -192,21 +191,22 @@ class Agent:
         self._episode_steps = 0
         self._total_episodes = 0
         self._total_steps = 0
-        self._train_step = 0
         self._last_obs = self._env.reset()
 
         # zahrievacie kola
         self.collect(self._warmup_steps, self.random_policy)
 
         # hlavny cyklus hry
-        while self._train_step < self._max_steps:
+        while self._total_steps < self._max_steps:
             self.collect(self._env_steps, self.collect_policy)
 
-            # Get data from replay buffer
-            data = self._memory.sample(self._batch_size)
+            # Training ...
+            for _ in range(self._env_steps):
+                # Get data from replay buffer
+                data = self._memory.sample(self._batch_size)
 
-            # update models
-            losses = self.train(data)
+                # update models
+                losses = self.train(data)
 
             # log metrics
             if self._log_wandb:
@@ -217,11 +217,8 @@ class Agent:
                         "Critic loss": losses["critic_loss"],
                         "Actor loss": losses["actor_loss"],
                     },
-                    step=self._train_step,
+                    step=self._total_steps,
                 )
-
-            # increase the training step
-            self._train_step += 1
 
     def save(self):
         if self._save_path:
