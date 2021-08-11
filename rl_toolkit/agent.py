@@ -4,24 +4,22 @@ import gym
 import numpy as np
 import pybullet_envs  # noqa
 import tensorflow as tf
-import wandb
 from tensorflow.keras.optimizers import Adam
 
+import wandb
 from rl_toolkit.networks import ActorCritic
-from rl_toolkit.utils.replay_buffer import ReplayBuffer
+from rl_toolkit.utils import ReplayBuffer
 
 
-class Training:
+class Agent:
     """
-    Training
+    Agent
     =================
-
     Attributes:
         env_name (str): the name of environment
-        model_path (str): path to the model
         max_steps (int): maximum number of interactions do in environment
-        warmup_steps (int): number of interactions before using policy network
         env_steps (int): number of steps per rollout
+        warmup_steps (int): number of interactions before using policy network
         buffer_capacity (int): the capacity of experiences replay buffer
         batch_size (int): size of mini-batch used for training
         actor_learning_rate (float): the learning rate for Actor's optimizer
@@ -31,6 +29,7 @@ class Training:
         tau (float): the soft update coefficient for target networks
         init_alpha (float): initialization of alpha param
         save_path (str): path to the models for saving
+        model_path (str): path to the model
         log_wandb (bool): log into WanDB cloud
     """
 
@@ -39,30 +38,33 @@ class Training:
         # ---
         env_name: str,
         # ---
-        max_steps: int = 1000000,
-        warmup_steps: int = 10000,
-        env_steps: int = 64,
-        buffer_capacity: int = 1000000,
-        batch_size: int = 256,
+        max_steps: int,
+        env_steps: int,
+        warmup_steps: int,
         # ---
-        actor_learning_rate: float = 3e-4,
-        critic_learning_rate: float = 3e-4,
-        alpha_learning_rate: float = 3e-4,
+        buffer_capacity: int,
+        batch_size: int,
         # ---
-        gamma: float = 0.99,
-        tau: float = 0.01,
-        init_alpha: float = 1.0,
+        actor_learning_rate: float,
+        critic_learning_rate: float,
+        alpha_learning_rate: float,
         # ---
-        model_path: str = None,
-        save_path: str = None,
+        gamma: float,
+        tau: float,
+        init_alpha: float,
         # ---
-        log_wandb: bool = False,
+        save_path: str,
+        model_path: str,
+        # ---
+        log_wandb: bool,
     ):
+        # Herne prostredie
         self._env = gym.make(env_name)
+
         self._max_steps = max_steps
         self._env_steps = env_steps
-        self._batch_size = batch_size
         self._warmup_steps = warmup_steps
+        self._batch_size = batch_size
         self._save_path = save_path
         self._log_wandb = log_wandb
 
@@ -71,16 +73,16 @@ class Training:
             n_quantiles=35,
             top_quantiles_to_drop=3,
             n_critics=3,
-            n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),
+            n_outputs=np.prod(self._env.action_space.shape),
             gamma=gamma,
             tau=tau,
             init_alpha=init_alpha,
         )
         self.model.build((None,) + self._env.observation_space.shape)
         self.model.compile(
-            actor_optimizer=Adam(learning_rate=actor_learning_rate, clipnorm=0.5),
-            critic_optimizer=Adam(learning_rate=critic_learning_rate, clipnorm=0.5),
-            alpha_optimizer=Adam(learning_rate=alpha_learning_rate, clipnorm=0.5),
+            actor_optimizer=Adam(learning_rate=actor_learning_rate),
+            critic_optimizer=Adam(learning_rate=critic_learning_rate),
+            alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
         )
 
         if model_path is not None:
@@ -91,9 +93,9 @@ class Training:
         self.model.critic.summary()
 
         # Init replay buffer
-        self._rpm = ReplayBuffer(
-            state_dim=self._env.observation_space.shape,
-            action_dim=self._env.action_space.shape,
+        self._memory = ReplayBuffer(
+            obs_dim=self._env.observation_space.shape,
+            act_dim=self._env.action_space.shape,
             max_size=buffer_capacity,
         )
 
@@ -103,15 +105,23 @@ class Training:
 
             # Settings
             wandb.config.max_steps = max_steps
-            wandb.config.warmup_steps = warmup_steps
             wandb.config.env_steps = env_steps
+            wandb.config.warmup_steps = warmup_steps
             wandb.config.buffer_capacity = buffer_capacity
             wandb.config.batch_size = batch_size
             wandb.config.actor_learning_rate = actor_learning_rate
             wandb.config.critic_learning_rate = critic_learning_rate
             wandb.config.alpha_learning_rate = alpha_learning_rate
             wandb.config.gamma = gamma
+            wandb.config.tau = tau
             wandb.config.init_alpha = init_alpha
+
+    @tf.function
+    def train(self, sample):
+        # Train the Actor-Critic model
+        losses = self.model.train_step(sample)
+
+        return losses
 
     def random_policy(self, input):
         action = self._env.action_space.sample()
@@ -126,13 +136,6 @@ class Training:
         )
         return tf.squeeze(action, axis=0)
 
-    @tf.function
-    def _train(self, sample):
-        # Train the Actor-Critic model
-        losses = self.model.train_step(sample)
-
-        return losses
-
     def collect(self, max_steps, policy):
         # collect the rollout
         for _ in range(max_steps):
@@ -141,17 +144,19 @@ class Training:
             action = np.array(action, dtype="float32")
 
             # perform action
-            next_state, reward, done, _ = self._env.step(action)
+            new_obs, reward, terminal, _ = self._env.step(action)
 
             # Update variables
             self._episode_reward += reward
             self._episode_steps += 1
             self._total_steps += 1
 
-            self._rpm.store(self._state, action, reward, done)
+            # store the interaction
+            # https://github.com/openai/gym/blob/master/gym/wrappers/frame_stack.py
+            self._memory.store(self._last_obs, action, reward, new_obs, terminal)
 
             # Check the end of episode
-            if done:
+            if terminal:
                 # logovanie
                 print("=============================================")
                 print(f"Epoch: {self._total_episodes}")
@@ -167,7 +172,7 @@ class Training:
                             "Score": self._episode_reward,
                             "Steps": self._episode_steps,
                         },
-                        step=self._,
+                        step=self._train_step,
                     )
 
                 # Init variables
@@ -179,7 +184,7 @@ class Training:
                 self._last_obs = self._env.reset()
             else:
                 # Super critical !!!
-                self._state = next_state
+                self._last_obs = new_obs
 
     def run(self):
         # init environment
@@ -187,46 +192,36 @@ class Training:
         self._episode_steps = 0
         self._total_episodes = 0
         self._total_steps = 0
-        self._state = self._env.reset()
         self._train_step = 0
+        self._last_obs = self._env.reset()
 
         # zahrievacie kola
         self.collect(self._warmup_steps, self.random_policy)
 
-        for train_step in range(self._max_steps):
-            # re-new noise matrix before every rollouts
-            self.model.actor.reset_noise()
-
-            # collect rollouts
+        # hlavny cyklus hry
+        while self._train_step < self._max_steps:
             self.collect(self._env_steps, self.collect_policy)
 
-            # Get sample
-            sample = self._rpm.sample(batch_size=self._batch_size)
+            # Get data from replay buffer
+            data = self._memory.sample(self._batch_size)
 
             # update models
-            losses = self._train(steps=self._env_steps, samples=sample)
+            losses = self.train(data)
 
             # log metrics
-            print("=============================================")
-            print(f"Train step: {self._train_step.numpy()}")
-            print(f"Alpha loss: {losses['alpha_loss']}")
-            print(f"Critic loss: {losses['critic_loss']}")
-            print(f"Actor loss: {losses['actor_loss']}")
-            print("=============================================")
-            print(
-                f"Training ... {(self._train_step * 100) // self._max_steps} %"  # noqa
-            )
             if self._log_wandb:
-                # log of epoch's mean loss
                 wandb.log(
                     {
-                        "Alpha": self.model.alpha,
+                        "Log alpha": self.model.log_alpha,
                         "Alpha loss": losses["alpha_loss"],
                         "Critic loss": losses["critic_loss"],
                         "Actor loss": losses["actor_loss"],
                     },
-                    step=self._train_step.numpy(),
+                    step=self._train_step,
                 )
+
+            # increase the training step
+            self._train_step += 1
 
     def save(self):
         if self._save_path:
