@@ -1,4 +1,5 @@
 import os
+import numpy as np
 
 import reverb
 import tensorflow as tf
@@ -18,8 +19,6 @@ class Learner(Policy):
 
     Attributes:
         env_name (str): the name of environment
-        model_path (str): path to the model
-        db_path (str): path to the database checkpoint
         max_steps (int): maximum number of interactions do in environment
         buffer_capacity (int): the capacity of experiences replay buffer
         batch_size (int): size of mini-batch used for training
@@ -29,6 +28,8 @@ class Learner(Policy):
         gamma (float): the discount factor
         tau (float): the soft update coefficient for target networks
         init_alpha (float): initialization of alpha param
+        model_path (str): path to the model
+        db_path (str): path to the database checkpoint
         save_path (str): path to the models for saving
         log_wandb (bool): log into WanDB cloud
         log_interval (int): the logging interval to the console
@@ -38,25 +39,25 @@ class Learner(Policy):
         self,
         # ---
         env_name: str,
-        model_path: str = None,
-        db_path: str = None,
         # ---
-        max_steps: int = 1000000,
-        buffer_capacity: int = 1000000,
-        batch_size: int = 256,
+        max_steps: int,
+        buffer_capacity: int,
+        batch_size: int,
         # ---
-        actor_learning_rate: float = 3e-4,
-        critic_learning_rate: float = 3e-4,
-        alpha_learning_rate: float = 3e-4,
+        actor_learning_rate: float,
+        critic_learning_rate: float,
+        alpha_learning_rate: float,
         # ---
-        gamma: float = 0.99,
-        tau: float = 0.01,
-        init_alpha: float = 1.0,
+        gamma: float,
+        tau: float,
+        init_alpha: float,
         # ---
-        save_path: str = None,
+        model_path: str,
+        db_path: str,
+        save_path: str,
         # ---
-        log_wandb: bool = False,
-        log_interval: int = 1000,
+        log_wandb: bool,
+        log_interval: int,
     ):
         super(Learner, self).__init__(env_name)
 
@@ -70,7 +71,7 @@ class Learner(Policy):
             n_quantiles=35,
             top_quantiles_to_drop=3,
             n_critics=3,
-            n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy(),
+            n_outputs=np.prod(self._env.action_space.shape),
             gamma=gamma,
             tau=tau,
             init_alpha=init_alpha,
@@ -190,6 +191,7 @@ class Learner(Policy):
             wandb.config.critic_learning_rate = critic_learning_rate
             wandb.config.alpha_learning_rate = alpha_learning_rate
             wandb.config.gamma = gamma
+            wandb.config.tau = tau
             wandb.config.init_alpha = init_alpha
 
     @tf.function
@@ -221,12 +223,11 @@ class Learner(Policy):
                 print(
                     f"Training ... {(self._train_step * 100) // self._max_steps} %"  # noqa
                 )
-
             if self._log_wandb:
                 # log of epoch's mean loss
                 wandb.log(
                     {
-                        "Alpha": self.model.alpha,
+                        "Log alpha": self.model.log_alpha,
                         "Alpha loss": losses["alpha_loss"],
                         "Critic loss": losses["critic_loss"],
                         "Actor loss": losses["actor_loss"],

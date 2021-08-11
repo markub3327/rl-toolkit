@@ -36,13 +36,13 @@ if __name__ == "__main__":
         "--env_steps",
         type=int,
         help="Number of steps per rollout",
-        default=64,
+        default=8,
     )
     parser_agent.add_argument(
         "--warmup_steps",
         type=int,
         help="Number of steps before using policy network",
-        default=10000,
+        default=int(1e4),
     )
     parser_agent.add_argument(
         "--wandb", action="store_true", help="Log into WanDB cloud"
@@ -93,6 +93,12 @@ if __name__ == "__main__":
         type=float,
         help="Learning rate for alpha parameter",
         default=7.3e-4,
+    )
+    parser_learner.add_argument(
+        "--buffer_capacity",
+        type=int,
+        help="Maximal capacity of memory",
+        default=int(1e6),
     )
     parser_learner.add_argument(
         "-bs", "--batch_size", type=int, help="Size of the mini-batch", default=256
@@ -164,9 +170,8 @@ if __name__ == "__main__":
     elif args.mode == "learner":
         agent = Learner(
             env_name=args.environment,
-            model_path=args.model_path,
-            db_path=args.db_path,
             max_steps=args.max_steps,
+            buffer_capacity=args.buffer_capacity,
             batch_size=args.batch_size,
             actor_learning_rate=args.actor_learning_rate,
             critic_learning_rate=args.critic_learning_rate,
@@ -175,6 +180,8 @@ if __name__ == "__main__":
             tau=args.tau,
             init_alpha=args.init_alpha,
             save_path=args.save_path,
+            model_path=args.model_path,
+            db_path=args.db_path,
             log_wandb=args.wandb,
             log_interval=args.log_interval,
         )

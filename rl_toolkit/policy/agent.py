@@ -28,10 +28,10 @@ class Agent(Policy):
         env_name: str,
         db_server: str,
         # ---
-        warmup_steps: int = 10000,
-        env_steps: int = 64,
+        warmup_steps: int,
+        env_steps: int,
         # ---
-        log_wandb: bool = False,
+        log_wandb: bool,
     ):
         super(Agent, self).__init__(env_name)
 
@@ -41,7 +41,7 @@ class Agent(Policy):
 
         # Init actor's network
         self.actor = Actor(
-            n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy()
+            n_outputs=np.prod(self._env.action_space.shape)
         )
         self.actor.build((None,) + self._env.observation_space.shape)
 
@@ -108,7 +108,7 @@ class Agent(Policy):
         for _ in range(max_steps):
             # Get the action
             action = policy(self._last_obs)
-            action = np.array(action, dtype="float32")
+            action = np.array(action, copy=False, dtype="float32")
 
             # perform action
             new_obs, reward, terminal, _ = self._env.step(action)

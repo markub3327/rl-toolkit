@@ -29,10 +29,10 @@ class Tester(Policy):
         # ---
         max_steps: int,
         # ---
-        render: bool = False,
+        render: bool,
         # ---
-        model_path: str = None,
-        log_wandb: bool = False,
+        model_path: str,
+        log_wandb: bool,
     ):
         super(Tester, self).__init__(env_name)
 
