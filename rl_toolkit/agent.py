@@ -129,7 +129,7 @@ class Agent:
 
     @tf.function
     def collect_policy(self, input):
-        action, _ = self.actor(
+        action, _ = self.model.actor(
             tf.expand_dims(input, axis=0),
             with_log_prob=False,
             deterministic=False,
