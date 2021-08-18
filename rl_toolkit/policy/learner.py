@@ -181,7 +181,7 @@ class Learner(Policy):
 
         # init Weights & Biases
         if self._log_wandb:
-            wandb.init(project="rl-toolkit")
+            wandb.init(project="rl-toolkit", group=f"{env_name}")
 
             # Settings
             wandb.config.max_steps = max_steps

@@ -82,7 +82,7 @@ class Agent(Policy):
 
         # init Weights & Biases
         if self._log_wandb:
-            wandb.init(project="rl-toolkit")
+            wandb.init(project="rl-toolkit", group=f"{env_name}")
 
             # Settings
             wandb.config.warmup_steps = warmup_steps
