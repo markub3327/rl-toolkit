@@ -87,14 +87,13 @@ class Learner(Policy):
             self.model.load_weights(model_path)
 
         # Show models details
-        self.model.actor.summary()
-        self.model.critic.summary()
+        self.model.summary()
 
         # Variables
         self._train_step = tf.Variable(
             0,
             trainable=False,
-            dtype=tf.int64,
+            dtype=tf.uint64,
             aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
             shape=(),
         )

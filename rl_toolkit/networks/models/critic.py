@@ -79,9 +79,13 @@ class MultiCritic(Model):
 
         # init critics
         self.models = []
-        for i in range(n_critics):
+        for _ in range(n_critics):
             self.models.append(Critic(n_quantiles))
 
     def call(self, inputs):
         quantiles = tf.stack(list(model(inputs) for model in self.models), axis=1)
         return quantiles
+
+    def summary(self):
+        for model in self.models:
+            model.summary()
