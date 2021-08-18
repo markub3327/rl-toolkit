@@ -147,7 +147,7 @@ class Learner(Policy):
                             [*self._env.observation_space.shape],
                             self._env.observation_space.dtype,
                         ),
-                        "terminal": tf.TensorSpec([1], tf.float32),
+                        "terminal": tf.TensorSpec([1], tf.bool),
                     },
                 ),
                 reverb.Table(  # Variables container

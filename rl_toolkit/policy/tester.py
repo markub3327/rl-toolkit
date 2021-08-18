@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 import cv2
 import tensorflow as tf
@@ -41,7 +42,7 @@ class Tester(Policy):
         self._log_wandb = log_wandb
 
         self.actor = Actor(
-            n_outputs=tf.reduce_prod(self._env.action_space.shape).numpy()
+            n_outputs=np.prod(self._env.action_space.shape)
         )
         self.actor.build((None,) + self._env.observation_space.shape)
 
@@ -105,7 +106,7 @@ class Tester(Policy):
                 print(f"TotalInteractions: {self._total_steps}")
                 print("=============================================")
                 print(
-                    f"Testing ... {math.floor(self._total_steps * 100.0 / self._max_steps)} %"  # noqa
+                    f"Testing ... {(self._total_steps * 100) // self._max_steps} %"  # noqa
                 )
 
                 if self._log_wandb:

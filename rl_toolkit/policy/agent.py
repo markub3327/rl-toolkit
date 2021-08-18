@@ -101,14 +101,13 @@ class Agent(Policy):
             with_log_prob=False,
             deterministic=False,
         )
-        return tf.squeeze(action, axis=0)
+        return tf.squeeze(action, axis=0).numpy()
 
     def collect(self, writer, max_steps, policy):
         # collect the rollout
         for _ in range(max_steps):
             # Get the action
             action = policy(self._last_obs)
-            action = np.array(action, copy=False, dtype="float32")
 
             # perform action
             new_obs, reward, terminal, _ = self._env.step(action)
@@ -121,10 +120,10 @@ class Agent(Policy):
             # Update the replay buffer
             writer.append(
                 {
-                    "observation": self._last_obs.astype("float32"),
+                    "observation": self._last_obs.astype("float32", copy=False),
                     "action": action,
-                    "reward": np.array([reward], dtype="float32"),
-                    "terminal": np.array([terminal], dtype="float32"),
+                    "reward": np.array([reward], copy=False, dtype="float32"),
+                    "terminal": np.array([terminal], copy=False, dtype="bool"),
                 }
             )
 
@@ -145,7 +144,7 @@ class Agent(Policy):
             # Check the end of episode
             if terminal:
                 # Write the final interaction !!!
-                writer.append({"observation": new_obs.astype("float32")})
+                writer.append({"observation": new_obs.astype("float32", copy=False)})
                 writer.create_item(
                     table="experience",
                     priority=1.0,
