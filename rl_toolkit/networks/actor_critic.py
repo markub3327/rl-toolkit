@@ -181,5 +181,5 @@ class ActorCritic(Model):
         self.alpha_optimizer = alpha_optimizer
 
     def summary(self):
-        self.model.actor.summary()
-        self.model.critic.summary()
+        self.actor.summary()
+        self.critic.summary()
