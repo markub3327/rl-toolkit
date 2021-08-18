@@ -1,8 +1,8 @@
 import numpy as np
 import reverb
 import tensorflow as tf
-import wandb
 
+import wandb
 from rl_toolkit.networks.models import Actor
 from rl_toolkit.utils import VariableContainer
 
@@ -40,9 +40,7 @@ class Agent(Policy):
         self._log_wandb = log_wandb
 
         # Init actor's network
-        self.actor = Actor(
-            n_outputs=np.prod(self._env.action_space.shape)
-        )
+        self.actor = Actor(n_outputs=np.prod(self._env.action_space.shape))
         self.actor.build((None,) + self._env.observation_space.shape)
 
         # Show models details
