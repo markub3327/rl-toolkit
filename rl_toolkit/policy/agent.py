@@ -50,7 +50,7 @@ class Agent(Policy):
         self._train_step = tf.Variable(
             0,
             trainable=False,
-            dtype=tf.uint64,
+            dtype=tf.int64,
             aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
             shape=(),
         )
@@ -99,13 +99,14 @@ class Agent(Policy):
             with_log_prob=False,
             deterministic=False,
         )
-        return tf.squeeze(action, axis=0).numpy()
+        return tf.squeeze(action, axis=0)
 
     def collect(self, writer, max_steps, policy):
         # collect the rollout
         for _ in range(max_steps):
             # Get the action
             action = policy(self._last_obs)
+            action = np.array(action, copy=False, dtype="float32")
 
             # perform action
             new_obs, reward, terminal, _ = self._env.step(action)

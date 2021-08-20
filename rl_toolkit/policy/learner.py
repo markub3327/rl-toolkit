@@ -93,7 +93,7 @@ class Learner(Policy):
         self._train_step = tf.Variable(
             0,
             trainable=False,
-            dtype=tf.uint64,
+            dtype=tf.int64,
             aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
             shape=(),
         )
