@@ -186,6 +186,7 @@ if __name__ == "__main__":
             save_path=args.save_path,
             model_path=args.model_path,
             db_path=args.db_path,
+            log_interval=100,
         )
 
         try:

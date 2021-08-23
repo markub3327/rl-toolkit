@@ -33,6 +33,7 @@ class Learner(Policy):
         model_path (str): path to the model
         db_path (str): path to the database checkpoint
         save_path (str): path to the models for saving
+        log_interval (int): the logging interval to the console
     """
 
     def __init__(
@@ -57,11 +58,14 @@ class Learner(Policy):
         model_path: str,
         db_path: str,
         save_path: str,
+        # ---
+        log_interval: int,
     ):
         super(Learner, self).__init__(env_name)
 
         self._max_steps = max_steps
         self._save_path = save_path
+        self._log_interval = log_interval
 
         # Init actor-critic's network
         self.model = ActorCritic(
@@ -223,6 +227,16 @@ class Learner(Policy):
             losses = self._step()
 
             # log metrics
+            if (self._train_step % self._log_interval) == 0:
+                print("=============================================")
+                print(f"Train step: {self._train_step.numpy()}")
+                print(f"Alpha loss: {losses['alpha_loss']}")
+                print(f"Critic loss: {losses['critic_loss']}")
+                print(f"Actor loss: {losses['actor_loss']}")
+                print("=============================================")
+                print(
+                    f"Training ... {(self._train_step.numpy() * 100) // self._max_steps} %"  # noqa
+                )
             wandb.log(
                 {
                     "Log alpha": self.model.log_alpha,
