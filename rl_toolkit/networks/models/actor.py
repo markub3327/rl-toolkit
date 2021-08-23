@@ -3,7 +3,7 @@ import tensorflow_probability as tfp
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Dense
 
-from rl_toolkit.networks.activations import clipped_linear
+from rl_toolkit.networks.activation import clipped_linear
 from rl_toolkit.networks.layers import MultivariateGaussianNoise
 
 

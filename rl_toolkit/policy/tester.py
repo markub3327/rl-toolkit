@@ -1,4 +1,3 @@
-import cv2
 import numpy as np
 import tensorflow as tf
 
@@ -15,29 +14,24 @@ class Tester(Policy):
 
     Attributes:
         env_name (str): the name of environment
-        max_steps (int): maximum number of interactions do in environment
         render (bool): enable the rendering into the video file
+        max_steps (int): maximum number of interactions do in environment
         model_path (str): path to the model
-        log_wandb (bool): log into WanDB cloud
     """
 
     def __init__(
         self,
         # ---
         env_name: str,
+        render: bool,
         # ---
         max_steps: int,
         # ---
-        render: bool,
-        # ---
         model_path: str,
-        log_wandb: bool,
     ):
         super(Tester, self).__init__(env_name)
 
         self._max_steps = max_steps
-        self._render = render
-        self._log_wandb = log_wandb
 
         self.actor = Actor(n_outputs=np.prod(self._env.action_space.shape))
         self.actor.build((None,) + self._env.observation_space.shape)
@@ -46,11 +40,12 @@ class Tester(Policy):
             self.actor.load_weights(model_path)
 
         # init Weights & Biases
-        if self._log_wandb:
-            wandb.init(project="rl-toolkit", group=f"{env_name}")
-
-            # Settings
-            wandb.config.max_steps = max_steps
+        wandb.init(
+            project="rl-toolkit",
+            group=f"{env_name}",
+            monitor_gym=render,
+        )
+        wandb.config.max_steps = max_steps
 
     def run(self):
         self._total_steps = 0
@@ -61,21 +56,8 @@ class Tester(Policy):
         # init environment
         self._last_obs = self._env.reset()
 
-        # init video file
-        if self._render:
-            video_stream = cv2.VideoWriter(
-                "game.avi", cv2.VideoWriter_fourcc(*"MJPG"), 30, (640, 480)
-            )
-
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
-            # write to stream
-            if self._render:
-                img_array = self._env.render(mode="rgb_array")
-                img_array = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
-                img_array = cv2.resize(img_array, (640, 480))
-                video_stream.write(img_array)
-
             # Get the action
             action, _ = self.actor(
                 tf.expand_dims(self._last_obs, axis=0),
@@ -104,16 +86,14 @@ class Tester(Policy):
                 print(
                     f"Testing ... {(self._total_steps * 100) // self._max_steps} %"  # noqa
                 )
-
-                if self._log_wandb:
-                    wandb.log(
-                        {
-                            "Epoch": self._total_episodes,
-                            "Score": self._episode_reward,
-                            "Steps": self._episode_steps,
-                        },
-                        step=self._total_steps,
-                    )
+                wandb.log(
+                    {
+                        "Epoch": self._total_episodes,
+                        "Score": self._episode_reward,
+                        "Steps": self._episode_steps,
+                    },
+                    step=self._total_steps,
+                )
 
                 # Init variables
                 self._episode_reward = 0.0
@@ -125,7 +105,3 @@ class Tester(Policy):
             else:
                 # super critical !!!
                 self._last_obs = new_obs
-
-        # Release video file stream
-        if self._render:
-            video_stream.release()

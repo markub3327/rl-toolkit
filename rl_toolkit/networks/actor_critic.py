@@ -16,7 +16,7 @@ class ActorCritic(Model):
         n_outputs (int): number of outputs
         gamma (float): the discount factor
         tau (float): the soft update coefficient for target networks
-        init_alpha (float): initialization of alpha param
+        init_alpha (float): initialization of log_alpha param
 
     References:
         - [Soft Actor-Critic Algorithms and Applications](https://arxiv.org/abs/1812.05905)
@@ -42,11 +42,10 @@ class ActorCritic(Model):
             (tf.range(n_quantiles, dtype=tf.float32) + 0.5) / n_quantiles
         )[tf.newaxis, tf.newaxis, :, tf.newaxis]
 
-        # init param 'alpha' - Lagrangian constraint
+        # init Lagrangian constraint
         self.log_alpha = tf.Variable(
             tf.math.log(init_alpha), trainable=True, name="log_alpha"
         )
-        self.alpha = tf.Variable(init_alpha, trainable=False, name="alpha")
         self.target_entropy = tf.cast(-n_outputs, dtype=tf.float32)
 
         # Actor
@@ -77,34 +76,35 @@ class ActorCritic(Model):
         # Re-new noise matrix every update of 'log_std' params
         self.actor.reset_noise()
 
-        # Set 'Alpha'
-        self.alpha.assign(tf.exp(self.log_alpha))
+        # Get 'Alpha'
+        alpha = tf.exp(self.log_alpha)
 
         # -------------------- Update 'Critic' -------------------- #
+        next_action, next_log_pi = self.actor(
+            data["next_observation"],
+            with_log_prob=True,
+            deterministic=False,
+        )
+        next_quantiles = self.critic_target([data["next_observation"], next_action])
+        next_quantiles = tf.sort(
+            tf.reshape(next_quantiles, [next_quantiles.shape[0], -1])
+        )
+        next_quantiles = next_quantiles[
+            :,
+            : self.critic_target.quantiles_total
+            - self.critic_target.top_quantiles_to_drop,
+        ]
+
+        # Bellman Equation
+        target_quantiles = tf.stop_gradient(
+            data["reward"]
+            + (1.0 - tf.cast(data["terminal"], dtype=tf.float32))
+            * self.gamma
+            * (next_quantiles - alpha * next_log_pi)
+        )
+
         with tf.GradientTape() as tape:
             quantiles = self.critic([data["observation"], data["action"]])
-
-            next_action, next_log_pi = self.actor(
-                data["next_observation"],
-                with_log_prob=True,
-                deterministic=False,
-            )
-            # target Q-values
-            next_quantiles = self.critic_target([data["next_observation"], next_action])
-            next_quantiles = tf.sort(
-                tf.reshape(next_quantiles, [next_quantiles.shape[0], -1])
-            )
-            next_quantiles = next_quantiles[
-                :, : self.critic.quantiles_total - self.critic.top_quantiles_to_drop
-            ]
-
-            # Bellman Equation
-            target_quantiles = tf.stop_gradient(
-                data["reward"]
-                + (1.0 - tf.cast(data["terminal"], dtype=tf.float32))
-                * self.gamma
-                * (next_quantiles - self.alpha * next_log_pi)
-            )
 
             # Compute critic loss
             pairwise_delta = (
@@ -117,7 +117,6 @@ class ActorCritic(Model):
                 abs_pairwise_delta - 0.5,
                 pairwise_delta ** 2 * 0.5,
             )
-
             critic_loss = tf.nn.compute_average_loss(
                 tf.reduce_mean(
                     tf.math.abs(
@@ -137,26 +136,29 @@ class ActorCritic(Model):
         with tf.GradientTape(persistent=True) as tape:
             quantiles, log_pi = self(data["observation"])
 
-            # Compute alpha loss
-            alpha_loss = tf.nn.compute_average_loss(
-                -self.log_alpha * tf.stop_gradient(log_pi + self.target_entropy)
-            )
-
             # Compute actor loss
             actor_loss = tf.nn.compute_average_loss(
-                self.alpha * log_pi
+                alpha * log_pi
                 - tf.reduce_mean(
                     tf.reduce_mean(quantiles, axis=2), axis=1, keepdims=True
                 )
             )
 
-        gradients = tape.gradient(alpha_loss, [self.log_alpha])
-        self.alpha_optimizer.apply_gradients(zip(gradients, [self.log_alpha]))
+            # Compute alpha loss
+            alpha_loss = tf.nn.compute_average_loss(
+                -self.log_alpha * tf.stop_gradient(log_pi + self.target_entropy)
+            )
 
         gradients = tape.gradient(actor_loss, self.actor.trainable_variables)
         self.actor_optimizer.apply_gradients(
             zip(gradients, self.actor.trainable_variables)
         )
+
+        gradients = tape.gradient(alpha_loss, [self.log_alpha])
+        self.alpha_optimizer.apply_gradients(zip(gradients, [self.log_alpha]))
+
+        # Delete the persistent tape manually
+        del tape
 
         # -------------------- Soft update target networks -------------------- #
         self._update_target(self.critic, self.critic_target, tau=tf.constant(self.tau))

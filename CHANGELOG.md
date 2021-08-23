@@ -1,5 +1,16 @@
 # Changes
 
+## v4.0.0 (XXX XX, 2021)
+### Features 🔊
+- WanDB is mandatory !!!
+- Render envs to WanDB
+- Grouping of runs in WanDB
+- SampleToInsertRatio
+- Gradient Clipping to avoid exploding gradients
+### Bug fixes 🛠️
+- Fixed creating of saving path for models
+- Fixed model's `summary()`
+
 ## v3.2.4 (July 7, 2021)
 ### Features 🔊
 - Reverb
@@ -10,14 +21,14 @@
 - Truncated Quantile Critics
 
 ## v2.0.2 (May 23, 2021)
-### Bug fixes 🛠️
+### Features 🔊
 - update Dockerfile
 - update `README.md`
 - formatted code by Black & Flake8
 
 ## v2.0.1 (April 27, 2021)
 ### Bug fixes 🛠️
-- fix Critic model
+- fixed Critic model
 
 ## v2.0.0 (April 22, 2021)
 ### Features 🔊

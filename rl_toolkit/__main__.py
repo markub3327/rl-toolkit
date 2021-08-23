@@ -45,7 +45,7 @@ if __name__ == "__main__":
         default=int(1e4),
     )
     parser_agent.add_argument(
-        "--wandb", action="store_true", help="Log into WanDB cloud"
+        "--render", action="store_true", help="Render the environment"
     )
 
     # create the parser for the "learner" sub-command
@@ -101,10 +101,18 @@ if __name__ == "__main__":
         default=int(1e6),
     )
     parser_learner.add_argument(
-        "-bs", "--batch_size", type=int, help="Size of the mini-batch", default=256
+        "--min_replay_size",
+        type=int,
+        help="Minimum number of samples in memory before learning starts",
+        default=int(1e4),
     )
     parser_learner.add_argument(
-        "--log_interval", type=int, help="Log into console interval", default=1000
+        "--samples_per_insert",
+        type=int,
+        help="Samples per insert ratio (SPI)",
+    )
+    parser_learner.add_argument(
+        "--batch_size", type=int, help="Size of the mini-batch", default=256
     )
     parser_learner.add_argument(
         "-s",
@@ -118,9 +126,6 @@ if __name__ == "__main__":
     )
     parser_learner.add_argument(
         "--db_path", type=str, help="DB's checkpoints path", default="./save/db"
-    )
-    parser_learner.add_argument(
-        "--wandb", action="store_true", help="Log into WanDB cloud"
     )
 
     # create the parser for the "tester" sub-command
@@ -142,9 +147,6 @@ if __name__ == "__main__":
     parser_tester.add_argument(
         "-f", "--model_path", type=str, help="Path to saved model"
     )
-    parser_tester.add_argument(
-        "--wandb", action="store_true", help="Log into WanDB cloud"
-    )
 
     # nacitaj zadane argumenty
     args = my_parser.parse_args()
@@ -153,10 +155,10 @@ if __name__ == "__main__":
     if args.mode == "agent":
         agent = Agent(
             env_name=args.environment,
+            render=args.render,
             db_server=args.db_server,
             warmup_steps=args.warmup_steps,
             env_steps=args.env_steps,
-            log_wandb=args.wandb,
         )
 
         try:
@@ -172,6 +174,8 @@ if __name__ == "__main__":
             env_name=args.environment,
             max_steps=args.max_steps,
             buffer_capacity=args.buffer_capacity,
+            min_replay_size=args.min_replay_size,
+            samples_per_insert=args.samples_per_insert,
             batch_size=args.batch_size,
             actor_learning_rate=args.actor_learning_rate,
             critic_learning_rate=args.critic_learning_rate,
@@ -182,8 +186,6 @@ if __name__ == "__main__":
             save_path=args.save_path,
             model_path=args.model_path,
             db_path=args.db_path,
-            log_wandb=args.wandb,
-            log_interval=args.log_interval,
         )
 
         try:
@@ -201,7 +203,6 @@ if __name__ == "__main__":
             max_steps=args.max_steps,
             render=args.render,
             model_path=args.model_path,
-            log_wandb=args.wandb,
         )
 
         try:

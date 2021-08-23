@@ -16,28 +16,26 @@ class Agent(Policy):
 
     Attributes:
         env_name (str): the name of environment
+        render (bool): enable the rendering into the video file
         db_server (str): database server name (IP or domain name)
         warmup_steps (int): number of interactions before using policy network
         env_steps (int): number of steps per rollout
-        log_wandb (bool): log into WanDB cloud
     """
 
     def __init__(
         self,
         # ---
         env_name: str,
+        render: bool,
         db_server: str,
         # ---
         warmup_steps: int,
         env_steps: int,
-        # ---
-        log_wandb: bool,
     ):
         super(Agent, self).__init__(env_name)
 
         self._env_steps = env_steps
         self._warmup_steps = warmup_steps
-        self._log_wandb = log_wandb
 
         # Init actor's network
         self.actor = Actor(n_outputs=np.prod(self._env.action_space.shape))
@@ -50,7 +48,7 @@ class Agent(Policy):
         self._train_step = tf.Variable(
             0,
             trainable=False,
-            dtype=tf.int64,
+            dtype=tf.uint64,
             aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
             shape=(),
         )
@@ -81,12 +79,13 @@ class Agent(Policy):
         self.client = reverb.Client(f"{db_server}:8000")
 
         # init Weights & Biases
-        if self._log_wandb:
-            wandb.init(project="rl-toolkit", group=f"{env_name}")
-
-            # Settings
-            wandb.config.warmup_steps = warmup_steps
-            wandb.config.env_steps = env_steps
+        wandb.init(
+            project="rl-toolkit",
+            group=f"{env_name}",
+            monitor_gym=render,
+        )
+        wandb.config.warmup_steps = warmup_steps
+        wandb.config.env_steps = env_steps
 
     def random_policy(self, input):
         action = self._env.action_space.sample()
@@ -167,15 +166,14 @@ class Agent(Policy):
                 print(f"TotalInteractions: {self._total_steps}")
                 print(f"Train step: {self._train_step.numpy()}")
                 print("=============================================")
-                if self._log_wandb:
-                    wandb.log(
-                        {
-                            "Epoch": self._total_episodes,
-                            "Score": self._episode_reward,
-                            "Steps": self._episode_steps,
-                        },
-                        step=self._train_step.numpy(),
-                    )
+                wandb.log(
+                    {
+                        "Epoch": self._total_episodes,
+                        "Score": self._episode_reward,
+                        "Steps": self._episode_steps,
+                    },
+                    step=self._train_step.numpy(),
+                )
 
                 # Init variables
                 self._episode_reward = 0.0

@@ -8,6 +8,8 @@ long_description += "\n\n"
 with open("CHANGELOG.md", "r", encoding="utf-8") as fh:
     long_description += fh.read()
 
+extras = {"all": ["tensorflow", "opencv-python>=3.", "dm-reverb"]}
+
 setup(
     name="rl-toolkit",
     version="4.0.0",
@@ -46,13 +48,10 @@ setup(
         "gym",
         "box2d",
         "pybullet",
-        "tensorflow",
         "tensorflow_probability",
-        "opencv-python",
         "wandb",
-        "dm-reverb",
-        "pydot",
     ],
+    extras_require=extras,
     python_requires=">=3.6",
     classifiers=[
         "License :: OSI Approved :: MIT License",
