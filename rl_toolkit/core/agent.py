@@ -6,10 +6,10 @@ import wandb
 from rl_toolkit.networks.models import Actor
 from rl_toolkit.utils import VariableContainer
 
-from .policy import Policy
+from .process import Process
 
 
-class Agent(Policy):
+class Agent(Process):
     """
     Agent
     =================
@@ -62,9 +62,9 @@ class Agent(Policy):
 
         # Table for storing variables
         self._variable_container = VariableContainer(
-            db_server,
-            "variables",
-            {
+            db_server=f"{db_server}:8000",
+            table="variables",
+            variables={
                 "train_step": self._train_step,
                 "stop_agents": self._stop_agents,
                 "policy_variables": self.actor.variables,

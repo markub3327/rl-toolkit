@@ -1,6 +1,7 @@
 import argparse
 
-from rl_toolkit.policy import Agent, Learner, Tester
+from rl_toolkit.core import Agent, Learner, Server, Tester
+
 
 if __name__ == "__main__":
     my_parser = argparse.ArgumentParser(
@@ -23,11 +24,38 @@ if __name__ == "__main__":
         required=True,
     )
 
+    # create the parser for the "server" sub-command
+    parser_server = sub_parsers.add_parser(
+        "server",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        help="Server process",
+    )
+    parser_server.add_argument(
+        "--min_replay_size",
+        type=int,
+        help="Minimum number of samples in memory before learning starts",
+        default=int(1e4),
+    )
+    parser_server.add_argument(
+        "--samples_per_insert",
+        type=int,
+        help="Samples per insert ratio (SPI)",
+    )
+    parser_server.add_argument(
+        "--buffer_capacity",
+        type=int,
+        help="Maximal capacity of memory",
+        default=int(1e6),
+    )
+    parser_server.add_argument(
+        "--db_path", type=str, help="DB's checkpoints path", default="./save/db"
+    )
+
     # create the parser for the "agent" sub-command
     parser_agent = sub_parsers.add_parser(
         "agent",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        help="Agent mode",
+        help="Agent process",
     )
     parser_agent.add_argument(
         "--db_server", type=str, help="DB server name", default="localhost"
@@ -52,7 +80,10 @@ if __name__ == "__main__":
     parser_learner = sub_parsers.add_parser(
         "learner",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        help="Learner mode",
+        help="Learner process",
+    )
+    parser_learner.add_argument(
+        "--db_server", type=str, help="DB server name", default="localhost"
     )
     parser_learner.add_argument(
         "-t",
@@ -95,23 +126,6 @@ if __name__ == "__main__":
         default=7.3e-4,
     )
     parser_learner.add_argument(
-        "--buffer_capacity",
-        type=int,
-        help="Maximal capacity of memory",
-        default=int(1e6),
-    )
-    parser_learner.add_argument(
-        "--min_replay_size",
-        type=int,
-        help="Minimum number of samples in memory before learning starts",
-        default=int(1e4),
-    )
-    parser_learner.add_argument(
-        "--samples_per_insert",
-        type=int,
-        help="Samples per insert ratio (SPI)",
-    )
-    parser_learner.add_argument(
         "--batch_size", type=int, help="Size of the mini-batch", default=256
     )
     parser_learner.add_argument(
@@ -124,15 +138,12 @@ if __name__ == "__main__":
     parser_learner.add_argument(
         "-f", "--model_path", type=str, help="Path to saved model"
     )
-    parser_learner.add_argument(
-        "--db_path", type=str, help="DB's checkpoints path", default="./save/db"
-    )
 
     # create the parser for the "tester" sub-command
     parser_tester = sub_parsers.add_parser(
         "tester",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        help="Tester mode",
+        help="Tester process",
     )
     parser_tester.add_argument(
         "-t",
@@ -151,8 +162,25 @@ if __name__ == "__main__":
     # nacitaj zadane argumenty
     args = my_parser.parse_args()
 
+    # Server mode
+    if args.mode == "server":
+        agent = Server(
+            env_name=args.environment,
+            min_replay_size=args.min_replay_size,
+            samples_per_insert=args.samples_per_insert,
+            buffer_capacity=args.buffer_capacity,
+            db_path=args.db_path,
+        )
+
+        try:
+            agent.run()
+        except KeyboardInterrupt:
+            print("Terminated by user 👋👋👋")
+        finally:
+            agent.close()
+
     # Agent mode
-    if args.mode == "agent":
+    elif args.mode == "agent":
         agent = Agent(
             env_name=args.environment,
             render=args.render,
@@ -172,10 +200,8 @@ if __name__ == "__main__":
     elif args.mode == "learner":
         agent = Learner(
             env_name=args.environment,
+            db_server=args.db_server,
             max_steps=args.max_steps,
-            buffer_capacity=args.buffer_capacity,
-            min_replay_size=args.min_replay_size,
-            samples_per_insert=args.samples_per_insert,
             batch_size=args.batch_size,
             actor_learning_rate=args.actor_learning_rate,
             critic_learning_rate=args.critic_learning_rate,
@@ -185,7 +211,6 @@ if __name__ == "__main__":
             init_alpha=args.init_alpha,
             save_path=args.save_path,
             model_path=args.model_path,
-            db_path=args.db_path,
             log_interval=100,
         )
 

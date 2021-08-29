@@ -7,6 +7,7 @@
 - Grouping of runs in WanDB
 - SampleToInsertRatio
 - Gradient Clipping to avoid exploding gradients
+- split into **Agent**, **Learner**, **Tester** and **Server**
 ### Bug fixes 🛠️
 - Fixed creating of saving path for models
 - Fixed model's `summary()`
@@ -15,7 +16,7 @@
 ### Features 🔊
 - Reverb
 - `setup.py` (package is available on PyPI)
-- split into **agent**, **learner** and **tester** roles
+- split into **Agent**, **Learner** and **Tester**
 - Use custom model and layer for defining Actor-Critic
 - MultiCritic - concatenating multiple critic networks into one network
 - Truncated Quantile Critics

@@ -24,21 +24,23 @@ docker pull markub3327/rl-toolkit:2.0.2
 
 ## Run
 ```bash
-# Run learner's container
+# Run Server's container
 docker run -p 8000:8000 -it --rm markub3327/rl-toolkit
 
-# Run tester's or agent's container
+# Run Learner's, Agent's or Tester's container
 docker run -it --rm markub3327/rl-toolkit
 
+# Server container
+python3 -m rl_toolkit -e [ENV_NAME] server [-h]
 
 # Learner container
-python3 -m rl_toolkit -e [ENV_NAME] learner --db_server [IP_ADDRESS/HOSTNAME] -s [PATH_TO_MODEL] [--wandb] [-h]
+python3 -m rl_toolkit -e [ENV_NAME] learner --db_server [IP_ADDRESS/HOSTNAME] -s [PATH_TO_MODEL] [-h]
 
 # Agent container
-python3 -m rl_toolkit -e [ENV_NAME] agent --db_server [IP_ADDRESS/HOSTNAME] [--wandb] [-h]
+python3 -m rl_toolkit -e [ENV_NAME] agent --db_server [IP_ADDRESS/HOSTNAME] [--render] [-h]
 
 # Tester container
-python3 -m rl_toolkit -e [ENV_NAME] tester --model_path [PATH_TO_MODEL] [--render] [--wandb] [-h]
+python3 -m rl_toolkit -e [ENV_NAME] tester --model_path [PATH_TO_MODEL] [--render] [-h]
 ```
 
 ## Tested environments

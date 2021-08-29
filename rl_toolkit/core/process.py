@@ -2,9 +2,9 @@ import gym
 import pybullet_envs  # noqa
 
 
-class Policy:
+class Process:
     """
-    Base class for policies
+    Base class for processes
     =================
 
     Attributes:

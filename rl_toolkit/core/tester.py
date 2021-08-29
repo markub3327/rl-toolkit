@@ -4,10 +4,10 @@ import tensorflow as tf
 import wandb
 from rl_toolkit.networks.models import Actor
 
-from .policy import Policy
+from .process import Process
 
 
-class Tester(Policy):
+class Tester(Process):
     """
     Tester
     =================

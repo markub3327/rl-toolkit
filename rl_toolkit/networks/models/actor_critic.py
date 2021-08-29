@@ -161,7 +161,7 @@ class ActorCritic(Model):
         del tape
 
         # -------------------- Soft update target networks -------------------- #
-        self._update_target(self.critic, self.critic_target, tau=tf.constant(self.tau))
+        self._update_target(self.critic, self.critic_target, tau=self.tau)
 
         return {
             "actor_loss": actor_loss,
