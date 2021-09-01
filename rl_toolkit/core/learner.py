@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
 
+import reverb
 import wandb
 from rl_toolkit.networks.models import ActorCritic
 from rl_toolkit.utils import VariableContainer, make_reverb_dataset
@@ -59,6 +60,7 @@ class Learner(Process):
         self._max_steps = max_steps
         self._save_path = save_path
         self._log_interval = log_interval
+        self._db_server = f"{db_server}:8000"
 
         # Init actor-critic's network
         self.model = ActorCritic(
@@ -101,7 +103,7 @@ class Learner(Process):
 
         # Table for storing variables
         self._variable_container = VariableContainer(
-            db_server=f"{db_server}:8000",
+            db_server=self._db_server,
             table="variables",
             variables={
                 "train_step": self._train_step,
@@ -116,8 +118,8 @@ class Learner(Process):
         # Initializes the reverb's dataset
         self.dataset_iterator = iter(
             make_reverb_dataset(
-                server_address=f"{db_server}:8000",
-                table="experience",
+                server_address=self._db_server,
+                table="experiences",
                 batch_size=batch_size,
             )
         )
@@ -133,26 +135,18 @@ class Learner(Process):
         wandb.config.tau = tau
         wandb.config.init_alpha = init_alpha
 
-    @tf.function
-    def _step(self):
-        # increase the training step
-        self._train_step.assign_add(1)
-
-        # Get data from replay buffer
-        sample = self.dataset_iterator.get_next()
-
+    @tf.function(jit_compile=True)
+    def _step(self, data):
         # Train the Actor-Critic model
-        losses = self.model.train_step(sample.data)
-
-        # Store new actor's params
-        self._variable_container.push_variables()
-
-        return losses
+        return self.model.train_step(data)
 
     def run(self):
         while self._train_step < self._max_steps:
+            # Get data from replay buffer
+            sample = self.dataset_iterator.get_next()
+
             # update models
-            losses = self._step()
+            losses = self._step(sample.data)
 
             # log metrics
             if (self._train_step % self._log_interval) == 0:
@@ -175,6 +169,12 @@ class Learner(Process):
                 step=self._train_step.numpy(),
             )
 
+            # increase the training step
+            self._train_step.assign_add(1)
+
+            # Store new actor's params
+            self._variable_container.push_variables()
+
         # Stop the agents
         self._stop_agents.assign(True)
         self._variable_container.push_variables()
@@ -188,3 +188,16 @@ class Learner(Process):
             # Save model
             self.model.save_weights(os.path.join(self._save_path, "actor_critic.h5"))
             self.model.actor.save_weights(os.path.join(self._save_path, "actor.h5"))
+            
+            # Save model to cloud
+            wandb.save(os.path.join(self._save_path, "actor_critic.h5"))
+            wandb.save(os.path.join(self._save_path, "actor.h5"))
+    
+    def close(self):
+        super(Learner, self).close()
+
+        # create the checkpoint of DB
+        client = reverb.Client(self._db_server)
+        client.checkpoint()
+        client.reset(table="variables")
+        client.reset(table="experiences")

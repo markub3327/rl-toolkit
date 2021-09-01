@@ -91,7 +91,7 @@ class Agent(Process):
         action = self._env.action_space.sample()
         return action
 
-    @tf.function
+    @tf.function(jit_compile=True)
     def collect_policy(self, input):
         action, _ = self.actor(
             tf.expand_dims(input, axis=0),
@@ -128,7 +128,7 @@ class Agent(Process):
             # Ak je v cyklickom bufferi dostatok prikladov
             if self._episode_steps > 1:
                 writer.create_item(
-                    table="experience",
+                    table="experiences",
                     priority=1.0,
                     trajectory={
                         "observation": writer.history["observation"][-2],
@@ -144,7 +144,7 @@ class Agent(Process):
                 # Write the final interaction !!!
                 writer.append({"observation": new_obs.astype("float32", copy=False)})
                 writer.create_item(
-                    table="experience",
+                    table="experiences",
                     priority=1.0,
                     trajectory={
                         "observation": writer.history["observation"][-2],

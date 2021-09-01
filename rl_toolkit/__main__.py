@@ -37,15 +37,16 @@ if __name__ == "__main__":
         default=int(1e4),
     )
     parser_server.add_argument(
-        "--samples_per_insert",
-        type=int,
-        help="Samples per insert ratio (SPI)",
-    )
-    parser_server.add_argument(
-        "--buffer_capacity",
+        "--max_replay_size",
         type=int,
         help="Maximal capacity of memory",
         default=int(1e6),
+    )
+    parser_server.add_argument(
+        "--samples_per_insert",
+        type=float,
+        help="Samples per insert ratio (SPI)",
+        default=32.0
     )
     parser_server.add_argument(
         "--db_path", type=str, help="DB's checkpoints path", default="./save/db"
@@ -168,7 +169,7 @@ if __name__ == "__main__":
             env_name=args.environment,
             min_replay_size=args.min_replay_size,
             samples_per_insert=args.samples_per_insert,
-            buffer_capacity=args.buffer_capacity,
+            max_replay_size=args.max_replay_size,
             db_path=args.db_path,
         )
 
@@ -211,7 +212,7 @@ if __name__ == "__main__":
             init_alpha=args.init_alpha,
             save_path=args.save_path,
             model_path=args.model_path,
-            log_interval=100,
+            log_interval=1000,
         )
 
         try:

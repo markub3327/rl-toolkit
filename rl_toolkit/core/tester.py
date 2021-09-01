@@ -47,6 +47,15 @@ class Tester(Process):
         )
         wandb.config.max_steps = max_steps
 
+    @tf.function(jit_compile=True)
+    def policy(self, input):
+        action, _ = self.actor(
+            tf.expand_dims(input, axis=0),
+            with_log_prob=False,
+            deterministic=True,
+        )
+        return tf.squeeze(action, axis=0)
+
     def run(self):
         self._total_steps = 0
         self._total_episodes = 0
@@ -59,12 +68,8 @@ class Tester(Process):
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
             # Get the action
-            action, _ = self.actor(
-                tf.expand_dims(self._last_obs, axis=0),
-                with_log_prob=False,
-                deterministic=True,
-            )
-            action = tf.squeeze(action, axis=0).numpy()
+            action = self.policy(self._last_obs)
+            action = np.array(action, copy=False, dtype="float32")
 
             # perform action
             new_obs, reward, terminal, _ = self._env.step(action)
@@ -84,7 +89,7 @@ class Tester(Process):
                 print(f"TotalInteractions: {self._total_steps}")
                 print("=============================================")
                 print(
-                    f"Testing ... {(self._total_steps * 100) // self._max_steps} %"  # noqa
+                    f"Testing ... {(self._total_steps * 100) / self._max_steps} %"  # noqa
                 )
                 wandb.log(
                     {

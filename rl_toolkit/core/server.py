@@ -16,8 +16,8 @@ class Server(Process):
     Attributes:
         env_name (str): the name of environment
         min_replay_size (int): minimum number of samples in memory before learning starts
-        samples_per_insert (int): samples per insert ratio (SPI) `= num_sampled_items / num_inserted_items`
-        buffer_capacity (int): the capacity of experiences replay buffer
+        max_replay_size (int): the capacity of experiences replay buffer
+        samples_per_insert (float): samples per insert ratio (SPI) `= num_sampled_items / num_inserted_items`
         db_path (str): path to the database checkpoint
     """
 
@@ -27,8 +27,8 @@ class Server(Process):
         env_name: str,
         # ---
         min_replay_size: int,
-        samples_per_insert: int,
-        buffer_capacity: int,
+        max_replay_size: int,
+        samples_per_insert: float,
         # ---
         db_path: str,
     ):
@@ -74,7 +74,7 @@ class Server(Process):
         else:
             checkpointer = reverb.checkpointers.DefaultCheckpointer(path=db_path)
 
-        if samples_per_insert is None:
+        if samples_per_insert is None or samples_per_insert == 0.0:
             limiter = reverb.rate_limiters.MinSize(min_replay_size)
         else:
             # 10% tolerance in rate
@@ -90,11 +90,11 @@ class Server(Process):
         self.server = reverb.Server(
             tables=[
                 reverb.Table(  # Replay buffer
-                    name="experience",
+                    name="experiences",
                     sampler=reverb.selectors.Uniform(),
                     remover=reverb.selectors.Fifo(),
                     rate_limiter=limiter,
-                    max_size=buffer_capacity,
+                    max_size=max_replay_size,
                     max_times_sampled=0,
                     signature={
                         "observation": tf.TensorSpec(

@@ -12,6 +12,7 @@
   * [**Generalized State-Dependent Exploration**](https://arxiv.org/abs/2005.05719)
   * [**Reverb: A framework for experience replay**](https://arxiv.org/abs/2102.04736)
   * [**Controlling Overestimation Bias with Truncated Mixture of Continuous Distributional Quantile Critics**](https://arxiv.org/abs/2005.04269)
+  * [**Acme: A Research Framework for Distributed Reinforcement Learning**](https://arxiv.org/abs/2006.00979)
 
 ## Setting up container
 ```bash
