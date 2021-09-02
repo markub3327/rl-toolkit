@@ -90,10 +90,10 @@ class Learner(Process):
 
         if actor_critic_model_path is not None:
             self.actor_critic_model.load_weights(actor_critic_model_path)
-        
+
         if curiosity_model_path is not None:
             self.curiosity_model.load_weights(curiosity_model_path)
-        
+
         # Show models details
         self.actor_critic_model.summary()
         self.curiosity_model.summary()
@@ -151,7 +151,10 @@ class Learner(Process):
     @tf.function(jit_compile=True)
     def _step(self, data):
         # Train the Actor-Critic model
-        data["intrinsic_reward"] = self.curiosity_model.get_reward(self.curiosity_model([data["observation"], data["action"]]), data["next_observation"])
+        data["intrinsic_reward"] = self.curiosity_model.get_reward(
+            self.curiosity_model([data["observation"], data["action"]]),
+            data["next_observation"],
+        )
         losses = self.actor_critic_model.train_step(data)
 
         # Train the Curiosity model
@@ -207,9 +210,15 @@ class Learner(Process):
                 os.makedirs(self._save_path)
 
             # Save model
-            self.actor_critic_model.save_weights(os.path.join(self._save_path, "actor_critic.h5"))
-            self.actor_critic_model.actor.save_weights(os.path.join(self._save_path, "actor.h5"))
-            self.curiosity_model.save_weights(os.path.join(self._save_path, "curiosity.h5"))
+            self.actor_critic_model.save_weights(
+                os.path.join(self._save_path, "actor_critic.h5")
+            )
+            self.actor_critic_model.actor.save_weights(
+                os.path.join(self._save_path, "actor.h5")
+            )
+            self.curiosity_model.save_weights(
+                os.path.join(self._save_path, "curiosity.h5")
+            )
 
             # Save model to cloud
             wandb.save(os.path.join(self._save_path, "actor_critic.h5"))
