@@ -1,12 +1,12 @@
 import os
 
 import numpy as np
+import reverb
 import tensorflow as tf
+import wandb
 from tensorflow.keras.optimizers import Adam
 
-import reverb
-import wandb
-from rl_toolkit.networks.models import ActorCritic
+from rl_toolkit.networks.models import ActorCritic, Curiosity
 from rl_toolkit.utils import VariableContainer, make_reverb_dataset
 
 from .process import Process
@@ -45,12 +45,14 @@ class Learner(Process):
         actor_learning_rate: float,
         critic_learning_rate: float,
         alpha_learning_rate: float,
+        curiosity_learning_rate: float,
         # ---
         gamma: float,
         tau: float,
         init_alpha: float,
         # ---
-        model_path: str,
+        actor_critic_model_path: str,
+        curiosity_model_path: str,
         save_path: str,
         # ---
         log_interval: int,
@@ -62,8 +64,8 @@ class Learner(Process):
         self._log_interval = log_interval
         self._db_server = f"{db_server}:8000"
 
-        # Init actor-critic's network
-        self.model = ActorCritic(
+        # Init actor-critic network
+        self.actor_critic_model = ActorCritic(
             n_quantiles=35,
             top_quantiles_to_drop=3,
             n_critics=3,
@@ -72,18 +74,29 @@ class Learner(Process):
             tau=tau,
             init_alpha=init_alpha,
         )
-        self.model.build((None,) + self._env.observation_space.shape)
-        self.model.compile(
+        self.actor_critic_model.build((None,) + self._env.observation_space.shape)
+        self.actor_critic_model.compile(
             actor_optimizer=Adam(learning_rate=actor_learning_rate, clipnorm=1.0),
             critic_optimizer=Adam(learning_rate=critic_learning_rate, clipnorm=1.0),
             alpha_optimizer=Adam(learning_rate=alpha_learning_rate, clipnorm=1.0),
         )
 
-        if model_path is not None:
-            self.model.load_weights(model_path)
+        # Init curiosity network
+        self.curiosity_model = Curiosity(self._env.observation_space.shape)
+        self.curiosity_model.build((None,) + self._env.observation_space.shape)
+        self.curiosity_model.compile(
+            optimizer=Adam(learning_rate=curiosity_learning_rate, clipnorm=1.0),
+        )
 
+        if actor_critic_model_path is not None:
+            self.actor_critic_model.load_weights(actor_critic_model_path)
+        
+        if curiosity_model_path is not None:
+            self.curiosity_model.load_weights(curiosity_model_path)
+        
         # Show models details
-        self.model.summary()
+        self.actor_critic_model.summary()
+        self.curiosity_model.summary()
 
         # Variables
         self._train_step = tf.Variable(
@@ -108,7 +121,7 @@ class Learner(Process):
             variables={
                 "train_step": self._train_step,
                 "stop_agents": self._stop_agents,
-                "policy_variables": self.model.actor.variables,
+                "policy_variables": self.actor_critic_model.actor.variables,
             },
         )
 
@@ -138,7 +151,13 @@ class Learner(Process):
     @tf.function(jit_compile=True)
     def _step(self, data):
         # Train the Actor-Critic model
-        return self.model.train_step(data)
+        data["intrinsic_reward"] = self.curiosity_model.get_reward(self.curiosity_model([data["observation"], data["action"]]), data["next_observation"])
+        losses = self.actor_critic_model.train_step(data)
+
+        # Train the Curiosity model
+        losses += self.curiosity_model.train_step(data)
+
+        return losses
 
     def run(self):
         while self._train_step < self._max_steps:
@@ -155,16 +174,18 @@ class Learner(Process):
                 print(f"Alpha loss: {losses['alpha_loss']}")
                 print(f"Critic loss: {losses['critic_loss']}")
                 print(f"Actor loss: {losses['actor_loss']}")
+                print(f"Curiosity loss: {losses['curiosity_loss']}")
                 print("=============================================")
                 print(
                     f"Training ... {(self._train_step.numpy() * 100) / self._max_steps} %"  # noqa
                 )
             wandb.log(
                 {
-                    "Log alpha": self.model.log_alpha,
+                    "Log alpha": self.actor_critic_model.log_alpha,
                     "Alpha loss": losses["alpha_loss"],
                     "Critic loss": losses["critic_loss"],
                     "Actor loss": losses["actor_loss"],
+                    "Curiosity loss": losses["curiosity_loss"],
                 },
                 step=self._train_step.numpy(),
             )
@@ -186,13 +207,15 @@ class Learner(Process):
                 os.makedirs(self._save_path)
 
             # Save model
-            self.model.save_weights(os.path.join(self._save_path, "actor_critic.h5"))
-            self.model.actor.save_weights(os.path.join(self._save_path, "actor.h5"))
-            
+            self.actor_critic_model.save_weights(os.path.join(self._save_path, "actor_critic.h5"))
+            self.actor_critic_model.actor.save_weights(os.path.join(self._save_path, "actor.h5"))
+            self.curiosity_model.save_weights(os.path.join(self._save_path, "curiosity.h5"))
+
             # Save model to cloud
             wandb.save(os.path.join(self._save_path, "actor_critic.h5"))
             wandb.save(os.path.join(self._save_path, "actor.h5"))
-    
+            wandb.save(os.path.join(self._save_path, "curiosity.h5"))
+
     def close(self):
         super(Learner, self).close()
 

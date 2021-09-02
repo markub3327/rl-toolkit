@@ -97,7 +97,7 @@ class ActorCritic(Model):
 
         # Bellman Equation
         target_quantiles = tf.stop_gradient(
-            data["reward"]
+            (data["reward"] + (0.5 * data["intrinsic_reward"]))
             + (1.0 - tf.cast(data["terminal"], dtype=tf.float32))
             * self.gamma
             * (next_quantiles - alpha * next_log_pi)

@@ -1,8 +1,8 @@
 import numpy as np
 import reverb
 import tensorflow as tf
-
 import wandb
+
 from rl_toolkit.networks.models import Actor
 from rl_toolkit.utils import VariableContainer
 

@@ -2,7 +2,6 @@ import argparse
 
 from rl_toolkit.core import Agent, Learner, Server, Tester
 
-
 if __name__ == "__main__":
     my_parser = argparse.ArgumentParser(
         prog="python3 -m rl_toolkit",
@@ -46,7 +45,7 @@ if __name__ == "__main__":
         "--samples_per_insert",
         type=float,
         help="Samples per insert ratio (SPI)",
-        default=32.0
+        default=32.0,
     )
     parser_server.add_argument(
         "--db_path", type=str, help="DB's checkpoints path", default="./save/db"

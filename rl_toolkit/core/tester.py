@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
-
 import wandb
+
 from rl_toolkit.networks.models import Actor
 
 from .process import Process
