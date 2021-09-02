@@ -126,6 +126,12 @@ if __name__ == "__main__":
         default=7.3e-4,
     )
     parser_learner.add_argument(
+        "--curiosity_learning_rate",
+        type=float,
+        help="Learning rate for curiosity network",
+        default=7.3e-4,
+    )
+    parser_learner.add_argument(
         "--batch_size", type=int, help="Size of the mini-batch", default=256
     )
     parser_learner.add_argument(
@@ -206,6 +212,7 @@ if __name__ == "__main__":
             actor_learning_rate=args.actor_learning_rate,
             critic_learning_rate=args.critic_learning_rate,
             alpha_learning_rate=args.alpha_learning_rate,
+            curiosity_learning_rate=args.curiosity_learning_rate,
             gamma=args.gamma,
             tau=args.tau,
             init_alpha=args.init_alpha,
