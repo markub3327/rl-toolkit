@@ -12,7 +12,7 @@ class Curiosity(Model):
         state_shape: the shape of next state
 
     References:
-        - [Soft Actor-Critic Algorithms and Applications](https://arxiv.org/abs/1812.05905)
+        - [Curiosity-driven Exploration by Self-supervised Prediction](https://pathak22.github.io/noreward-rl/resources/icml17.pdf)
     """
 
     def __init__(self, state_shape, **kwargs):
@@ -66,11 +66,7 @@ class Curiosity(Model):
             next_state = self([data["observation"], data["action"]])
 
             curiosity_loss = tf.nn.compute_average_loss(
-                0.5
-                * tf.reduce_sum(
-                    (data["next_observation"] - next_state) ** 2,
-                    axis=-1,
-                )
+                tf.keras.losses.huber(y_true=data["next_observation"], y_pred=next_state)
             )
 
         gradients = tape.gradient(curiosity_loss, self.trainable_variables)
