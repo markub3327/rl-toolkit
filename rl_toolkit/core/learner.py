@@ -138,22 +138,29 @@ class Learner(Process):
         )
 
         # init Weights & Biases
-        wandb.init(project="rl-toolkit", group=f"{env_name}")
-        wandb.config.max_steps = max_steps
-        wandb.config.batch_size = batch_size
-        wandb.config.actor_learning_rate = actor_learning_rate
-        wandb.config.critic_learning_rate = critic_learning_rate
-        wandb.config.alpha_learning_rate = alpha_learning_rate
-        wandb.config.curiosity_learning_rate = curiosity_learning_rate
-        wandb.config.gamma = gamma
-        wandb.config.tau = tau
-        wandb.config.init_alpha = init_alpha
+        wandb.init(
+            project="rl-toolkit",
+            group=f"{env_name}",
+            config={
+                "max_steps": max_steps,
+                "batch_size": batch_size,
+                "actor_learning_rate": actor_learning_rate,
+                "critic_learning_rate": critic_learning_rate,
+                "alpha_learning_rate": alpha_learning_rate,
+                "curiosity_learning_rate": curiosity_learning_rate,
+                "gamma": gamma,
+                "tau": tau,
+                "init_alpha": init_alpha,
+            },
+        )
 
     @tf.function(jit_compile=True)
     def _step(self, data):
         # Train the Actor-Critic model
         data["intrinsic_reward"] = self.curiosity_model.get_reward(
-            predicted_next_state=self.curiosity_model([data["observation"], data["action"]]),
+            predicted_next_state=self.curiosity_model(
+                [data["observation"], data["action"]]
+            ),
             current_next_state=data["next_observation"],
         )
         losses = self.actor_critic_model.train_step(data)

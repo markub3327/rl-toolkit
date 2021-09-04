@@ -83,9 +83,8 @@ class Agent(Process):
             project="rl-toolkit",
             group=f"{env_name}",
             monitor_gym=render,
+            config={"warmup_steps": warmup_steps, "env_steps": env_steps},
         )
-        wandb.config.warmup_steps = warmup_steps
-        wandb.config.env_steps = env_steps
 
     def random_policy(self, input):
         action = self._env.action_space.sample()

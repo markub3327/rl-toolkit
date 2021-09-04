@@ -66,7 +66,9 @@ class Curiosity(Model):
             next_state = self([data["observation"], data["action"]])
 
             curiosity_loss = tf.nn.compute_average_loss(
-                tf.keras.losses.huber(y_true=data["next_observation"], y_pred=next_state)
+                tf.keras.losses.huber(
+                    y_true=data["next_observation"], y_pred=next_state
+                )
             )
 
         gradients = tape.gradient(curiosity_loss, self.trainable_variables)

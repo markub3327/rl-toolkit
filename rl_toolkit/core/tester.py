@@ -44,8 +44,8 @@ class Tester(Process):
             project="rl-toolkit",
             group=f"{env_name}",
             monitor_gym=render,
+            config={"max_steps": max_steps},
         )
-        wandb.config.max_steps = max_steps
 
     @tf.function(jit_compile=True)
     def policy(self, input):
