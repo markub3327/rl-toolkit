@@ -142,7 +142,10 @@ if __name__ == "__main__":
         default="./save/model",
     )
     parser_learner.add_argument(
-        "-f", "--model_path", type=str, help="Path to saved model"
+        "--actor_critic_model_path", type=str, help="Path to saved actor-critic model"
+    )
+    parser_learner.add_argument(
+        "--curiosity_model_path", type=str, help="Path to saved curiosity model"
     )
 
     # create the parser for the "tester" sub-command
@@ -217,7 +220,8 @@ if __name__ == "__main__":
             tau=args.tau,
             init_alpha=args.init_alpha,
             save_path=args.save_path,
-            model_path=args.model_path,
+            actor_critic_model_path=args.actor_critic_model_path,
+            curiosity_model_path=args.curiosity_model_path,
             log_interval=1000,
         )
 

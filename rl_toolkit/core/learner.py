@@ -28,7 +28,8 @@ class Learner(Process):
         gamma (float): the discount factor
         tau (float): the soft update coefficient for target networks
         init_alpha (float): initialization of alpha param
-        model_path (str): path to the model
+        actor_critic_model_path (str): path to the actor-critic model
+        curiosity_model_path (str): path to the curiosity model
         save_path (str): path to the models for saving
         log_interval (int): the logging interval to the console
     """
@@ -83,7 +84,6 @@ class Learner(Process):
 
         # Init curiosity network
         self.curiosity_model = Curiosity(self._env.observation_space.shape)
-        self.curiosity_model.build((None,) + self._env.observation_space.shape)
         self.curiosity_model.compile(
             optimizer=Adam(learning_rate=curiosity_learning_rate, clipnorm=1.0),
         )
@@ -96,7 +96,6 @@ class Learner(Process):
 
         # Show models details
         self.actor_critic_model.summary()
-        self.curiosity_model.summary()
 
         # Variables
         self._train_step = tf.Variable(
@@ -166,7 +165,7 @@ class Learner(Process):
         losses = self.actor_critic_model.train_step(data)
 
         # Train the Curiosity model
-        losses += self.curiosity_model.train_step(data)
+        losses.update(self.curiosity_model.train_step(data))
 
         return losses
 

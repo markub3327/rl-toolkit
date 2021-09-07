@@ -37,7 +37,7 @@ class Curiosity(Model):
 
         # Output layer
         self.next_state = Dense(
-            state_shape,
+            tf.reduce_prod(state_shape),
             activation="linear",
             kernel_initializer="glorot_uniform",
             name="next_state",
