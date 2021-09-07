@@ -73,7 +73,9 @@ class ActorCritic(Model):
         ):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
-    def train_step(self, data):
+    def train_step(self, samples):
+        data, intrinsic_reward = samples
+
         # Re-new noise matrix every update of 'log_std' params
         self.actor.reset_noise()
 
@@ -98,7 +100,7 @@ class ActorCritic(Model):
 
         # Bellman Equation
         target_quantiles = tf.stop_gradient(
-            (data["reward"] + (0.5 * data["intrinsic_reward"]))
+            (data["reward"] + (0.5 * intrinsic_reward))
             + (1.0 - tf.cast(data["terminal"], dtype=tf.float32))
             * self.gamma
             * (next_quantiles - alpha * next_log_pi)

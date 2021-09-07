@@ -156,13 +156,13 @@ class Learner(Process):
     @tf.function(jit_compile=True)
     def _step(self, data):
         # Train the Actor-Critic model
-        data["intrinsic_reward"] = self.curiosity_model.get_reward(
+        intrinsic_reward = self.curiosity_model.get_reward(
             predicted_next_state=self.curiosity_model(
                 [data["observation"], data["action"]]
             ),
             current_next_state=data["next_observation"],
         )
-        losses = self.actor_critic_model.train_step(data)
+        losses = self.actor_critic_model.train_step([data, intrinsic_reward])
 
         # Train the Curiosity model
         losses.update(self.curiosity_model.train_step(data))
