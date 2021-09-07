@@ -9,13 +9,13 @@ class Critic(Model):
     ===============
 
     Attributes:
-        quantiles (int): number of predicted quantiles
+        n_quantiles (int): number of predicted quantiles
 
     References:
         - [Controlling Overestimation Bias with Truncated Mixture of Continuous Distributional Quantile Critics](https://arxiv.org/abs/2005.04269)
     """
 
-    def __init__(self, quantiles: int, **kwargs):
+    def __init__(self, n_quantiles: int, **kwargs):
         super(Critic, self).__init__(**kwargs)
 
         # Input layer
@@ -37,7 +37,7 @@ class Critic(Model):
 
         # Output layer
         self.quantiles = Dense(
-            quantiles,
+            n_quantiles,
             activation="linear",
             kernel_initializer="glorot_uniform",
             name="quantiles",
@@ -63,23 +63,24 @@ class MultiCritic(Model):
     ===============
 
     Attributes:
-        quantiles (int): number of predicted quantiles
+        n_quantiles (int): number of predicted quantiles
         top_quantiles_to_drop (int): number of quantiles to drop
-        critics (int): number of critic networks
+        n_critics (int): number of critic networks
     """
 
     def __init__(
-        self, quantiles: int, top_quantiles_to_drop: int, critics: int, **kwargs
+        self, n_quantiles: int, top_quantiles_to_drop: int, n_critics: int, **kwargs
     ):
         super(MultiCritic, self).__init__(**kwargs)
 
-        self.quantiles_total = quantiles * critics
+        self.n_quantiles = n_quantiles
+        self.quantiles_total = n_quantiles * n_critics
         self.top_quantiles_to_drop = top_quantiles_to_drop
 
         # init critics
         self.models = []
-        for _ in range(critics):
-            self.models.append(Critic(quantiles))
+        for _ in range(n_critics):
+            self.models.append(Critic(n_quantiles))
 
     def call(self, inputs):
         quantiles = tf.stack(list(model(inputs) for model in self.models), axis=1)
