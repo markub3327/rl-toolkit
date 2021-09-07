@@ -129,7 +129,7 @@ if __name__ == "__main__":
         "--curiosity_learning_rate",
         type=float,
         help="Learning rate for curiosity network",
-        default=7.3e-4,
+        default=1e-3,
     )
     parser_learner.add_argument(
         "--batch_size", type=int, help="Size of the mini-batch", default=256

@@ -56,9 +56,17 @@ class Curiosity(Model):
         next_state = self.next_state(x)
         return next_state
 
-    def get_reward(self, predicted_next_state, current_next_state):
-        return 0.5 * tf.reduce_sum(
-            (current_next_state - predicted_next_state) ** 2, axis=-1, keepdims=True
+    def get_reward(self, data):
+        # Euclidean distance
+        return tf.sqrt(
+            tf.reduce_sum(
+                tf.square(
+                    data["next_observation"]
+                    - self([data["observation"], data["action"]])
+                ),
+                axis=-1,
+                keepdims=True,
+            )
         )
 
     def train_step(self, data):

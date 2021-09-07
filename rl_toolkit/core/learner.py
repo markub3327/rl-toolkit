@@ -156,17 +156,14 @@ class Learner(Process):
     @tf.function(jit_compile=True)
     def _step(self, data):
         # Train the Actor-Critic model
-        intrinsic_reward = self.curiosity_model.get_reward(
-            predicted_next_state=self.curiosity_model(
-                [data["observation"], data["action"]]
-            ),
-            current_next_state=data["next_observation"],
-        )
-        intrinsic_reward = tf.clip_by_value(intrinsic_reward, -1.0, 1.0)
-        losses = self.actor_critic_model.train_step([data, intrinsic_reward])
+        intrinsic_reward = self.curiosity_model.get_reward(data)
+        intrinsic_reward_clipped = tf.clip_by_value(intrinsic_reward, -1.0, 1.0)
+        losses = self.actor_critic_model.train_step([data, intrinsic_reward_clipped])
 
         # Train the Curiosity model
         losses.update(self.curiosity_model.train_step(data))
+
+        losses.update({"intrinsic_reward": tf.reduce_mean(intrinsic_reward)})
 
         return losses
 
@@ -186,6 +183,7 @@ class Learner(Process):
                 print(f"Critic loss: {losses['critic_loss']}")
                 print(f"Actor loss: {losses['actor_loss']}")
                 print(f"Curiosity loss: {losses['curiosity_loss']}")
+                print(f"Intrinsic reward: {losses['intrinsic_reward']}")
                 print("=============================================")
                 print(
                     f"Training ... {(self._train_step.numpy() * 100) / self._max_steps} %"  # noqa
@@ -197,6 +195,7 @@ class Learner(Process):
                     "Critic loss": losses["critic_loss"],
                     "Actor loss": losses["actor_loss"],
                     "Curiosity loss": losses["curiosity_loss"],
+                    "Intrinsic reward": losses["intrinsic_reward"],
                 },
                 step=self._train_step.numpy(),
             )
