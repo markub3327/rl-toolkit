@@ -162,6 +162,7 @@ class Learner(Process):
             ),
             current_next_state=data["next_observation"],
         )
+        intrinsic_reward = tf.clip_by_value(intrinsic_reward, -1.0, 1.0)
         losses = self.actor_critic_model.train_step([data, intrinsic_reward])
 
         # Train the Curiosity model
