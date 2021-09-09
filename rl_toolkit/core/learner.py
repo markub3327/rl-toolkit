@@ -6,7 +6,7 @@ import tensorflow as tf
 import wandb
 from tensorflow.keras.optimizers import Adam
 
-from rl_toolkit.networks.models import ActorCritic, Curiosity
+from rl_toolkit.networks.models import ActorCritic  # , Curiosity
 from rl_toolkit.utils import VariableContainer, make_reverb_dataset
 
 from .process import Process
@@ -83,16 +83,16 @@ class Learner(Process):
         )
 
         # Init curiosity network
-        self.curiosity_model = Curiosity(self._env.observation_space.shape)
-        self.curiosity_model.compile(
-            optimizer=Adam(learning_rate=curiosity_learning_rate, clipnorm=1.0),
-        )
+        # self.curiosity_model = Curiosity(self._env.observation_space.shape)
+        # self.curiosity_model.compile(
+        #    optimizer=Adam(learning_rate=curiosity_learning_rate, clipnorm=1.0),
+        # )
 
         if actor_critic_model_path is not None:
             self.actor_critic_model.load_weights(actor_critic_model_path)
 
-        if curiosity_model_path is not None:
-            self.curiosity_model.load_weights(curiosity_model_path)
+        # if curiosity_model_path is not None:
+        #    self.curiosity_model.load_weights(curiosity_model_path)
 
         # Show models details
         self.actor_critic_model.summary()
@@ -146,7 +146,7 @@ class Learner(Process):
                 "actor_learning_rate": actor_learning_rate,
                 "critic_learning_rate": critic_learning_rate,
                 "alpha_learning_rate": alpha_learning_rate,
-                "curiosity_learning_rate": curiosity_learning_rate,
+                # "curiosity_learning_rate": curiosity_learning_rate,
                 "gamma": gamma,
                 "tau": tau,
                 "init_alpha": init_alpha,
@@ -156,14 +156,13 @@ class Learner(Process):
     @tf.function(jit_compile=True)
     def _step(self, data):
         # Train the Actor-Critic model
-        intrinsic_reward = self.curiosity_model.get_reward(data)
-        intrinsic_reward_clipped = tf.clip_by_value(intrinsic_reward, -1.0, 1.0)
-        losses = self.actor_critic_model.train_step([data, intrinsic_reward_clipped])
+        # intrinsic_reward = self.curiosity_model.get_reward(data)
+        losses = self.actor_critic_model.train_step(data)
 
         # Train the Curiosity model
-        losses.update(self.curiosity_model.train_step(data))
+        # losses.update(self.curiosity_model.train_step(data))
 
-        losses.update({"intrinsic_reward": tf.reduce_mean(intrinsic_reward)})
+        # losses.update({"intrinsic_reward": tf.reduce_mean(intrinsic_reward)})
 
         return losses
 
@@ -182,8 +181,8 @@ class Learner(Process):
                 print(f"Alpha loss: {losses['alpha_loss']}")
                 print(f"Critic loss: {losses['critic_loss']}")
                 print(f"Actor loss: {losses['actor_loss']}")
-                print(f"Curiosity loss: {losses['curiosity_loss']}")
-                print(f"Intrinsic reward: {losses['intrinsic_reward']}")
+                # print(f"Curiosity loss: {losses['curiosity_loss']}")
+                # print(f"Intrinsic reward: {losses['intrinsic_reward']}")
                 print("=============================================")
                 print(
                     f"Training ... {(self._train_step.numpy() * 100) / self._max_steps} %"  # noqa
@@ -194,8 +193,8 @@ class Learner(Process):
                     "Alpha loss": losses["alpha_loss"],
                     "Critic loss": losses["critic_loss"],
                     "Actor loss": losses["actor_loss"],
-                    "Curiosity loss": losses["curiosity_loss"],
-                    "Intrinsic reward": losses["intrinsic_reward"],
+                    # "Curiosity loss": losses["curiosity_loss"],
+                    # "Intrinsic reward": losses["intrinsic_reward"],
                 },
                 step=self._train_step.numpy(),
             )
@@ -223,14 +222,14 @@ class Learner(Process):
             self.actor_critic_model.actor.save_weights(
                 os.path.join(self._save_path, "actor.h5")
             )
-            self.curiosity_model.save_weights(
-                os.path.join(self._save_path, "curiosity.h5")
-            )
+            # self.curiosity_model.save_weights(
+            #    os.path.join(self._save_path, "curiosity.h5")
+            # )
 
             # Save model to cloud
             wandb.save(os.path.join(self._save_path, "actor_critic.h5"))
             wandb.save(os.path.join(self._save_path, "actor.h5"))
-            wandb.save(os.path.join(self._save_path, "curiosity.h5"))
+            # wandb.save(os.path.join(self._save_path, "curiosity.h5"))
 
     def close(self):
         super(Learner, self).close()

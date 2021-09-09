@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras import Model
+from tensorflow.keras import Model, initializers
 from tensorflow.keras.layers import Concatenate, Dense
 
 
@@ -25,21 +25,21 @@ class Critic(Model):
         self.fc1 = Dense(
             400,
             activation="relu",
-            kernel_initializer="he_uniform",
+            kernel_initializer=initializers.Orthogonal(gain=1.0),
         )
 
         # 2. layer
         self.fc2 = Dense(
             300,
             activation="relu",
-            kernel_initializer="he_uniform",
+            kernel_initializer=initializers.Orthogonal(gain=1.0),
         )
 
         # Output layer
         self.quantiles = Dense(
             n_quantiles,
             activation="linear",
-            kernel_initializer="glorot_uniform",
+            kernel_initializer=initializers.Orthogonal(gain=1.0),
             name="quantiles",
         )
 

@@ -1,6 +1,6 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
-from tensorflow.keras import Model
+from tensorflow.keras import Model, initializers
 from tensorflow.keras.layers import Dense
 
 from rl_toolkit.networks.activation import clipped_linear
@@ -26,28 +26,28 @@ class Actor(Model):
         self.fc1 = Dense(
             400,
             activation="relu",
-            kernel_initializer="he_uniform",
+            kernel_initializer=initializers.Orthogonal(gain=0.01),
         )
 
         # 2. layer
         self.latent_sde = Dense(
             300,
             activation="relu",
-            kernel_initializer="he_uniform",
+            kernel_initializer=initializers.Orthogonal(gain=0.01),
         )
 
         # Deterministicke akcie
         self.mean = Dense(
             n_outputs,
             activation=clipped_linear,
-            kernel_initializer="glorot_uniform",
+            kernel_initializer=initializers.Orthogonal(gain=0.01),
             name="mean",
         )
 
         # Stochasticke akcie
         self.noise = MultivariateGaussianNoise(
             n_outputs,
-            kernel_initializer=tf.keras.initializers.Constant(value=-3.0),
+            kernel_initializer=initializers.Constant(value=-3.0),
             name="noise",
         )
 
