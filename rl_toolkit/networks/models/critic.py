@@ -25,21 +25,21 @@ class Critic(Model):
         self.fc1 = Dense(
             400,
             activation="relu",
-            kernel_initializer=initializers.Orthogonal(gain=0.1),
+            kernel_initializer=initializers.Orthogonal(gain=2.0**0.5),
         )
 
         # 2. layer
         self.fc2 = Dense(
             300,
             activation="relu",
-            kernel_initializer=initializers.Orthogonal(gain=0.1),
+            kernel_initializer=initializers.Orthogonal(gain=2.0**0.5),
         )
 
         # Output layer
         self.quantiles = Dense(
             n_quantiles,
             activation="linear",
-            kernel_initializer=initializers.Orthogonal(gain=0.1),
+            kernel_initializer=initializers.Orthogonal(gain=2.0**0.5),
             name="quantiles",
         )
 
