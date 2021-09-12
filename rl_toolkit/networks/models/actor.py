@@ -26,21 +26,21 @@ class Actor(Model):
         self.fc1 = Dense(
             400,
             activation="relu",
-            kernel_initializer=initializers.Orthogonal(gain=tf.sqrt(2.0)),
+            kernel_initializer="he_uniform",
         )
 
         # 2. layer
         self.latent_sde = Dense(
             300,
             activation="relu",
-            kernel_initializer=initializers.Orthogonal(gain=tf.sqrt(2.0)),
+            kernel_initializer="he_uniform",
         )
 
         # Deterministicke akcie
         self.mean = Dense(
             n_outputs,
             activation=clipped_linear,
-            kernel_initializer=initializers.Orthogonal(gain=0.01),
+            kernel_initializer="glorot_uniform",
             name="mean",
         )
 
