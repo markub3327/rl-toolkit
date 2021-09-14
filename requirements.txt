@@ -7,14 +7,14 @@ pybullet
 #
 ###### Tensorflow ######
 #
-tensorflow
+tensorflow>=2.5.0
 tensorflow_probability
 pydot
 #
 #
 ###### OpenCV ######
 #
-opencv-python
+opencv-python>=3.
 #
 #
 ####### Logger ######

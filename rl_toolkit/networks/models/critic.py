@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow.keras import Model, initializers
+from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate, Dense
 
 
