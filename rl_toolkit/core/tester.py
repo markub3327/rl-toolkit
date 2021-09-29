@@ -1,7 +1,8 @@
 import numpy as np
 import tensorflow as tf
-import wandb
+from gym.wrappers import Monitor
 
+import wandb
 from rl_toolkit.networks.models import Actor
 
 from .process import Process
@@ -30,6 +31,10 @@ class Tester(Process):
         model_path: str,
     ):
         super(Tester, self).__init__(env_name)
+
+        # save to video file
+        if render:
+            self._env = Monitor(self._env, f"videos/{env_name}")
 
         self._max_steps = max_steps
 

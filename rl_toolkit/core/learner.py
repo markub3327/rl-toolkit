@@ -3,9 +3,9 @@ import os
 import numpy as np
 import reverb
 import tensorflow as tf
-import wandb
 from tensorflow.keras.optimizers import Adam
 
+import wandb
 from rl_toolkit.networks.models import ActorCritic  # , Curiosity
 from rl_toolkit.utils import VariableContainer, make_reverb_dataset
 

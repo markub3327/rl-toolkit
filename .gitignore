@@ -148,3 +148,6 @@ wandb/
 
 # ignore saved models and checkpoints (db)
 save/
+
+# ignore saved videos
+videos/
