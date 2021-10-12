@@ -162,8 +162,6 @@ class Learner(Process):
         # Train the Curiosity model
         # losses.update(self.curiosity_model.train_step(data))
 
-        # losses.update({"intrinsic_reward": tf.reduce_mean(intrinsic_reward)})
-
         return losses
 
     def run(self):
