@@ -18,6 +18,7 @@ class Agent(Process):
         env_name (str): the name of environment
         render (bool): enable the rendering into the video file
         db_server (str): database server name (IP or domain name)
+        actor_units (list): list of the numbers of units in each Actor's layer
         warmup_steps (int): number of interactions before using policy network
         env_steps (int): number of steps per rollout
     """
@@ -29,6 +30,8 @@ class Agent(Process):
         render: bool,
         db_server: str,
         # ---
+        actor_units: list,
+        # ---
         warmup_steps: int,
         env_steps: int,
     ):
@@ -38,7 +41,11 @@ class Agent(Process):
         self._warmup_steps = warmup_steps
 
         # Init actor's network
-        self.actor = Actor(n_outputs=np.prod(self._env.action_space.shape))
+        self.actor = Actor(
+            units=actor_units,
+            n_outputs=np.prod(self._env.action_space.shape),
+            init_noise=0.0,
+        )
         self.actor.build((None,) + self._env.observation_space.shape)
 
         # Show models details
@@ -62,8 +69,8 @@ class Agent(Process):
 
         # Table for storing variables
         self._variable_container = VariableContainer(
-            db_server=f"{db_server}:8000",
-            table="variables",
+            db_server=db_server,
+            table="variable",
             variables={
                 "train_step": self._train_step,
                 "stop_agents": self._stop_agents,
@@ -76,7 +83,7 @@ class Agent(Process):
         self.actor.reset_noise()
 
         # Initializes the reverb client
-        self.client = reverb.Client(f"{db_server}:8000")
+        self.client = reverb.Client(db_server)
 
         # init Weights & Biases
         wandb.init(
@@ -91,7 +98,7 @@ class Agent(Process):
         action = self._env.action_space.sample()
         return action
 
-    @tf.function
+    @tf.function(jit_compile=True)
     def collect_policy(self, input):
         action, _ = self.actor(
             tf.expand_dims(input, axis=0),
@@ -105,7 +112,7 @@ class Agent(Process):
         for _ in range(max_steps):
             # Get the action
             action = policy(self._last_obs)
-            action = np.array(action, copy=False, dtype="float32")
+            action = np.array(action, copy=False)
 
             # perform action
             new_obs, reward, terminal, _ = self._env.step(action)
@@ -121,7 +128,7 @@ class Agent(Process):
                     "observation": self._last_obs.astype("float32", copy=False),
                     "action": action,
                     "reward": np.array([reward], copy=False, dtype="float32"),
-                    "terminal": np.array([terminal], copy=False, dtype="bool"),
+                    "terminal": np.array([terminal], copy=False),
                 }
             )
 

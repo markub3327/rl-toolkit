@@ -9,28 +9,29 @@ class Critic(Model):
     ===============
 
     Attributes:
+        units (list): list of the numbers of units in each layer
         n_quantiles (int): number of predicted quantiles
 
     References:
         - [Controlling Overestimation Bias with Truncated Mixture of Continuous Distributional Quantile Critics](https://arxiv.org/abs/2005.04269)
     """
 
-    def __init__(self, n_quantiles: int, **kwargs):
+    def __init__(self, units: list, n_quantiles: int, **kwargs):
         super(Critic, self).__init__(**kwargs)
 
         # Input layer
         self.merged = Concatenate()
 
         # 1. layer
-        self.fc1 = Dense(
-            400,
+        self.fc_0 = Dense(
+            units=units[0],
             activation="relu",
             kernel_initializer="he_uniform",
         )
 
         # 2. layer
-        self.fc2 = Dense(
-            300,
+        self.fc_1 = Dense(
+            units=units[1],
             activation="relu",
             kernel_initializer="he_uniform",
         )
@@ -47,10 +48,10 @@ class Critic(Model):
         x = self.merged(inputs)
 
         # 1. layer
-        x = self.fc1(x)
+        x = self.fc_0(x)
 
         # 2. layer
-        x = self.fc2(x)
+        x = self.fc_1(x)
 
         # Output layer
         quantiles = self.quantiles(x)
@@ -63,13 +64,19 @@ class MultiCritic(Model):
     ===============
 
     Attributes:
+        units (list): list of the numbers of units in each layer
         n_quantiles (int): number of predicted quantiles
         top_quantiles_to_drop (int): number of quantiles to drop
         n_critics (int): number of critic networks
     """
 
     def __init__(
-        self, n_quantiles: int, top_quantiles_to_drop: int, n_critics: int, **kwargs
+        self,
+        units: list,
+        n_quantiles: int,
+        top_quantiles_to_drop: int,
+        n_critics: int,
+        **kwargs
     ):
         super(MultiCritic, self).__init__(**kwargs)
 
@@ -80,7 +87,7 @@ class MultiCritic(Model):
         # init critics
         self.models = []
         for _ in range(n_critics):
-            self.models.append(Critic(n_quantiles))
+            self.models.append(Critic(units, n_quantiles))
 
     def call(self, inputs):
         quantiles = tf.stack(list(model(inputs) for model in self.models), axis=1)

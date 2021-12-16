@@ -1,7 +1,7 @@
 import argparse
+import yaml
 
 from rl_toolkit.core import Agent, Learner, Server, Tester
-
 
 if __name__ == "__main__":
     my_parser = argparse.ArgumentParser(
@@ -13,6 +13,13 @@ if __name__ == "__main__":
         "--environment",
         type=str,
         help="Only OpenAI Gym/PyBullet environments are available!",
+        required=True,
+    )
+    my_parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        help="Path Configuration File",
         required=True,
     )
 
@@ -30,26 +37,6 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         help="Server process",
     )
-    parser_server.add_argument(
-        "--min_replay_size",
-        type=int,
-        help="Minimum number of samples in memory before learning starts",
-        default=int(1e4),
-    )
-    parser_server.add_argument(
-        "--samples_per_insert",
-        type=int,
-        help="Samples per insert ratio (SPI)",
-    )
-    parser_server.add_argument(
-        "--buffer_capacity",
-        type=int,
-        help="Maximal capacity of memory",
-        default=int(1e6),
-    )
-    parser_server.add_argument(
-        "--db_path", type=str, help="DB's checkpoints path", default="./save/db"
-    )
 
     # create the parser for the "agent" sub-command
     parser_agent = sub_parsers.add_parser(
@@ -58,19 +45,10 @@ if __name__ == "__main__":
         help="Agent process",
     )
     parser_agent.add_argument(
-        "--db_server", type=str, help="DB server name", default="localhost"
-    )
-    parser_agent.add_argument(
-        "--env_steps",
-        type=int,
-        help="Number of steps per rollout",
-        default=8,
-    )
-    parser_agent.add_argument(
-        "--warmup_steps",
-        type=int,
-        help="Number of steps before using policy network",
-        default=int(1e4),
+        "--db_server",
+        type=str,
+        help="Database server name or IP address (e.g. localhost or 192.168.1.1)",
+        default="localhost",
     )
     parser_agent.add_argument(
         "--render", action="store_true", help="Render the environment"
@@ -83,57 +61,10 @@ if __name__ == "__main__":
         help="Learner process",
     )
     parser_learner.add_argument(
-        "--db_server", type=str, help="DB server name", default="localhost"
-    )
-    parser_learner.add_argument(
-        "-t",
-        "--max_steps",
-        type=int,
-        help="Number of agent's steps",
-        default=int(1e6),
-    )
-    parser_learner.add_argument(
-        "--gamma",
-        type=float,
-        help="Discount rate (gamma) for future rewards",
-        default=0.99,
-    )
-    parser_learner.add_argument(
-        "--tau", type=float, help="Soft update rate", default=0.01
-    )
-    parser_learner.add_argument(
-        "--init_alpha",
-        type=float,
-        help="Initialization value of alpha (entropy coeff)",
-        default=1.0,
-    )
-    parser_learner.add_argument(
-        "--actor_learning_rate",
-        type=float,
-        help="Learning rate for actor network",
-        default=7.3e-4,
-    )
-    parser_learner.add_argument(
-        "--critic_learning_rate",
-        type=float,
-        help="Learning rate for critic network",
-        default=7.3e-4,
-    )
-    parser_learner.add_argument(
-        "--alpha_learning_rate",
-        type=float,
-        help="Learning rate for alpha parameter",
-        default=7.3e-4,
-    )
-    parser_learner.add_argument(
-        "--batch_size", type=int, help="Size of the mini-batch", default=256
-    )
-    parser_learner.add_argument(
-        "-s",
-        "--save_path",
+        "--db_server",
         type=str,
-        help="Path for saving model files",
-        default="./save/model",
+        help="Database server name or IP address (e.g. localhost or 192.168.1.1)",
+        default="localhost",
     )
     parser_learner.add_argument(
         "-f", "--model_path", type=str, help="Path to saved model"
@@ -162,14 +93,20 @@ if __name__ == "__main__":
     # nacitaj zadane argumenty
     args = my_parser.parse_args()
 
+    # load config
+    with open(args.config, "r") as f:
+        config = yaml.load(f, Loader=yaml.Loader)
+
     # Server mode
     if args.mode == "server":
         agent = Server(
             env_name=args.environment,
-            min_replay_size=args.min_replay_size,
-            samples_per_insert=args.samples_per_insert,
-            buffer_capacity=args.buffer_capacity,
-            db_path=args.db_path,
+            port=config["port"],
+            actor_units=config["Actor"]["units"],
+            min_replay_size=config["min_replay_size"],
+            max_replay_size=config["max_replay_size"],
+            samples_per_insert=config["samples_per_insert"],
+            db_path=config["db_path"],
         )
 
         try:
@@ -184,9 +121,10 @@ if __name__ == "__main__":
         agent = Agent(
             env_name=args.environment,
             render=args.render,
-            db_server=args.db_server,
-            warmup_steps=args.warmup_steps,
-            env_steps=args.env_steps,
+            db_server=f"{args.db_server}:{config['port']}",
+            actor_units=config["Actor"]["units"],
+            warmup_steps=config["warmup_steps"],
+            env_steps=config["env_steps"],
         )
 
         try:
@@ -200,18 +138,24 @@ if __name__ == "__main__":
     elif args.mode == "learner":
         agent = Learner(
             env_name=args.environment,
-            db_server=args.db_server,
-            max_steps=args.max_steps,
-            batch_size=args.batch_size,
-            actor_learning_rate=args.actor_learning_rate,
-            critic_learning_rate=args.critic_learning_rate,
-            alpha_learning_rate=args.alpha_learning_rate,
-            gamma=args.gamma,
-            tau=args.tau,
-            init_alpha=args.init_alpha,
-            save_path=args.save_path,
+            db_server=f"{args.db_server}:{config['port']}",
+            max_steps=config["max_steps"],
+            batch_size=config["batch_size"],
+            actor_units=config["Actor"]["units"],
+            critic_units=config["Critic"]["units"],
+            actor_learning_rate=config["Actor"]["learning_rate"],
+            critic_learning_rate=config["Critic"]["learning_rate"],
+            alpha_learning_rate=config["Alpha"]["learning_rate"],
+            n_quantiles=config["Critic"]["n_quantiles"],
+            top_quantiles_to_drop=config["Critic"]["top_quantiles_to_drop"],
+            n_critics=config["Critic"]["count"],
+            gamma=config["gamma"],
+            tau=config["tau"],
+            init_alpha=config["Alpha"]["init"],
+            init_noise=config["Actor"]["init_noise"],
+            save_path=config["save_path"],
             model_path=args.model_path,
-            log_interval=100,
+            log_interval=config["log_interval"],
         )
 
         try:
@@ -226,8 +170,9 @@ if __name__ == "__main__":
     elif args.mode == "tester":
         agent = Tester(
             env_name=args.environment,
-            max_steps=args.max_steps,
             render=args.render,
+            max_steps=args.max_steps,
+            actor_units=config["Actor"]["units"],
             model_path=args.model_path,
         )
 

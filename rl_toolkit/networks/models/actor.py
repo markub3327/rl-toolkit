@@ -13,25 +13,27 @@ class Actor(Model):
     ===============
 
     Attributes:
+        units (list): list of the numbers of units in each layer
         n_outputs (int): number of outputs
+        init_noise (float): initialization of Actor's noise
 
     References:
         - [Soft Actor-Critic Algorithms and Applications](https://arxiv.org/abs/1812.05905)
     """
 
-    def __init__(self, n_outputs: int, **kwargs):
+    def __init__(self, units: list, n_outputs: int, init_noise: float, **kwargs):
         super(Actor, self).__init__(**kwargs)
 
         # 1. layer
-        self.fc1 = Dense(
-            400,
+        self.fc_0 = Dense(
+            units=units[0],
             activation="relu",
             kernel_initializer="he_uniform",
         )
 
         # 2. layer
-        self.latent_sde = Dense(
-            300,
+        self.fc_1 = Dense(
+            units=units[1],
             activation="relu",
             kernel_initializer="he_uniform",
         )
@@ -47,7 +49,7 @@ class Actor(Model):
         # Stochasticke akcie
         self.noise = MultivariateGaussianNoise(
             n_outputs,
-            kernel_initializer=tf.keras.initializers.Constant(value=-3.0),
+            kernel_initializer=tf.keras.initializers.Constant(value=init_noise),
             name="noise",
         )
 
@@ -59,10 +61,10 @@ class Actor(Model):
 
     def call(self, inputs, with_log_prob=True, deterministic=None):
         # 1. layer
-        x = self.fc1(inputs)
+        x = self.fc_0(inputs)
 
         # 2. layer
-        latent_sde = self.latent_sde(x)
+        latent_sde = self.fc_1(x)
 
         # Output layer
         mean = self.mean(latent_sde)

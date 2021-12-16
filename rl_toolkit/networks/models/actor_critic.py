@@ -1,7 +1,8 @@
 import tensorflow as tf
 from tensorflow.keras import Model
 
-from rl_toolkit.networks.models import Actor, MultiCritic
+from .critic import MultiCritic
+from .actor import Actor
 
 
 class ActorCritic(Model):
@@ -10,6 +11,8 @@ class ActorCritic(Model):
     ===========
 
     Attributes:
+        actor_units (list): list of the numbers of units in each Actor's layer
+        critic_units (list): list of the numbers of units in each Critic's layer
         n_quantiles (int): number of predicted quantiles
         top_quantiles_to_drop (int): number of quantiles to drop
         n_critics (int): number of critic networks
@@ -17,6 +20,7 @@ class ActorCritic(Model):
         gamma (float): the discount factor
         tau (float): the soft update coefficient for target networks
         init_alpha (float): initialization of log_alpha param
+        init_noise (float): initialization of Actor's noise
 
     References:
         - [Soft Actor-Critic Algorithms and Applications](https://arxiv.org/abs/1812.05905)
@@ -25,6 +29,8 @@ class ActorCritic(Model):
 
     def __init__(
         self,
+        actor_units: list,
+        critic_units: list,
         n_quantiles: int,
         top_quantiles_to_drop: int,
         n_critics: int,
@@ -32,6 +38,7 @@ class ActorCritic(Model):
         gamma: float,
         tau: float,
         init_alpha: float,
+        init_noise: float,
         **kwargs,
     ):
         super(ActorCritic, self).__init__(**kwargs)
@@ -49,10 +56,15 @@ class ActorCritic(Model):
         self.target_entropy = tf.cast(-n_outputs, dtype=tf.float32)
 
         # Actor
-        self.actor = Actor(n_outputs)
+        self.actor = Actor(
+            units=actor_units,
+            n_outputs=n_outputs,
+            init_noise=init_noise,
+        )
 
         # Critic
         self.critic = MultiCritic(
+            units=critic_units,
             n_quantiles=n_quantiles,
             top_quantiles_to_drop=top_quantiles_to_drop,
             n_critics=n_critics,
@@ -60,6 +72,7 @@ class ActorCritic(Model):
 
         # Critic target
         self.critic_target = MultiCritic(
+            units=critic_units,
             n_quantiles=n_quantiles,
             top_quantiles_to_drop=top_quantiles_to_drop,
             n_critics=n_critics,
@@ -80,12 +93,7 @@ class ActorCritic(Model):
         alpha = tf.exp(self.log_alpha)
 
         # -------------------- Update 'Critic' -------------------- #
-        next_action, next_log_pi = self.actor(
-            data["next_observation"],
-            with_log_prob=True,
-            deterministic=False,
-        )
-        next_quantiles = self.critic_target([data["next_observation"], next_action])
+        next_quantiles, next_log_pi = self(data["next_observation"])
         next_quantiles = tf.sort(
             tf.reshape(next_quantiles, [next_quantiles.shape[0], -1])
         )
@@ -167,6 +175,7 @@ class ActorCritic(Model):
             "actor_loss": actor_loss,
             "critic_loss": critic_loss,
             "alpha_loss": alpha_loss,
+            "quantiles": quantiles,
         }
 
     def call(self, inputs, with_log_prob=True, deterministic=None):

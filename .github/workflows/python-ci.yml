@@ -28,9 +28,11 @@ jobs:
 
       - name: Check codestyle
         run: |
-          isort --check ./
           black --check ./
     
-      - name: Lint with flake8
+      - name: Flake8
         run: |
           flake8 ./ --count --show-source --statistics
+      
+      - name: PyTest
+        run: |

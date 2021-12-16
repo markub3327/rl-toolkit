@@ -15,9 +15,11 @@ class Server(Process):
 
     Attributes:
         env_name (str): the name of environment
+        port (int): the port number of database server
+        actor_units (list): list of the numbers of units in each Actor's layer
         min_replay_size (int): minimum number of samples in memory before learning starts
+        max_replay_size (int): the capacity of experiences replay buffer
         samples_per_insert (int): samples per insert ratio (SPI) `= num_sampled_items / num_inserted_items`
-        buffer_capacity (int): the capacity of experiences replay buffer
         db_path (str): path to the database checkpoint
     """
 
@@ -25,17 +27,25 @@ class Server(Process):
         self,
         # ---
         env_name: str,
+        port: int,
+        # ---
+        actor_units: list,
         # ---
         min_replay_size: int,
+        max_replay_size: int,
         samples_per_insert: int,
-        buffer_capacity: int,
         # ---
         db_path: str,
     ):
         super(Server, self).__init__(env_name)
+        self.port = port
 
         # Init actor's network
-        self.actor = Actor(n_outputs=np.prod(self._env.action_space.shape))
+        self.actor = Actor(
+            units=actor_units,
+            n_outputs=np.prod(self._env.action_space.shape),
+            init_noise=0.0,
+        )
         self.actor.build((None,) + self._env.observation_space.shape)
 
         # Show models details
@@ -59,8 +69,8 @@ class Server(Process):
 
         # Table for storing variables
         self._variable_container = VariableContainer(
-            db_server="localhost:8000",
-            table="variables",
+            db_server=f"localhost:{self.port}",
+            table="variable",
             variables={
                 "train_step": self._train_step,
                 "stop_agents": self._stop_agents,
@@ -74,9 +84,7 @@ class Server(Process):
         else:
             checkpointer = reverb.checkpointers.DefaultCheckpointer(path=db_path)
 
-        if samples_per_insert is None:
-            limiter = reverb.rate_limiters.MinSize(min_replay_size)
-        else:
+        if samples_per_insert:
             # 10% tolerance in rate
             samples_per_insert_tolerance = 0.1 * samples_per_insert
             error_buffer = min_replay_size * samples_per_insert_tolerance
@@ -85,6 +93,8 @@ class Server(Process):
                 samples_per_insert=samples_per_insert,
                 error_buffer=error_buffer,
             )
+        else:
+            limiter = reverb.rate_limiters.MinSize(min_replay_size)
 
         # Initialize the reverb server
         self.server = reverb.Server(
@@ -94,7 +104,7 @@ class Server(Process):
                     sampler=reverb.selectors.Uniform(),
                     remover=reverb.selectors.Fifo(),
                     rate_limiter=limiter,
-                    max_size=buffer_capacity,
+                    max_size=max_replay_size,
                     max_times_sampled=0,
                     signature={
                         "observation": tf.TensorSpec(
@@ -114,7 +124,7 @@ class Server(Process):
                     },
                 ),
                 reverb.Table(  # Variables container
-                    name="variables",
+                    name="variable",
                     sampler=reverb.selectors.Uniform(),
                     remover=reverb.selectors.Fifo(),
                     rate_limiter=reverb.rate_limiters.MinSize(1),
@@ -123,7 +133,7 @@ class Server(Process):
                     signature=self._variable_container.signature,
                 ),
             ],
-            port=8000,
+            port=self.port,
             checkpointer=checkpointer,
         )
 
@@ -135,7 +145,4 @@ class Server(Process):
 
     def close(self):
         super(Server, self).close()
-
-        # create the checkpoint of DB
-        client = reverb.Client("localhost:8000")
-        client.checkpoint()
+        print("The database server is successfully closed! 🔥🔥🔥 Bay Bay.")

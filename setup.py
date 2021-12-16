@@ -20,7 +20,7 @@ setup(
     project_urls={
         "Bug Tracker": "https://github.com/markub3327/rl-toolkit/issues",
     },
-    author="Martin Kubovčík",
+    author="Bc. Martin Kubovčík",
     author_email="markub3327@gmail.com",
     license="mit",
     packages=[
