@@ -103,6 +103,7 @@ if __name__ == "__main__":
             env_name=args.environment,
             port=config["port"],
             actor_units=config["Actor"]["units"],
+            init_noise=config["Actor"]["init_noise"],
             min_replay_size=config["min_replay_size"],
             max_replay_size=config["max_replay_size"],
             samples_per_insert=config["samples_per_insert"],
@@ -123,6 +124,7 @@ if __name__ == "__main__":
             render=args.render,
             db_server=f"{args.db_server}:{config['port']}",
             actor_units=config["Actor"]["units"],
+            init_noise=config["Actor"]["init_noise"],
             warmup_steps=config["warmup_steps"],
             env_steps=config["env_steps"],
         )
@@ -173,6 +175,7 @@ if __name__ == "__main__":
             render=args.render,
             max_steps=args.max_steps,
             actor_units=config["Actor"]["units"],
+            init_noise=config["Actor"]["init_noise"],
             model_path=args.model_path,
         )
 

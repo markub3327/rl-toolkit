@@ -17,6 +17,7 @@ class Server(Process):
         env_name (str): the name of environment
         port (int): the port number of database server
         actor_units (list): list of the numbers of units in each Actor's layer
+        init_noise (float): initialization of Actor's noise
         min_replay_size (int): minimum number of samples in memory before learning starts
         max_replay_size (int): the capacity of experiences replay buffer
         samples_per_insert (int): samples per insert ratio (SPI) `= num_sampled_items / num_inserted_items`
@@ -30,6 +31,7 @@ class Server(Process):
         port: int,
         # ---
         actor_units: list,
+        init_noise: float,
         # ---
         min_replay_size: int,
         max_replay_size: int,
@@ -38,13 +40,13 @@ class Server(Process):
         db_path: str,
     ):
         super(Server, self).__init__(env_name)
-        self.port = port
+        self._port = port
 
         # Init actor's network
         self.actor = Actor(
             units=actor_units,
             n_outputs=np.prod(self._env.action_space.shape),
-            init_noise=0.0,
+            init_noise=init_noise,
         )
         self.actor.build((None,) + self._env.observation_space.shape)
 
@@ -69,7 +71,7 @@ class Server(Process):
 
         # Table for storing variables
         self._variable_container = VariableContainer(
-            db_server=f"localhost:{self.port}",
+            db_server=f"localhost:{self._port}",
             table="variable",
             variables={
                 "train_step": self._train_step,
@@ -133,7 +135,7 @@ class Server(Process):
                     signature=self._variable_container.signature,
                 ),
             ],
-            port=self.port,
+            port=self._port,
             checkpointer=checkpointer,
         )
 

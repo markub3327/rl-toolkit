@@ -35,5 +35,5 @@ Critic:
 
 # Alpha parameter
 Alpha:
-  learning_rate: !!float 7.3e-4
   init: 1.0
+  learning_rate: !!float 7.3e-4
