@@ -86,14 +86,19 @@ class ActorCritic(Model):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
     def train_step(self, data):
-        # Re-new noise matrix every update of 'log_std' params
+        # Re-new noise matrix every update
         self.actor.reset_noise()
 
         # Get 'Alpha'
         alpha = tf.exp(self.log_alpha)
 
         # -------------------- Update 'Critic' -------------------- #
-        next_quantiles, next_log_pi = self(data["next_observation"])
+        next_action, next_log_pi = self.actor(
+            data["next_observation"],
+            with_log_prob=True,
+            deterministic=False,
+        )
+        next_quantiles = self.critic_target([data["next_observation"], next_action])
         next_quantiles = tf.sort(
             tf.reshape(next_quantiles, [next_quantiles.shape[0], -1])
         )
