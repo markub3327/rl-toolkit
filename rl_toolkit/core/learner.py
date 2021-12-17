@@ -20,7 +20,7 @@ class Learner(Process):
     Attributes:
         env_name (str): the name of environment
         db_server (str): database server name (IP or domain name)
-        max_steps (int): maximum number of interactions do in environment
+        train_steps (int): number of training steps
         batch_size (int): size of mini-batch used for training
         actor_units (list): list of the numbers of units in each Actor's layer
         critic_units (list): list of the numbers of units in each Critic's layer
@@ -45,7 +45,7 @@ class Learner(Process):
         env_name: str,
         db_server: str,
         # ---
-        max_steps: int,
+        train_steps: int,
         batch_size: int,
         # ---
         actor_units: list,
@@ -70,7 +70,7 @@ class Learner(Process):
     ):
         super(Learner, self).__init__(env_name)
 
-        self._max_steps = max_steps
+        self._train_steps = train_steps
         self._save_path = save_path
         self._log_interval = log_interval
         self._db_server = db_server
@@ -142,7 +142,7 @@ class Learner(Process):
 
         # init Weights & Biases
         wandb.init(project="rl-toolkit", group=f"{env_name}")
-        wandb.config.max_steps = max_steps
+        wandb.config.train_steps = train_steps
         wandb.config.batch_size = batch_size
         wandb.config.actor_units = actor_units
         wandb.config.critic_units = critic_units
@@ -163,7 +163,7 @@ class Learner(Process):
         return self.model.train_step(data)
 
     def run(self):
-        while self._train_step < self._max_steps:
+        while self._train_step < self._train_steps:
             # Get data from replay buffer
             sample = self.dataset_iterator.get_next()
 
@@ -181,14 +181,14 @@ class Learner(Process):
                 print(f"log Alpha: {self.model.log_alpha.numpy()}")
                 print("=============================================")
                 print(
-                    f"Training ... {(self._train_step.numpy() * 100) / self._max_steps} %"  # noqa
+                    f"Training ... {(self._train_step.numpy() * 100) / self._train_steps} %"  # noqa
                 )
             wandb.log(
                 {
                     "Alpha loss": losses["alpha_loss"],
                     "Critic loss": losses["critic_loss"],
                     "Actor loss": losses["actor_loss"],
-                    "Quantiles": wandb.Histogram(losses["quantiles"]),
+                    "Quantiles": wandb.Histogram(losses["quantiles"], num_bins=128),
                     "log Alpha": self.model.log_alpha,
                 },
                 step=self._train_step.numpy(),

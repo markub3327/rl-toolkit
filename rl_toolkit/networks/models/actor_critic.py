@@ -124,18 +124,12 @@ class ActorCritic(Model):
                 target_quantiles[:, tf.newaxis, tf.newaxis, :]
                 - quantiles[:, :, :, tf.newaxis]
             )  # batch_size, n_critics, n_quantiles, n_target_quantiles
-            abs_pairwise_delta = tf.math.abs(pairwise_delta)
-            huber_loss = tf.where(
-                abs_pairwise_delta > 1.0,
-                abs_pairwise_delta - 0.5,
-                pairwise_delta ** 2 * 0.5,
-            )
             critic_loss = tf.nn.compute_average_loss(
                 tf.reduce_mean(
                     tf.math.abs(
                         self.cum_prob - tf.cast(pairwise_delta < 0.0, dtype=tf.float32)
                     )
-                    * huber_loss,
+                    * tf.math.log(tf.cosh(pairwise_delta)),
                     axis=[1, 2, 3],
                 )
             )

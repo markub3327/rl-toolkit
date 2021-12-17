@@ -141,7 +141,7 @@ if __name__ == "__main__":
         agent = Learner(
             env_name=args.environment,
             db_server=f"{args.db_server}:{config['port']}",
-            max_steps=config["max_steps"],
+            train_steps=config["train_steps"],
             batch_size=config["batch_size"],
             actor_units=config["Actor"]["units"],
             critic_units=config["Critic"]["units"],

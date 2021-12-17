@@ -6,7 +6,7 @@ env_steps: 8
 warmup_steps: 10000
 
 # Learner
-max_steps: 1000000
+train_steps: 1000000
 gamma: 0.99
 tau: 0.01
 min_replay_size: 10000
