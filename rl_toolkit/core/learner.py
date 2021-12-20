@@ -159,6 +159,8 @@ class Learner(Process):
         wandb.config.n_quantiles = n_quantiles
         wandb.config.top_quantiles_to_drop = top_quantiles_to_drop
         wandb.config.n_critics = n_critics
+        wandb.config.clip_mean_min = clip_mean_min
+        wandb.config.clip_mean_max = clip_mean_max
         wandb.config.gamma = gamma
         wandb.config.tau = tau
         wandb.config.init_alpha = init_alpha

@@ -23,9 +23,9 @@ class Actor(Model):
     """
 
     def __init__(
-        self, 
-        units: list, 
-        n_outputs: int, 
+        self,
+        units: list,
+        n_outputs: int,
         clip_mean_min: float,
         clip_mean_max: float,
         init_noise: float,
@@ -55,7 +55,8 @@ class Actor(Model):
             name="mean",
         )
         self.clip_mean = Lambda(
-            lambda x: tf.clip_by_value(x, clip_mean_min, clip_mean_max), name="clip_mean"
+            lambda x: tf.clip_by_value(x, clip_mean_min, clip_mean_max),
+            name="clip_mean",
         )
 
         # Stochasticke akcie
