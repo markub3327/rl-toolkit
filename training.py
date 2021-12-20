@@ -45,16 +45,10 @@ if __name__ == "__main__":
         default=10000,
     )
     my_parser.add_argument(
-        "--env_steps", type=int, help="Num. of environment steps", default=64
+        "--env_steps", type=int, help="Num. of environment steps", default=8
     )
     my_parser.add_argument(
-        "--gradient_steps", type=int, help="Num. of gradient steps", default=64
-    )
-    my_parser.add_argument(
-        "--policy_delay",
-        type=int,
-        help="Delay between critic and policy update",
-        default=2,
+        "--gradient_steps", type=int, help="Num. of gradient steps", default=8
     )
     my_parser.add_argument("--wandb", action="store_true", help="Logging to wanDB")
     my_parser.add_argument("-s", "--save", type=str, help="Path for saving model files")
