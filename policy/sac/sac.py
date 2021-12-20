@@ -1,8 +1,9 @@
-from policy.off_policy import OffPolicy
-from .network import Actor, Critic
+import tensorflow as tf
 
 import wandb
-import tensorflow as tf
+from policy.off_policy import OffPolicy
+
+from .network import Actor, Critic
 
 
 class SAC(OffPolicy):
@@ -71,8 +72,7 @@ class SAC(OffPolicy):
 
         # logging metrics
         self._loss_a = tf.keras.metrics.Mean()
-        self._loss_c1 = tf.keras.metrics.Mean()
-        self._loss_c2 = tf.keras.metrics.Mean()
+        self._loss_c = tf.keras.metrics.Mean()
         self._loss_alpha = tf.keras.metrics.Mean()
 
         # init param 'alpha' - Lagrangian constraint
@@ -249,8 +249,7 @@ class SAC(OffPolicy):
         self._loss_alpha.update_state(self._update_alpha(batch))
 
         l_c1, l_c2 = self._update_critic(batch)
-        self._loss_c1.update_state(l_c1)
-        self._loss_c2.update_state(l_c2)
+        self._loss_c.update_state(tf.reduce_mean([l_c1, l_c2]))
 
         # Actor model update
         self._loss_a.update_state(self._update_actor(batch))
@@ -271,11 +270,10 @@ class SAC(OffPolicy):
             # logging of epoch's mean loss
             wandb.log(
                 {
-                    "loss_a": self._loss_a.result(),
-                    "loss_c1": self._loss_c1.result(),
-                    "loss_c2": self._loss_c2.result(),
-                    "loss_alpha": self._loss_alpha.result(),
-                    "alpha": self._alpha,
+                    "Actor loss": self._loss_a.result(),
+                    "Critic loss": self._loss_c.result(),
+                    "Alpha loss": self._loss_alpha.result(),
+                    "log Alpha": self._log_alpha,
                 },
                 step=self._total_steps,
             )
@@ -284,8 +282,7 @@ class SAC(OffPolicy):
     def _clear_metrics(self):
         # reset logger
         self._loss_a.reset_states()
-        self._loss_c1.reset_states()
-        self._loss_c2.reset_states()
+        self._loss_c.reset_states()
         self._loss_alpha.reset_states()
 
     def save(self, path):

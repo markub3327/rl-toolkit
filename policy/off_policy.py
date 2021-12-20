@@ -1,10 +1,9 @@
+import math
 from abc import ABC, abstractmethod
 
-import cv2
-import math
-import wandb
 import tensorflow as tf
-import numpy as np
+
+import wandb
 
 # utilities
 from utils.replay_buffer import ReplayBuffer
@@ -103,10 +102,10 @@ class OffPolicy(ABC):
         if self._logging_wandb:
             wandb.log(
                 {
-                    "epoch": self._total_episodes,
-                    "score": self._episode_reward,
-                    "steps": self._episode_steps,
-                    "replayBuffer": len(self._rpm),
+                    "Epoch": self._total_episodes,
+                    "Score": self._episode_reward,
+                    "Steps": self._episode_steps,
+                    "ReplayBuffer": len(self._rpm),
                 },
                 step=self._total_steps,
             )
@@ -124,9 +123,9 @@ class OffPolicy(ABC):
         if self._logging_wandb:
             wandb.log(
                 {
-                    "epoch": self._total_episodes,
-                    "score": self._episode_reward,
-                    "steps": self._episode_steps,
+                    "Epoch": self._total_episodes,
+                    "Score": self._episode_reward,
+                    "Steps": self._episode_steps,
                 },
                 step=self._total_steps,
             )
@@ -199,12 +198,6 @@ class OffPolicy(ABC):
         self._total_steps = 0
         self._total_episodes = 0
 
-        # init video file
-        if render:
-            video_stream = cv2.VideoWriter(
-                "video/game.avi", cv2.VideoWriter_fourcc(*"MJPG"), 30, (640, 480)
-            )
-
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
             self._episode_reward = 0.0
@@ -215,12 +208,6 @@ class OffPolicy(ABC):
 
             # collect rollout
             while not done:
-                # write to stream
-                if render:
-                    img_array = self._env.render(mode="rgb_array")
-                    img_array = cv2.resize(img_array, (640, 480))
-                    video_stream.write(img_array)
-
                 # Get the action
                 action = self._get_action(self._last_obs, deterministic=True).numpy()
 
@@ -240,7 +227,3 @@ class OffPolicy(ABC):
 
             # logovanie
             self._logging_test()
-
-        # Release video file stream
-        if render:
-            video_stream.release()

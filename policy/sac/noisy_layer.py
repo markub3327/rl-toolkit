@@ -1,8 +1,7 @@
-from tensorflow.keras.layers import Layer
-from tensorflow.keras import initializers
-
 import tensorflow as tf
 import tensorflow_probability as tfp
+from tensorflow.keras import initializers
+from tensorflow.keras.layers import Layer
 
 
 class NoisyLayer(Layer):
