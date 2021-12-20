@@ -24,16 +24,18 @@ class Learner(Process):
         batch_size (int): size of mini-batch used for training
         actor_units (list): list of the numbers of units in each Actor's layer
         critic_units (list): list of the numbers of units in each Critic's layer
-        actor_learning_rate (float): the learning rate for Actor's optimizer
-        critic_learning_rate (float): the learning rate for Critic's optimizer
-        alpha_learning_rate (float): the learning rate for Alpha's optimizer
+        actor_learning_rate (float): the learning rate for the Actor's optimizer
+        critic_learning_rate (float): the learning rate for the Critic's optimizer
+        alpha_learning_rate (float): the learning rate for the Alpha's optimizer
         n_quantiles (int): number of predicted quantiles
         top_quantiles_to_drop (int): number of quantiles to drop
         n_critics (int): number of critic networks
+        clip_mean_min (float): the minimum value of mean
+        clip_mean_max (float): the maximum value of mean
         gamma (float): the discount factor
         tau (float): the soft update coefficient for target networks
         init_alpha (float): initialization of alpha param
-        init_noise (float): initialization of Actor's noise
+        init_noise (float): initialization of the Actor's noise
         model_path (str): path to the model
         save_path (str): path to the models for saving
         log_interval (int): the logging interval to the console
@@ -57,6 +59,9 @@ class Learner(Process):
         n_quantiles: int,
         top_quantiles_to_drop: int,
         n_critics: int,
+        # ---
+        clip_mean_min: float,
+        clip_mean_max: float,
         # ---
         gamma: float,
         tau: float,
@@ -83,6 +88,8 @@ class Learner(Process):
             top_quantiles_to_drop=top_quantiles_to_drop,
             n_critics=n_critics,
             n_outputs=np.prod(self._env.action_space.shape),
+            clip_mean_min=clip_mean_min,
+            clip_mean_max=clip_mean_max,
             gamma=gamma,
             tau=tau,
             init_alpha=init_alpha,

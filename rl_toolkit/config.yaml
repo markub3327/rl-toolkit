@@ -24,6 +24,8 @@ Actor:
   units: [400, 300]
   init_noise: -3.0
   learning_rate: !!float 7.3e-4
+  clip_mean_min: -2.0
+  clip_mean_max: 2.0
 
 # Critic model
 Critic:

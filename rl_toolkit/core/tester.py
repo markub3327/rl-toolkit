@@ -17,7 +17,9 @@ class Tester(Process):
         render (bool): enable the rendering into the video file
         max_steps (int): maximum number of interactions do in environment
         actor_units (list): list of the numbers of units in each Actor's layer
-        init_noise (float): initialization of Actor's noise
+        clip_mean_min (float): the minimum value of mean
+        clip_mean_max (float): the maximum value of mean
+        init_noise (float): initialization of the Actor's noise
         model_path (str): path to the model
     """
 
@@ -29,6 +31,8 @@ class Tester(Process):
         max_steps: int,
         # ---
         actor_units: list,
+        clip_mean_min: float,
+        clip_mean_max: float,
         init_noise: float,
         # ---
         model_path: str,
@@ -40,6 +44,8 @@ class Tester(Process):
         self.actor = Actor(
             units=actor_units,
             n_outputs=np.prod(self._env.action_space.shape),
+            clip_mean_min=clip_mean_min,
+            clip_mean_max=clip_mean_max,
             init_noise=init_noise,
         )
         self.actor.build((None,) + self._env.observation_space.shape)

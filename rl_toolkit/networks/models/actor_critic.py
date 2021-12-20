@@ -17,6 +17,8 @@ class ActorCritic(Model):
         top_quantiles_to_drop (int): number of quantiles to drop
         n_critics (int): number of critic networks
         n_outputs (int): number of outputs
+        clip_mean_min (float): the minimum value of mean
+        clip_mean_max (float): the maximum value of mean
         gamma (float): the discount factor
         tau (float): the soft update coefficient for target networks
         init_alpha (float): initialization of log_alpha param
@@ -35,6 +37,8 @@ class ActorCritic(Model):
         top_quantiles_to_drop: int,
         n_critics: int,
         n_outputs: int,
+        clip_mean_min: float,
+        clip_mean_max: float,
         gamma: float,
         tau: float,
         init_alpha: float,
@@ -59,6 +63,8 @@ class ActorCritic(Model):
         self.actor = Actor(
             units=actor_units,
             n_outputs=n_outputs,
+            clip_mean_min=clip_mean_min,
+            clip_mean_max=clip_mean_max,
             init_noise=init_noise,
         )
 
@@ -129,7 +135,11 @@ class ActorCritic(Model):
                     tf.math.abs(
                         self.cum_prob - tf.cast(pairwise_delta < 0.0, dtype=tf.float32)
                     )
-                    * tf.math.log(tf.cosh(pairwise_delta)),
+                    * (
+                        pairwise_delta
+                        + tf.math.softplus(-2.0 * pairwise_delta)
+                        - tf.math.log(2.0)
+                    ),
                     axis=[1, 2, 3],
                 )
             )

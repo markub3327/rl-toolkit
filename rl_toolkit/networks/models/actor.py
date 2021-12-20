@@ -1,9 +1,8 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Dense, Lambda
 
-from rl_toolkit.networks.activation import clipped_linear
 from rl_toolkit.networks.layers import MultivariateGaussianNoise
 
 
@@ -15,13 +14,23 @@ class Actor(Model):
     Attributes:
         units (list): list of the numbers of units in each layer
         n_outputs (int): number of outputs
-        init_noise (float): initialization of Actor's noise
+        clip_mean_min (float): the minimum value of mean
+        clip_mean_max (float): the maximum value of mean
+        init_noise (float): initialization of the Actor's noise
 
     References:
         - [Soft Actor-Critic Algorithms and Applications](https://arxiv.org/abs/1812.05905)
     """
 
-    def __init__(self, units: list, n_outputs: int, init_noise: float, **kwargs):
+    def __init__(
+        self, 
+        units: list, 
+        n_outputs: int, 
+        clip_mean_min: float,
+        clip_mean_max: float,
+        init_noise: float,
+        **kwargs
+    ):
         super(Actor, self).__init__(**kwargs)
 
         # 1. layer
@@ -41,9 +50,12 @@ class Actor(Model):
         # Deterministicke akcie
         self.mean = Dense(
             n_outputs,
-            activation=clipped_linear,
+            activation="linear",
             kernel_initializer="glorot_uniform",
             name="mean",
+        )
+        self.clip_mean = Lambda(
+            lambda x: tf.clip_by_value(x, clip_mean_min, clip_mean_max), name="clip_mean"
         )
 
         # Stochasticke akcie
@@ -68,6 +80,7 @@ class Actor(Model):
 
         # Output layer
         mean = self.mean(latent_sde)
+        mean = self.clip_mean(mean)
 
         if deterministic:
             action = self.bijector.forward(mean)

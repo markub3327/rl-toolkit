@@ -17,7 +17,9 @@ class Server(Process):
         env_name (str): the name of environment
         port (int): the port number of database server
         actor_units (list): list of the numbers of units in each Actor's layer
-        init_noise (float): initialization of Actor's noise
+        clip_mean_min (float): the minimum value of mean
+        clip_mean_max (float): the maximum value of mean
+        init_noise (float): initialization of the Actor's noise
         min_replay_size (int): minimum number of samples in memory before learning starts
         max_replay_size (int): the capacity of experiences replay buffer
         samples_per_insert (int): samples per insert ratio (SPI) `= num_sampled_items / num_inserted_items`
@@ -31,6 +33,8 @@ class Server(Process):
         port: int,
         # ---
         actor_units: list,
+        clip_mean_min: float,
+        clip_mean_max: float,
         init_noise: float,
         # ---
         min_replay_size: int,
@@ -46,6 +50,8 @@ class Server(Process):
         self.actor = Actor(
             units=actor_units,
             n_outputs=np.prod(self._env.action_space.shape),
+            clip_mean_min=clip_mean_min,
+            clip_mean_max=clip_mean_max,
             init_noise=init_noise,
         )
         self.actor.build((None,) + self._env.observation_space.shape)

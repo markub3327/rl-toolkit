@@ -19,7 +19,9 @@ class Agent(Process):
         render (bool): enable the rendering into the video file
         db_server (str): database server name (IP or domain name)
         actor_units (list): list of the numbers of units in each Actor's layer
-        init_noise (float): initialization of Actor's noise
+        clip_mean_min (float): the minimum value of mean
+        clip_mean_max (float): the maximum value of mean
+        init_noise (float): initialization of the Actor's noise
         warmup_steps (int): number of interactions before using policy network
         env_steps (int): number of steps per rollout
     """
@@ -32,6 +34,8 @@ class Agent(Process):
         db_server: str,
         # ---
         actor_units: list,
+        clip_mean_min: float,
+        clip_mean_max: float,
         init_noise: float,
         # ---
         warmup_steps: int,
@@ -46,6 +50,8 @@ class Agent(Process):
         self.actor = Actor(
             units=actor_units,
             n_outputs=np.prod(self._env.action_space.shape),
+            clip_mean_min=clip_mean_min,
+            clip_mean_max=clip_mean_max,
             init_noise=init_noise,
         )
         self.actor.build((None,) + self._env.observation_space.shape)
