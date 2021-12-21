@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Concatenate, Dense
+from tensorflow.keras.layers import Add, Activation, Dense
 
 
 class Critic(Model):
@@ -19,9 +19,6 @@ class Critic(Model):
     def __init__(self, units: list, n_quantiles: int, **kwargs):
         super(Critic, self).__init__(**kwargs)
 
-        # Input layer
-        self.merged = Concatenate()
-
         # 1. layer
         self.fc_0 = Dense(
             units=units[0],
@@ -32,9 +29,14 @@ class Critic(Model):
         # 2. layer
         self.fc_1 = Dense(
             units=units[1],
-            activation="relu",
             kernel_initializer="he_uniform",
         )
+        self.fc_2 = Dense(
+            units=units[1],
+            kernel_initializer="he_uniform",
+        )
+        self.add_0 = Add()
+        self.activ_0 = Activation("relu")
 
         # Output layer
         self.quantiles = Dense(
@@ -45,13 +47,14 @@ class Critic(Model):
         )
 
     def call(self, inputs):
-        x = self.merged(inputs)
-
         # 1. layer
-        x = self.fc_0(x)
+        x = self.fc_0(inputs[0])
 
         # 2. layer
-        x = self.fc_1(x)
+        state = self.fc_1(x)
+        action = self.fc_2(inputs[1])
+        x = self.add_0([state, action])
+        x = self.activ_0(x)
 
         # Output layer
         quantiles = self.quantiles(x)
