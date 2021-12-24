@@ -70,11 +70,12 @@ class MultivariateGaussianNoise(Layer):
 
         return config
 
-    def get_std(self):
+    @property
+    def scale(self):
         return tf.math.softplus(self.kernel)
 
     def sample_weights(self):
         w_dist = tfp.distributions.MultivariateNormalDiag(
-            loc=tf.zeros_like(self.kernel), scale_diag=(self.get_std() + 1e-6)
+            loc=tf.zeros_like(self.kernel), scale_diag=(self.scale + 1e-6)
         )
         self.epsilon.assign(w_dist.sample())

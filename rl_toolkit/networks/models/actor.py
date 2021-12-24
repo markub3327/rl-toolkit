@@ -91,9 +91,7 @@ class Actor(Model):
             action = self.bijector.forward(mean + noise)
 
             if with_log_prob:
-                variance = tf.matmul(
-                    tf.square(latent_sde), tf.square(self.noise.get_std())
-                )
+                variance = tf.matmul(tf.square(latent_sde), tf.square(self.noise.scale))
                 pi_distribution = tfp.distributions.TransformedDistribution(
                     distribution=tfp.distributions.MultivariateNormalDiag(
                         loc=mean, scale_diag=tf.sqrt(variance + 1e-6)
