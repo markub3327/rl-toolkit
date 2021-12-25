@@ -49,9 +49,9 @@ class ActorCritic(Model):
 
         self.gamma = tf.constant(gamma)
         self.tau = tf.constant(tau)
-        self.cum_prob = tf.constant(
-            (tf.range(n_quantiles, dtype=tf.float32) + 0.5) / n_quantiles
-        )[tf.newaxis, tf.newaxis, :, tf.newaxis]
+        self.cum_prob = ((tf.range(n_quantiles, dtype=tf.float32) + 0.5) / n_quantiles)[
+            tf.newaxis, tf.newaxis, :, tf.newaxis
+        ]
 
         # init Lagrangian constraint
         self.log_alpha = tf.Variable(
@@ -83,12 +83,10 @@ class ActorCritic(Model):
             top_quantiles_to_drop=top_quantiles_to_drop,
             n_critics=n_critics,
         )
-        self._update_target(self.critic, self.critic_target, tau=tf.constant(1.0))
+        self._update_target(self.critic, self.critic_target, tau=1.0)
 
     def _update_target(self, net, net_targ, tau):
-        for source_weight, target_weight in zip(
-            net.trainable_variables, net_targ.trainable_variables
-        ):
+        for source_weight, target_weight in zip(net.variables, net_targ.variables):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
     def train_step(self, data):
@@ -97,6 +95,11 @@ class ActorCritic(Model):
 
         # Get 'Alpha'
         alpha = tf.exp(self.log_alpha)
+
+        # Get trainable variables
+        actor_variables = self.actor.trainable_variables
+        critic_variables = self.critic.trainable_variables
+        alpha_variables = [self.log_alpha]
 
         # -------------------- Update 'Critic' -------------------- #
         next_action, next_log_pi = self.actor(
@@ -144,10 +147,8 @@ class ActorCritic(Model):
                 )
             )
 
-        gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
-        self.critic_optimizer.apply_gradients(
-            zip(gradients, self.critic.trainable_variables)
-        )
+        critic_gradients = tape.gradient(critic_loss, critic_variables)
+        self.critic_optimizer.apply_gradients(zip(critic_gradients, critic_variables))
 
         # -------------------- Update 'Actor' & 'Alpha' -------------------- #
         with tf.GradientTape(persistent=True) as tape:
@@ -166,16 +167,16 @@ class ActorCritic(Model):
                 -self.log_alpha * tf.stop_gradient(log_pi + self.target_entropy)
             )
 
-        gradients = tape.gradient(actor_loss, self.actor.trainable_variables)
-        self.actor_optimizer.apply_gradients(
-            zip(gradients, self.actor.trainable_variables)
-        )
-
-        gradients = tape.gradient(alpha_loss, [self.log_alpha])
-        self.alpha_optimizer.apply_gradients(zip(gradients, [self.log_alpha]))
+        # Compute gradients
+        actor_gradients = tape.gradient(actor_loss, actor_variables)
+        alpha_gradients = tape.gradient(alpha_loss, alpha_variables)
 
         # Delete the persistent tape manually
         del tape
+
+        # Apply gradients
+        self.actor_optimizer.apply_gradients(zip(actor_gradients, actor_variables))
+        self.alpha_optimizer.apply_gradients(zip(alpha_gradients, alpha_variables))
 
         # -------------------- Soft update target networks -------------------- #
         self._update_target(self.critic, self.critic_target, tau=self.tau)
