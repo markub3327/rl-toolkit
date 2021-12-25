@@ -147,7 +147,13 @@ class ActorCritic(Model):
                 )
             )
 
+        # Compute gradients
         critic_gradients = tape.gradient(critic_loss, critic_variables)
+
+        # Clip gradients
+        critic_gradients, _ = tf.clip_by_global_norm(critic_gradients, 40.0)
+
+        # Apply gradients
         self.critic_optimizer.apply_gradients(zip(critic_gradients, critic_variables))
 
         # -------------------- Update 'Actor' & 'Alpha' -------------------- #
@@ -173,6 +179,9 @@ class ActorCritic(Model):
 
         # Delete the persistent tape manually
         del tape
+
+        # Clip gradients
+        actor_gradients, _ = tf.clip_by_global_norm(actor_gradients, 40.0)
 
         # Apply gradients
         self.actor_optimizer.apply_gradients(zip(actor_gradients, actor_variables))
