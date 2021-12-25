@@ -28,7 +28,6 @@ def make_reverb_dataset(
         num_parallel_calls=num_parallel_calls,
         deterministic=False,
     )
-
     dataset = dataset.prefetch(tf.data.AUTOTUNE)
 
     return dataset

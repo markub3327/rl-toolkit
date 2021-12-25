@@ -43,7 +43,7 @@ class Server(Process):
         # ---
         db_path: str,
     ):
-        super(Server, self).__init__(env_name)
+        super(Server, self).__init__(env_name, False)
         self._port = port
 
         # Init actor's network

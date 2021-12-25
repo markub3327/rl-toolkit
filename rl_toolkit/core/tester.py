@@ -37,7 +37,7 @@ class Tester(Process):
         # ---
         model_path: str,
     ):
-        super(Tester, self).__init__(env_name)
+        super(Tester, self).__init__(env_name, render)
 
         self._max_steps = max_steps
 

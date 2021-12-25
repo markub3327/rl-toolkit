@@ -41,7 +41,7 @@ class Agent(Process):
         warmup_steps: int,
         env_steps: int,
     ):
-        super(Agent, self).__init__(env_name)
+        super(Agent, self).__init__(env_name, render)
 
         self._env_steps = env_steps
         self._warmup_steps = warmup_steps

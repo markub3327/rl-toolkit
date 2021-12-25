@@ -73,7 +73,7 @@ class Learner(Process):
         # ---
         log_interval: int,
     ):
-        super(Learner, self).__init__(env_name)
+        super(Learner, self).__init__(env_name, False)
 
         self._train_steps = train_steps
         self._save_path = save_path
