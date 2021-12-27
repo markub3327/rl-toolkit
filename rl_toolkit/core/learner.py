@@ -201,7 +201,7 @@ class Learner(Process):
                     "Alpha loss": losses["alpha_loss"],
                     "Critic loss": losses["critic_loss"],
                     "Actor loss": losses["actor_loss"],
-                    "Quantiles": wandb.Histogram(losses["quantiles"], num_bins=128),
+                    "Quantiles": wandb.Histogram(losses["quantiles"]),
                     "log Alpha": self.model.log_alpha,
                 },
                 step=self._train_step.numpy(),
