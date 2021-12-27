@@ -1,9 +1,14 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow.keras import Model
+from tensorflow.keras.initializers import Constant, VarianceScaling
 from tensorflow.keras.layers import Dense, Lambda
 
 from rl_toolkit.networks.layers import MultivariateGaussianNoise
+
+uniform_initializer = VarianceScaling(
+    distribution="uniform", mode="fan_out", scale=0.333
+)
 
 
 class Actor(Model):
@@ -37,21 +42,21 @@ class Actor(Model):
         self.fc_0 = Dense(
             units=units[0],
             activation="relu",
-            kernel_initializer="he_uniform",
+            kernel_initializer=uniform_initializer,
         )
 
         # 2. layer
         self.fc_1 = Dense(
             units=units[1],
             activation="relu",
-            kernel_initializer="he_uniform",
+            kernel_initializer=uniform_initializer,
         )
 
         # Deterministicke akcie
         self.mean = Dense(
             n_outputs,
             activation="linear",
-            kernel_initializer="glorot_uniform",
+            kernel_initializer=uniform_initializer,
             name="mean",
         )
         self.clip_mean = Lambda(
@@ -62,7 +67,7 @@ class Actor(Model):
         # Stochasticke akcie
         self.noise = MultivariateGaussianNoise(
             n_outputs,
-            kernel_initializer=tf.keras.initializers.Constant(value=init_noise),
+            kernel_initializer=Constant(value=init_noise),
             name="noise",
         )
 

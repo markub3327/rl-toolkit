@@ -1,6 +1,11 @@
 import tensorflow as tf
 from tensorflow.keras import Model
+from tensorflow.keras.initializers import VarianceScaling
 from tensorflow.keras.layers import Activation, Add, Dense
+
+uniform_initializer = VarianceScaling(
+    distribution="uniform", mode="fan_out", scale=0.333
+)
 
 
 class Critic(Model):
@@ -23,17 +28,17 @@ class Critic(Model):
         self.fc_0 = Dense(
             units=units[0],
             activation="relu",
-            kernel_initializer="he_uniform",
+            kernel_initializer=uniform_initializer,
         )
 
         # 2. layer
         self.fc_1 = Dense(
             units=units[1],
-            kernel_initializer="he_uniform",
+            kernel_initializer=uniform_initializer,
         )
         self.fc_2 = Dense(
             units=units[1],
-            kernel_initializer="he_uniform",
+            kernel_initializer=uniform_initializer,
         )
         self.add_0 = Add()
         self.activ_0 = Activation("relu")
@@ -42,7 +47,7 @@ class Critic(Model):
         self.quantiles = Dense(
             n_quantiles,
             activation="linear",
-            kernel_initializer="glorot_uniform",
+            kernel_initializer=uniform_initializer,
             name="quantiles",
         )
 
