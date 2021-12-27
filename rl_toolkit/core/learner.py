@@ -98,12 +98,12 @@ class Learner(Process):
         self.model.build((None,) + self._env.observation_space.shape)
         self.model.compile(
             actor_optimizer=Adam(
-                learning_rate=actor_learning_rate, epsilon=1e-3, global_clipnorm=40.0
+                learning_rate=actor_learning_rate, global_clipnorm=40.0
             ),
             critic_optimizer=Adam(
-                learning_rate=critic_learning_rate, epsilon=1e-3, global_clipnorm=40.0
+                learning_rate=critic_learning_rate, global_clipnorm=40.0
             ),
-            alpha_optimizer=Adam(learning_rate=alpha_learning_rate, epsilon=1e-3),
+            alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
         )
 
         if model_path is not None:
