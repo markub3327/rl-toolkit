@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Add, Activation, Dense
+from tensorflow.keras.layers import Activation, Add, Dense
 
 
 class Critic(Model):

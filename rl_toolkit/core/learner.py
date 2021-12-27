@@ -3,9 +3,9 @@ import os
 import numpy as np
 import reverb
 import tensorflow as tf
+import wandb
 from tensorflow.keras.optimizers import Adam
 
-import wandb
 from rl_toolkit.networks.models import ActorCritic
 from rl_toolkit.utils import VariableContainer, make_reverb_dataset
 
@@ -97,9 +97,13 @@ class Learner(Process):
         )
         self.model.build((None,) + self._env.observation_space.shape)
         self.model.compile(
-            actor_optimizer=Adam(learning_rate=actor_learning_rate),
-            critic_optimizer=Adam(learning_rate=critic_learning_rate),
-            alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
+            actor_optimizer=Adam(
+                learning_rate=actor_learning_rate, epsilon=1e-3, global_clipnorm=40.0
+            ),
+            critic_optimizer=Adam(
+                learning_rate=critic_learning_rate, epsilon=1e-3, global_clipnorm=40.0
+            ),
+            alpha_optimizer=Adam(learning_rate=alpha_learning_rate, epsilon=1e-3),
         )
 
         if model_path is not None:
