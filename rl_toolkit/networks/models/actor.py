@@ -7,7 +7,7 @@ from tensorflow.keras.layers import Dense, Lambda
 from rl_toolkit.networks.layers import MultivariateGaussianNoise
 
 uniform_initializer = VarianceScaling(
-    distribution="uniform", mode="fan_out", scale=0.333
+    distribution="uniform", mode="fan_in", scale=(1.0 / 3.0)
 )
 
 
