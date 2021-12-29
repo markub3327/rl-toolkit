@@ -1,12 +1,17 @@
 # Changes
 
-## v4.0.0 (XXX XX, 2021)
+## v4.0.0 (XXX XX, 2022)
 ### Features 🔊
-- WanDB is mandatory !!!
-- Render envs to WanDB
+- Render environments to WanDB
 - Grouping of runs in WanDB
-- SampleToInsertRatio
-- Gradient Clipping to avoid exploding gradients
+- SampleToInsertRatio rate limiter
+- Global Gradient Clipping to avoid exploding gradients
+- Softplus for numerical stability
+- YAML configuration file
+- LogCosh instead of Huber loss
+- Critic network with Add layer applied on state & action branches
+- Custom uniform initializer
+- XLA (Accelerated Linear Algebra) compiler
 - split into **Agent**, **Learner**, **Tester** and **Server**
 ### Bug fixes 🛠️
 - Fixed creating of saving path for models

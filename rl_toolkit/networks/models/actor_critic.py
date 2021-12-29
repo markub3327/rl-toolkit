@@ -54,9 +54,7 @@ class ActorCritic(Model):
         ]
 
         # init Lagrangian constraint
-        self.log_alpha = tf.Variable(
-            tf.math.log(init_alpha), trainable=True, name="log_alpha"
-        )
+        self.log_alpha = tf.Variable(init_alpha, trainable=True, name="log_alpha")
         self.target_entropy = tf.cast(-n_outputs, dtype=tf.float32)
 
         # Actor
@@ -94,7 +92,7 @@ class ActorCritic(Model):
         self.actor.reset_noise()
 
         # Get 'Alpha'
-        alpha = tf.exp(self.log_alpha)
+        alpha = tf.math.softplus(self.log_alpha)
 
         # Get trainable variables
         actor_variables = self.actor.trainable_variables
