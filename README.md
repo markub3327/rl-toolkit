@@ -173,6 +173,9 @@
   | HumanoidBulletEnv-v0 | - | - | - | - |
   | MinitaurBulletEnv-v0 | - | - | - | - |
 
+![results](https://raw.githubusercontent.com/markub3327/rl-toolkit/master/img/results.png)
+![rl-toolkit](https://raw.githubusercontent.com/markub3327/rl-toolkit/master/img/preview.gif)
+
 ## Releases
 
    * SAC + gSDE + Huber loss<br> &emsp; is stored here, [branch r2.0](https://github.com/markub3327/rl-toolkit/tree/r2.0)

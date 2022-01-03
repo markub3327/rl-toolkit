@@ -13,7 +13,7 @@ extras = {"all": ["tensorflow", "opencv-python>=3.", "dm-reverb"]}
 setup(
     name="rl-toolkit",
     version="4.0.0",
-    description="The RL-Toolkit: A toolkit for developing and comparing your reinforcement learning agents in various games (OpenAI Gym or Pybullet).",  # noqa
+    description="RL-Toolkit: A Research Framework for Robotics",  # noqa
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/markub3327/rl-toolkit",
