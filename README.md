@@ -29,19 +29,19 @@
       ```   
   3. Run (for **Server**)
       ```sh
-      python3 -m rl_toolkit -e MinitaurBulletEnv-v0 server
+      python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 server
       ```
      Run (for **Agent**)
       ```sh
-      python3 -m rl_toolkit -e MinitaurBulletEnv-v0 agent --db_server localhost:8000
+      python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 agent --db_server localhost
       ```
      Run (for **Learner**)
       ```sh
-      python3 -m rl_toolkit -e MinitaurBulletEnv-v0 learner --db_server 192.168.1.2:8000
+      python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 learner --db_server 192.168.1.2
       ```
      Run (for **Tester**)
       ```sh
-      python3 -m rl_toolkit -e MinitaurBulletEnv-v0 tester -f save/model/actor.h5
+      python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 tester -f save/model/actor.h5
       ```
   
 ### On NVIDIA Jetson
@@ -133,19 +133,19 @@
       ```   
   4. Run (for **Server**)
       ```sh
-      python3 -m rl_toolkit -e MinitaurBulletEnv-v0 server
+      python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 server
       ```
      Run (for **Agent**)
       ```sh
-      python3 -m rl_toolkit -e MinitaurBulletEnv-v0 agent --db_server localhost:8000
+      python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 agent --db_server localhost
       ```
      Run (for **Learner**)
       ```sh
-      python3 -m rl_toolkit -e MinitaurBulletEnv-v0 learner --db_server 192.168.1.2:8000
+      python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 learner --db_server 192.168.1.2
       ```
      Run (for **Tester**)
       ```sh
-      python3 -m rl_toolkit -e MinitaurBulletEnv-v0 tester -f save/model/actor.h5
+      python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 tester -f save/model/actor.h5
       ```
 
 
