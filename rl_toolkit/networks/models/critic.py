@@ -1,9 +1,11 @@
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.initializers import VarianceScaling
-from tensorflow.keras.layers import Activation, Add, Dense
+from tensorflow.keras.layers import Activation, Add, Dense, LayerNormalization
 
-uniform_initializer = VarianceScaling(distribution="uniform", mode="fan_in", scale=1.0)
+uniform_initializer = VarianceScaling(
+    distribution="uniform", mode="fan_out", scale=(1.0 / 3.0)
+)
 
 
 class Critic(Model):
@@ -25,16 +27,24 @@ class Critic(Model):
         # 1. layer
         self.fc_0 = Dense(
             units=units[0],
-            activation="relu",
             kernel_initializer=uniform_initializer,
         )
+        self.norm_0 = LayerNormalization()
+        self.activ_0 = Activation("tanh")
+
+        self.fc_1 = Dense(
+            units=units[0],
+            kernel_initializer=uniform_initializer,
+        )
+        self.norm_1 = LayerNormalization()
+        self.activ_1 = Activation("tanh")
 
         # 2. layer
-        self.fc_1 = Dense(
+        self.fc_2 = Dense(
             units=units[1],
             kernel_initializer=uniform_initializer,
         )
-        self.fc_2 = Dense(
+        self.fc_3 = Dense(
             units=units[1],
             kernel_initializer=uniform_initializer,
         )
@@ -51,11 +61,17 @@ class Critic(Model):
 
     def call(self, inputs):
         # 1. layer
-        x = self.fc_0(inputs[0])
+        state = self.fc_0(inputs[0])
+        state = self.norm_0(state)
+        state = self.activ_0(state)
+
+        action = self.fc_1(inputs[1])
+        action = self.norm_1(action)
+        action = self.activ_1(action)
 
         # 2. layer
-        state = self.fc_1(x)
-        action = self.fc_2(inputs[1])
+        state = self.fc_2(state)
+        action = self.fc_3(action)
         x = self.add_0([state, action])
         x = self.activ_0(x)
 
