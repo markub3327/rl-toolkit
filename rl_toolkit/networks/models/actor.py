@@ -43,7 +43,7 @@ class Actor(Model):
             units=units[0],
             kernel_initializer=uniform_initializer,
         )
-        self.norm_0 = LayerNormalization()
+        self.norm_0 = LayerNormalization(epsilon=1e-6)
         self.activ_0 = Activation("tanh")
 
         # 2. layer

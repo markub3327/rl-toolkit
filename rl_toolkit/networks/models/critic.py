@@ -29,14 +29,14 @@ class Critic(Model):
             units=units[0],
             kernel_initializer=uniform_initializer,
         )
-        self.norm_0 = LayerNormalization()
+        self.norm_0 = LayerNormalization(epsilon=1e-6)
         self.activ_0 = Activation("tanh")
 
         self.fc_1 = Dense(
             units=units[0],
             kernel_initializer=uniform_initializer,
         )
-        self.norm_1 = LayerNormalization()
+        self.norm_1 = LayerNormalization(epsilon=1e-6)
         self.activ_1 = Activation("tanh")
 
         # 2. layer
