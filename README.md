@@ -163,7 +163,7 @@
 
 ## Results
 
-  | Environment              | SAC + gSDE | SAC + gSDE<br>+ Huber loss | TQC + gSDE | TQC + gSDE<br>+ Reverb |
+  | Environment              | SAC + gSDE | SAC + gSDE<br>+ Huber loss | SAC + TQC + gSDE | SAC + TQC + gSDE<br>+ Reverb |
   | ------------------------ | :--------: | :------------------------: | :--------: | :---------------------------: |
   | BipedalWalkerHardcore-v3 | 13 ± 18[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | - | 228 ± 18[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | - |
   | Walker2DBulletEnv-v0     | 2270 ± 28[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | 2732 ± 96 | 2535 ± 94[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | - |
@@ -176,7 +176,7 @@
 ## Releases
 
    * SAC + gSDE + Huber loss<br> &emsp; is stored here, [branch r2.0](https://github.com/markub3327/rl-toolkit/tree/r2.0)
-   * TQC + gSDE + Reverb<br> &emsp; is stored here, [branch r3.0](https://github.com/markub3327/rl-toolkit/)
+   * SAC + TQC + gSDE + Reverb<br> &emsp; is stored here, [branch r4.0](https://github.com/markub3327/rl-toolkit/)
 
 ----------------------------------
 
