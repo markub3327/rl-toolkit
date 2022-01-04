@@ -12,6 +12,7 @@
 - Critic network with Add layer applied on state & action branches
 - Custom uniform initializer
 - XLA (Accelerated Linear Algebra) compiler
+- Optimized Replay Buffer (https://github.com/deepmind/reverb/issues/90)
 - split into **Agent**, **Learner**, **Tester** and **Server**
 ### Bug fixes 🛠️
 - Fixed creating of saving path for models
