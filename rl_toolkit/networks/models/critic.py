@@ -32,25 +32,17 @@ class Critic(Model):
         self.norm_0 = LayerNormalization(epsilon=1e-6)
         self.activ_0 = Activation("tanh")
 
+        # 2. layer     TODO(markub3327): Transformer
         self.fc_1 = Dense(
-            units=units[0],
+            units=units[1],
             kernel_initializer=uniform_initializer,
         )
-        self.norm_1 = LayerNormalization(epsilon=1e-6)
-        self.activ_1 = Activation("tanh")
-
-        # 2. layer
         self.fc_2 = Dense(
             units=units[1],
             kernel_initializer=uniform_initializer,
         )
-        self.fc_3 = Dense(
-            units=units[1],
-            kernel_initializer=uniform_initializer,
-        )
         self.add_0 = Add()
-        self.norm_2 = LayerNormalization(epsilon=1e-6)
-        self.activ_2 = Activation("relu")
+        self.activ_0 = Activation("relu")
 
         # Output layer
         self.quantiles = Dense(
@@ -66,16 +58,11 @@ class Critic(Model):
         state = self.norm_0(state)
         state = self.activ_0(state)
 
-        action = self.fc_1(inputs[1])
-        action = self.norm_1(action)
-        action = self.activ_1(action)
-
         # 2. layer
-        state = self.fc_2(state)
-        action = self.fc_3(action)
+        state = self.fc_1(state)
+        action = self.fc_2(inputs[1])
         x = self.add_0([state, action])
-        x = self.norm_2(x)
-        x = self.activ_2(x)
+        x = self.activ_0(x)
 
         # Output layer
         quantiles = self.quantiles(x)

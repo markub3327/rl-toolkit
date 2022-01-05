@@ -46,13 +46,12 @@ class Actor(Model):
         self.norm_0 = LayerNormalization(epsilon=1e-6)
         self.activ_0 = Activation("tanh")
 
-        # 2. layer
+        # 2. layer     TODO(markub3327): Transformer
         self.fc_1 = Dense(
             units=units[1],
+            activation="relu",
             kernel_initializer=uniform_initializer,
         )
-        self.norm_1 = LayerNormalization(epsilon=1e-6)
-        self.activ_1 = Activation("relu")
 
         # Deterministicke akcie
         self.mean = Dense(
@@ -87,8 +86,6 @@ class Actor(Model):
 
         # 2. layer
         latent_sde = self.fc_1(x)
-        latent_sde = self.norm_1(latent_sde)
-        latent_sde = self.activ_1(latent_sde)
 
         # Output layer
         mean = self.mean(latent_sde)
