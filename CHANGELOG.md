@@ -11,6 +11,7 @@
 - LogCosh instead of Huber loss
 - Critic network with Add layer applied on state & action branches
 - Custom uniform initializer
+- [LayerNormalization + TanH] block for Input layer
 - XLA (Accelerated Linear Algebra) compiler
 - Optimized Replay Buffer (https://github.com/deepmind/reverb/issues/90)
 - split into **Agent**, **Learner**, **Tester** and **Server**
