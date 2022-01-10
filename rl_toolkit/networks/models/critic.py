@@ -4,7 +4,7 @@ from tensorflow.keras.initializers import VarianceScaling
 from tensorflow.keras.layers import Activation, Add, Dense, LayerNormalization
 
 uniform_initializer = VarianceScaling(
-    distribution="uniform", mode="fan_out", scale=(1.0 / 3.0)
+    distribution="uniform", mode="fan_in", scale=(1.0 / 3.0)
 )
 
 
@@ -96,14 +96,14 @@ class MultiCritic(Model):
         self.top_quantiles_to_drop = top_quantiles_to_drop
 
         # init critics
-        self.models = []
-        for _ in range(n_critics):
-            self.models.append(Critic(units, n_quantiles))
+        self.models = [Critic(units, n_quantiles) for _ in range(n_critics)]
 
     def call(self, inputs):
-        quantiles = tf.stack(list(model(inputs) for model in self.models), axis=1)
+        quantiles = tf.stack([model(inputs) for model in self.models], axis=1)
         return quantiles
 
     def summary(self):
         for model in self.models:
             model.summary()
+
+    # TODO(markub3327):    def train_step(self, data):

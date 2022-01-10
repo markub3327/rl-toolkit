@@ -7,7 +7,7 @@ from tensorflow.keras.layers import Activation, Dense, Lambda, LayerNormalizatio
 from rl_toolkit.networks.layers import MultivariateGaussianNoise
 
 uniform_initializer = VarianceScaling(
-    distribution="uniform", mode="fan_out", scale=(1.0 / 3.0)
+    distribution="uniform", mode="fan_in", scale=(1.0 / 3.0)
 )
 
 
@@ -111,3 +111,5 @@ class Actor(Model):
                 log_prob = None
 
         return [action, log_prob]
+
+    # TODO(markub3327):    def train_step(self, data):
