@@ -4,7 +4,7 @@ from tensorflow.keras.initializers import VarianceScaling
 from tensorflow.keras.layers import Activation, Add, Dense, LayerNormalization
 
 uniform_initializer = VarianceScaling(
-    distribution="uniform", mode="fan_in", scale=(1.0 / 3.0)
+    distribution="uniform", mode="fan_in", scale=1.0
 )
 
 
