@@ -30,7 +30,7 @@ class Critic(Model):
             kernel_initializer=uniform_initializer,
         )
         self.norm_0 = LayerNormalization(epsilon=1e-6)
-        self.activ_0 = Activation("tanh")
+        self.activ_0 = Activation("relu")
 
         # 2. layer     TODO(markub3327): Transformer
         self.fc_1 = Dense(
