@@ -3,9 +3,7 @@ from tensorflow.keras import Model
 from tensorflow.keras.initializers import VarianceScaling
 from tensorflow.keras.layers import Activation, Add, Dense, LayerNormalization
 
-uniform_initializer = VarianceScaling(
-    distribution="uniform", mode="fan_in", scale=1.0
-)
+uniform_initializer = VarianceScaling(distribution="uniform", mode="fan_in", scale=1.0)
 
 
 class Critic(Model):

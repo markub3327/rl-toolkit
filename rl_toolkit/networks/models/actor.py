@@ -6,9 +6,7 @@ from tensorflow.keras.layers import Activation, Dense, Lambda, LayerNormalizatio
 
 from rl_toolkit.networks.layers import MultivariateGaussianNoise
 
-uniform_initializer = VarianceScaling(
-    distribution="uniform", mode="fan_in", scale=1.0
-)
+uniform_initializer = VarianceScaling(distribution="uniform", mode="fan_in", scale=1.0)
 
 
 class Actor(Model):
