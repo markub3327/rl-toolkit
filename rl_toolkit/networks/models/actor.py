@@ -2,7 +2,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow.keras import Model
 from tensorflow.keras.initializers import Constant, VarianceScaling
-from tensorflow.keras.layers import Activation, Dense, Lambda, LayerNormalization
+from tensorflow.keras.layers import Dense, Lambda
 
 from rl_toolkit.networks.layers import MultivariateGaussianNoise
 
@@ -39,15 +39,14 @@ class Actor(Model):
         # 1. layer
         self.fc_0 = Dense(
             units=units[0],
+            activation="gelu",
             kernel_initializer=uniform_initializer,
         )
-        self.norm_0 = LayerNormalization(epsilon=1e-6)
-        self.activ_0 = Activation("relu")
 
         # 2. layer     TODO(markub3327): Transformer
         self.fc_1 = Dense(
             units=units[1],
-            activation="relu",
+            activation="gelu",
             kernel_initializer=uniform_initializer,
         )
 
@@ -79,8 +78,6 @@ class Actor(Model):
     def call(self, inputs, with_log_prob=True, deterministic=None):
         # 1. layer
         x = self.fc_0(inputs)
-        x = self.norm_0(x)
-        x = self.activ_0(x)
 
         # 2. layer
         latent_sde = self.fc_1(x)

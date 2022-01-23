@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.initializers import VarianceScaling
-from tensorflow.keras.layers import Activation, Add, Dense, LayerNormalization
+from tensorflow.keras.layers import Activation, Add, Dense
 
 uniform_initializer = VarianceScaling(distribution="uniform", mode="fan_in", scale=1.0)
 
@@ -25,10 +25,9 @@ class Critic(Model):
         # 1. layer
         self.fc_0 = Dense(
             units=units[0],
+            activation="gelu",
             kernel_initializer=uniform_initializer,
         )
-        self.norm_0 = LayerNormalization(epsilon=1e-6)
-        self.activ_0 = Activation("relu")
 
         # 2. layer     TODO(markub3327): Transformer
         self.fc_1 = Dense(
@@ -40,7 +39,7 @@ class Critic(Model):
             kernel_initializer=uniform_initializer,
         )
         self.add_0 = Add()
-        self.activ_1 = Activation("relu")
+        self.activ_0 = Activation("gelu")
 
         # Output layer
         self.quantiles = Dense(
@@ -53,14 +52,12 @@ class Critic(Model):
     def call(self, inputs):
         # 1. layer
         state = self.fc_0(inputs[0])
-        state = self.norm_0(state)
-        state = self.activ_0(state)
 
         # 2. layer
         state = self.fc_1(state)
         action = self.fc_2(inputs[1])
         x = self.add_0([state, action])
-        x = self.activ_1(x)
+        x = self.activ_0(x)
 
         # Output layer
         quantiles = self.quantiles(x)
