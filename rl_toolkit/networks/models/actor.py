@@ -39,14 +39,14 @@ class Actor(Model):
         # 1. layer
         self.fc_0 = Dense(
             units=units[0],
-            activation="gelu",
+            activation="relu",
             kernel_initializer=uniform_initializer,
         )
 
         # 2. layer     TODO(markub3327): Transformer
         self.fc_1 = Dense(
             units=units[1],
-            activation="gelu",
+            activation="relu",
             kernel_initializer=uniform_initializer,
         )
 

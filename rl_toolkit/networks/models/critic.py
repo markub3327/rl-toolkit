@@ -25,7 +25,7 @@ class Critic(Model):
         # 1. layer
         self.fc_0 = Dense(
             units=units[0],
-            activation="gelu",
+            activation="relu",
             kernel_initializer=uniform_initializer,
         )
 
@@ -39,7 +39,7 @@ class Critic(Model):
             kernel_initializer=uniform_initializer,
         )
         self.add_0 = Add()
-        self.activ_0 = Activation("gelu")
+        self.activ_0 = Activation("relu")
 
         # Output layer
         self.quantiles = Dense(
