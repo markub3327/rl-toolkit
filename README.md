@@ -163,7 +163,7 @@
 
 ## Results
 
-  | Environment              | SAC + gSDE | SAC + gSDE<br>+ Huber loss | SAC + TQC + gSDE | SAC + TQC + gSDE<br>+ Reverb |
+  | Environment              | SAC<br> + gSDE | SAC<br> + gSDE<br>+ Huber loss | SAC<br> + TQC<br> + gSDE | SAC<br> + TQC<br> + gSDE<br> + LogCosh<br>+ Reverb |
   | ------------------------ | :--------: | :------------------------: | :--------: | :---------------------------: |
   | BipedalWalkerHardcore-v3 | 13 ± 18[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | - | 228 ± 18[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | - |
   | Walker2DBulletEnv-v0     | 2270 ± 28[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | 2732 ± 96 | 2535 ± 94[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | - |
