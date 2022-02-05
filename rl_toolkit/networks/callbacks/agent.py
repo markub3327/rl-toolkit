@@ -5,7 +5,7 @@ from rl_toolkit.utils import VariableContainer
 
 
 class AgentCallback(Callback):
-    def __init__(self):
+    def __init__(self, db_server: str):
         super(AgentCallback, self).__init__()
 
         # Variables
@@ -26,7 +26,7 @@ class AgentCallback(Callback):
 
         # Table for storing variables
         self._variable_container = VariableContainer(
-            db_server=self._db_server,
+            db_server=db_server,
             table="variable",
             variables={
                 "train_step": self._train_step,
