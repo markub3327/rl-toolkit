@@ -105,7 +105,9 @@ class ActorCritic(Model):
             with_log_prob=True,
             deterministic=False,
         )
-        next_quantiles = self.critic_target([sample.data["next_observation"], next_action])
+        next_quantiles = self.critic_target(
+            [sample.data["next_observation"], next_action]
+        )
         next_quantiles = tf.sort(
             tf.reshape(next_quantiles, [next_quantiles.shape[0], -1])
         )

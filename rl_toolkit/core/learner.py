@@ -4,6 +4,7 @@ import numpy as np
 import reverb
 import wandb
 from tensorflow.keras.optimizers import Adam
+from wandb.keras import WandbCallback
 
 from rl_toolkit.networks.callbacks import AgentCallback
 from rl_toolkit.networks.models import ActorCritic
@@ -143,7 +144,7 @@ class Learner(Process):
             self.dataset,
             epochs=self._train_steps,
             steps_per_epoch=1,
-            callbacks=[AgentCallback(self._db_server)],
+            callbacks=[AgentCallback(self._db_server), WandbCallback(save_model=False)],
         )
 
     def save(self):
