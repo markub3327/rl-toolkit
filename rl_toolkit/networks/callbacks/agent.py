@@ -5,9 +5,12 @@ from rl_toolkit.utils import VariableContainer
 
 
 class AgentCallback(Callback):
-    def __init__(self, db_server: str, actor):
+    def __init__(self, db_server: str):
         super(AgentCallback, self).__init__()
 
+        self._db_server = db_server
+
+    def on_epoch_begin(self, epoch, logs=None):
         # Variables
         self._train_step = tf.Variable(
             0,
@@ -26,12 +29,12 @@ class AgentCallback(Callback):
 
         # Table for storing variables
         self._variable_container = VariableContainer(
-            db_server=db_server,
+            db_server=self._db_server,
             table="variable",
             variables={
                 "train_step": self._train_step,
                 "stop_agents": self._stop_agents,
-                "policy_variables": actor.variables,
+                "policy_variables": self.model.actor.variables,
             },
         )
 

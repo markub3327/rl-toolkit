@@ -142,6 +142,7 @@ class Learner(Process):
         self.model.fit(
             self.dataset,
             epochs=self._train_steps,
+            steps_per_epoch=1,
             callbacks=[AgentCallback(self._db_server, self.model.actor)],
         )
 
