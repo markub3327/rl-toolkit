@@ -140,7 +140,9 @@ class Learner(Process):
 
     def run(self):
         self.model.fit(
-            self.dataset, epochs=self._train_steps, callbacks=[AgentCallback(self._db_server)]
+            self.dataset,
+            epochs=self._train_steps,
+            callbacks=[AgentCallback(self._db_server, self.model.actor)],
         )
 
     def save(self):

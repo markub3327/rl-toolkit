@@ -5,7 +5,7 @@ from rl_toolkit.utils import VariableContainer
 
 
 class AgentCallback(Callback):
-    def __init__(self, db_server: str):
+    def __init__(self, db_server: str, actor):
         super(AgentCallback, self).__init__()
 
         # Variables
@@ -31,7 +31,7 @@ class AgentCallback(Callback):
             variables={
                 "train_step": self._train_step,
                 "stop_agents": self._stop_agents,
-                "policy_variables": self.model.actor.variables,
+                "policy_variables": actor.variables,
             },
         )
 
