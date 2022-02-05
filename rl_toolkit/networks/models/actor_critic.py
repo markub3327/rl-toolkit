@@ -87,7 +87,7 @@ class ActorCritic(Model):
         for source_weight, target_weight in zip(net.variables, net_targ.variables):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
-    def train_step(self, data):
+    def train_step(self, sample):
         # Re-new noise matrix every update
         self.actor.reset_noise()
 
@@ -101,11 +101,11 @@ class ActorCritic(Model):
 
         # -------------------- Update 'Critic' -------------------- #
         next_action, next_log_pi = self.actor(
-            data["next_observation"],
+            sample.data["next_observation"],
             with_log_prob=True,
             deterministic=False,
         )
-        next_quantiles = self.critic_target([data["next_observation"], next_action])
+        next_quantiles = self.critic_target([sample.data["next_observation"], next_action])
         next_quantiles = tf.sort(
             tf.reshape(next_quantiles, [next_quantiles.shape[0], -1])
         )
@@ -117,14 +117,14 @@ class ActorCritic(Model):
 
         # Bellman Equation
         target_quantiles = tf.stop_gradient(
-            data["reward"]
-            + (1.0 - tf.cast(data["terminal"], dtype=tf.float32))
+            sample.data["reward"]
+            + (1.0 - tf.cast(sample.data["terminal"], dtype=tf.float32))
             * self.gamma
             * (next_quantiles - alpha * next_log_pi)
         )
 
         with tf.GradientTape() as tape:
-            quantiles = self.critic([data["observation"], data["action"]])
+            quantiles = self.critic([sample.data["observation"], sample.data["action"]])
 
             # Compute critic loss
             pairwise_delta = (
@@ -153,7 +153,7 @@ class ActorCritic(Model):
 
         # -------------------- Update 'Actor' & 'Alpha' -------------------- #
         with tf.GradientTape(persistent=True) as tape:
-            quantiles, log_pi = self(data["observation"])
+            quantiles, log_pi = self(sample.data["observation"])
 
             # Compute actor loss
             actor_loss = tf.nn.compute_average_loss(
