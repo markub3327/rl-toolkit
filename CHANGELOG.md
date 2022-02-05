@@ -1,6 +1,11 @@
 # Changes
 
-## v4.0.0 (February XX, 2022)
+## v4.1.0 (February XX, 2022)
+### Features 🔊
+- .fit()
+- AgentCallback
+
+## v4.0.0 (February 5, 2022)
 ### Features 🔊
 - Render environments to WanDB
 - Grouping of runs in WanDB

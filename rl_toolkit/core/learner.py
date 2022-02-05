@@ -2,12 +2,12 @@ import os
 
 import numpy as np
 import reverb
-import tensorflow as tf
 import wandb
 from tensorflow.keras.optimizers import Adam
 
+from rl_toolkit.networks.callbacks import AgentCallback
 from rl_toolkit.networks.models import ActorCritic
-from rl_toolkit.utils import VariableContainer, make_reverb_dataset
+from rl_toolkit.utils import make_reverb_dataset
 
 from .process import Process
 
@@ -112,43 +112,11 @@ class Learner(Process):
         # Show models details
         self.model.summary()
 
-        # Variables
-        self._train_step = tf.Variable(
-            0,
-            trainable=False,
-            dtype=tf.uint64,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            shape=(),
-        )
-        self._stop_agents = tf.Variable(
-            False,
-            trainable=False,
-            dtype=tf.bool,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            shape=(),
-        )
-
-        # Table for storing variables
-        self._variable_container = VariableContainer(
-            db_server=self._db_server,
-            table="variable",
-            variables={
-                "train_step": self._train_step,
-                "stop_agents": self._stop_agents,
-                "policy_variables": self.model.actor.variables,
-            },
-        )
-
-        # Init variable container from DB server
-        self._variable_container.update_variables()
-
         # Initializes the reverb's dataset
-        self.dataset_iterator = iter(
-            make_reverb_dataset(
-                server_address=self._db_server,
-                table="experience",
-                batch_size=batch_size,
-            )
+        self.dataset = make_reverb_dataset(
+            server_address=self._db_server,
+            table="experience",
+            batch_size=batch_size,
         )
 
         # init Weights & Biases
@@ -170,52 +138,10 @@ class Learner(Process):
         wandb.config.init_alpha = init_alpha
         wandb.config.init_noise = init_noise
 
-    @tf.function(jit_compile=True)
-    def _step(self, data):
-        # Train the Actor-Critic model
-        return self.model.train_step(data)
-
     def run(self):
-        while self._train_step < self._train_steps:
-            # Get data from replay buffer
-            sample = self.dataset_iterator.get_next()
-
-            # update models
-            losses = self._step(sample.data)
-
-            # log metrics
-            if (self._train_step % self._log_interval) == 0:
-                print("=============================================")
-                print(f"Train step: {self._train_step.numpy()}")
-                print(f"Alpha loss: {losses['alpha_loss']}")
-                print(f"Critic loss: {losses['critic_loss']}")
-                print(f"Actor loss: {losses['actor_loss']}")
-                print(f"Q value: {tf.reduce_mean(losses['quantiles'])}")
-                print(f"log Alpha: {self.model.log_alpha.numpy()}")
-                print("=============================================")
-                print(
-                    f"Training ... {(self._train_step.numpy() * 100) / self._train_steps} %"  # noqa
-                )
-            wandb.log(
-                {
-                    "Alpha loss": losses["alpha_loss"],
-                    "Critic loss": losses["critic_loss"],
-                    "Actor loss": losses["actor_loss"],
-                    "Quantiles": wandb.Histogram(losses["quantiles"]),
-                    "log Alpha": self.model.log_alpha,
-                },
-                step=self._train_step.numpy(),
-            )
-
-            # increase the training step
-            self._train_step.assign_add(1)
-
-            # Store new actor's params
-            self._variable_container.push_variables()
-
-        # Stop the agents
-        self._stop_agents.assign(True)
-        self._variable_container.push_variables()
+        self.model.fit(
+            self.dataset, epochs=self._train_steps, callbacks=[AgentCallback()]
+        )
 
     def save(self):
         if self._save_path:
