@@ -10,7 +10,7 @@ class AgentCallback(Callback):
 
         self._db_server = db_server
 
-    def on_epoch_begin(self, epoch, logs=None):
+    def on_train_begin(self, logs=None):
         # Variables
         self._train_step = tf.Variable(
             0,
