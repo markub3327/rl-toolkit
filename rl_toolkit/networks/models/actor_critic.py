@@ -189,6 +189,7 @@ class ActorCritic(Model):
             "critic_loss": critic_loss,
             "alpha_loss": alpha_loss,
             "quantiles": quantiles[0],  # logging only one randomly sampled transition
+            "log_alpha": self.log_alpha,
         }
 
     def call(self, inputs, with_log_prob=True, deterministic=None):
