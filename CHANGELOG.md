@@ -1,6 +1,6 @@
 # Changes
 
-## v4.1.0 (February XX, 2022)
+## v4.1.0 (February 9, 2022)
 ### Features 🔊
 - .fit()
 - AgentCallback

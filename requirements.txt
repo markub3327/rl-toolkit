@@ -9,12 +9,6 @@ pybullet
 #
 tensorflow
 tensorflow_probability
-pydot
-#
-#
-###### OpenCV ######
-#
-opencv-python
 #
 #
 ####### Logger ######

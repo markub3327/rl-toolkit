@@ -8,11 +8,15 @@ long_description += "\n\n"
 with open("CHANGELOG.md", "r", encoding="utf-8") as fh:
     long_description += fh.read()
 
-extras = {"all": ["tensorflow", "opencv-python>=3.", "dm-reverb"]}
+extras = {
+    "all": ["tensorflow", "dm-reverb"],
+    "reverb": ["dm-reverb"],
+    "tf": ["tensorflow"],
+}
 
 setup(
     name="rl-toolkit",
-    version="4.0.0",
+    version="4.1.0",
     description="RL-Toolkit: A Research Framework for Robotics",  # noqa
     long_description=long_description,
     long_description_content_type="text/markdown",

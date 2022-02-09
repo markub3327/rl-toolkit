@@ -36,7 +36,7 @@ WORKDIR /root/
 RUN git clone https://github.com/markub3327/rl-toolkit.git
 WORKDIR /root/rl-toolkit
 
-RUN python3 -mpip install --no-cache-dir -e .
+RUN python3 -mpip install --no-cache-dir -e .[all]
 
 ###########################################
 # Entry point
