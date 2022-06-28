@@ -201,6 +201,8 @@ class Agent(Process):
                 # Super critical !!!
                 self._last_obs = new_obs
 
+        writer.flush()
+
     def run(self):
         # init environment
         self._episode_reward = 0.0
