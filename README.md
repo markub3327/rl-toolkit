@@ -6,8 +6,6 @@
 ![Commits](https://img.shields.io/github/commit-activity/w/markub3327/rl-toolkit)
 ![Languages](https://img.shields.io/github/languages/count/markub3327/rl-toolkit)
 ![Size](https://img.shields.io/github/repo-size/markub3327/rl-toolkit)
-[![Visits](https://badges.pufler.dev/visits/markub3327/rl-toolkit)](https://badges.pufler.dev)
-[![Updated](https://badges.pufler.dev/updated/markub3327/rl-toolkit)](https://badges.pufler.dev)
 
 ## Papers
   * [**Soft Actor-Critic**](https://arxiv.org/abs/1812.05905)
