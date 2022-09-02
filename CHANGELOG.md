@@ -1,5 +1,9 @@
 # Changes
 
+## v4.1.1 (September 2, 2022)
+
+- update default `config.yaml`
+
 ## v4.1.0 (February 9, 2022)
 ### Features 🔊
 - .fit()
