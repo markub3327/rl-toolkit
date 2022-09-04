@@ -10,7 +10,7 @@ train_steps: 1000000
 gamma: 0.99
 tau: 0.01
 min_replay_size: 10000
-max_replay_size: 1000000
+max_replay_size: 2000000
 samples_per_insert: 32
 batch_size: 256
 log_interval: 1000
@@ -26,6 +26,7 @@ Actor:
   learning_rate: !!float 7.3e-4
   clip_mean_min: -2.0
   clip_mean_max: 2.0
+  global_clipnorm: 40.0
 
 # Critic model
 Critic:
@@ -34,8 +35,10 @@ Critic:
   n_quantiles: 35
   top_quantiles_to_drop: 3
   learning_rate: !!float 7.3e-4
+  global_clipnorm: 40.0
 
 # Alpha parameter
 Alpha:
   init: 1.0
   learning_rate: !!float 7.3e-4
+  global_clipnorm: 40.0
