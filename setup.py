@@ -16,7 +16,7 @@ extras = {
 
 setup(
     name="rl-toolkit",
-    version="4.1.0",
+    version="4.1.1",
     description="RL-Toolkit: A Research Framework for Robotics",  # noqa
     long_description=long_description,
     long_description_content_type="text/markdown",
