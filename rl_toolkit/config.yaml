@@ -8,9 +8,9 @@ warmup_steps: 10000
 # Learner
 train_steps: 1000000
 gamma: 0.98
-tau: 0.01
+tau: 0.005
 min_replay_size: 10000
-max_replay_size: 2000000
+max_replay_size: 1000000
 samples_per_insert: 32
 batch_size: 256
 log_interval: 1000
