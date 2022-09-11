@@ -151,15 +151,15 @@
 
 ## Environments
 
-  | Environment              | Observation space | Observation bounds | Action space | Action bounds |
-  | ------------------------ | :---------------: | :----------------: | :----------: | :-----------: |
-  | BipedalWalkerHardcore-v3 | (24, ) | [-inf, inf] | (4, ) | [-1.0, 1.0] |
-  | Walker2DBulletEnv-v0     | (22, ) | [-inf, inf] | (6, ) | [-1.0, 1.0] |
-  | AntBulletEnv-v0          | (28, ) | [-inf, inf] | (8, ) | [-1.0, 1.0] |
-  | HalfCheetahBulletEnv-v0  | (26, ) | [-inf, inf] | (6, ) | [-1.0, 1.0] |
-  | HopperBulletEnv-v0       | (15, ) | [-inf, inf] | (3, ) | [-1.0, 1.0] |
-  | HumanoidBulletEnv-v0     | (44, ) | [-inf, inf] | (17, ) | [-1.0, 1.0] |
-  | MinitaurBulletEnv-v0     | (28, ) | [-167.72488, 167.72488] | (8, ) | [-1.0, 1.0] |
+  | Environment              | Observation space | Observation bounds | Action space | Action bounds | Reward bounds |
+  | ------------------------ | :---------------: | :----------------: | :----------: | :-----------: | :-----------: |
+  | BipedalWalkerHardcore-v3 | (24, ) | [-inf, inf] | (4, ) | [-1.0, 1.0] | [-1.0, 1.0] |
+  | Walker2DBulletEnv-v0     | (22, ) | [-inf, inf] | (6, ) | [-1.0, 1.0] | [-1.0, 1.0] |
+  | AntBulletEnv-v0          | (28, ) | [-inf, inf] | (8, ) | [-1.0, 1.0] | [-1.0, 1.0] |
+  | HalfCheetahBulletEnv-v0  | (26, ) | [-inf, inf] | (6, ) | [-1.0, 1.0] | [-1.0, 1.0] |
+  | HopperBulletEnv-v0       | (15, ) | [-inf, inf] | (3, ) | [-1.0, 1.0] | [-1.0, 1.0] |
+  | HumanoidBulletEnv-v0     | (44, ) | [-inf, inf] | (17, ) | [-1.0, 1.0] | [-1.0, 1.0] |
+  | MinitaurBulletEnv-v0     | (28, ) | [-167.72488, 167.72488] | (8, ) | [-1.0, 1.0] | [-1.0, 1.0] |
 
 ## Results
 
