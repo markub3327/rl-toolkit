@@ -50,7 +50,9 @@ setup(
     ],
     install_requires=[
         "gym",
-        "box2d",
+        "box2d-py",
+        "pygame",
+        "swig",
         "pybullet",
         "tensorflow_probability",
         "wandb",
