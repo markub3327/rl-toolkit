@@ -93,7 +93,7 @@ class Tester(Process):
             self._total_steps += 1
 
             # Check the end of episode
-            if terminal:
+            if terminal or self._episode_steps >= self._env.spec.max_episode_steps:
                 # logovanie
                 print("=============================================")
                 print(f"Epoch: {self._total_episodes}")
