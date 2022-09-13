@@ -154,7 +154,7 @@ class Agent(Process):
                 )
 
             # Check the end of episode
-            if terminal:
+            if terminal or self._episode_steps >= self._env.spec.max_episode_steps:
                 # Write the final interaction !!!
                 writer.append({"observation": new_obs.astype("float32", copy=False)})
                 writer.create_item(
