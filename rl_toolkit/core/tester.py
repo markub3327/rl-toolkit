@@ -14,7 +14,7 @@ class Tester(Process):
 
     Attributes:
         env_name (str): the name of environment
-        render (bool): enable the rendering into the video file
+        render (bool): enable the rendering
         max_steps (int): maximum number of interactions do in environment
         actor_units (list): list of the numbers of units in each Actor's layer
         clip_mean_min (float): the minimum value of mean
@@ -57,7 +57,6 @@ class Tester(Process):
         wandb.init(
             project="rl-toolkit",
             group=f"{env_name}",
-            monitor_gym=render,
         )
         wandb.config.max_steps = max_steps
 

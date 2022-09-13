@@ -9,7 +9,7 @@ class Process:
 
     Attributes:
         env_name (str): the name of environment
-        render (bool): enable the rendering into the video file
+        render (bool): enable the rendering
     """
 
     def __init__(
@@ -19,10 +19,7 @@ class Process:
         render: bool,
     ):
         # Herne prostredie
-        self._env = gym.make(env_name)
-
-        if render:
-            self._env = gym.wrappers.RecordVideo(self._env, f"videos/{env_name}")
+        self._env = gym.make(env_name, render_mode="human" if render else None)
 
     def run(self):
         pass

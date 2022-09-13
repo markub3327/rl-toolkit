@@ -16,7 +16,7 @@ class Agent(Process):
 
     Attributes:
         env_name (str): the name of environment
-        render (bool): enable the rendering into the video file
+        render (bool): enable the rendering
         db_server (str): database server name (IP or domain name)
         actor_units (list): list of the numbers of units in each Actor's layer
         clip_mean_min (float): the minimum value of mean
@@ -97,7 +97,6 @@ class Agent(Process):
         wandb.init(
             project="rl-toolkit",
             group=f"{env_name}",
-            monitor_gym=render,
         )
         wandb.config.warmup_steps = warmup_steps
         wandb.config.env_steps = env_steps
