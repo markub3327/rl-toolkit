@@ -76,7 +76,7 @@ class Tester(Process):
         self._episode_steps = 0
 
         # init environment
-        self._last_obs = self._env.reset()
+        self._last_obs, _ = self._env.reset()
 
         # hlavny cyklus hry
         while self._total_steps < self._max_steps:
@@ -85,7 +85,7 @@ class Tester(Process):
             action = np.array(action, copy=False)
 
             # perform action
-            new_obs, reward, terminal, _ = self._env.step(action)
+            new_obs, reward, terminal, _, _ = self._env.step(action)
 
             # update variables
             self._episode_reward += reward
@@ -119,7 +119,7 @@ class Tester(Process):
                 self._total_episodes += 1
 
                 # Init environment
-                self._last_obs = self._env.reset()
+                self._last_obs, _ = self._env.reset()
             else:
                 # super critical !!!
                 self._last_obs = new_obs
