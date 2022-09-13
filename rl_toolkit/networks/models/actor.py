@@ -6,8 +6,6 @@ from tensorflow.keras.layers import Dense, Lambda
 
 from rl_toolkit.networks.layers import MultivariateGaussianNoise
 
-uniform_initializer = VarianceScaling(distribution="uniform", mode="fan_in", scale=1.0)
-
 
 class Actor(Model):
     """
@@ -40,21 +38,27 @@ class Actor(Model):
         self.fc_0 = Dense(
             units=units[0],
             activation="relu",
-            kernel_initializer=uniform_initializer,
+            kernel_initializer=VarianceScaling(
+                distribution="uniform", mode="fan_in", scale=1.0
+            ),
         )
 
         # 2. layer     TODO(markub3327): Transformer
         self.fc_1 = Dense(
             units=units[1],
             activation="relu",
-            kernel_initializer=uniform_initializer,
+            kernel_initializer=VarianceScaling(
+                distribution="uniform", mode="fan_in", scale=1.0
+            ),
         )
 
         # Deterministicke akcie
         self.mean = Dense(
             n_outputs,
             activation="linear",
-            kernel_initializer=uniform_initializer,
+            kernel_initializer=VarianceScaling(
+                distribution="uniform", mode="fan_in", scale=1.0
+            ),
             name="mean",
         )
         self.clip_mean = Lambda(
