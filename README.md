@@ -50,15 +50,12 @@
       <br>Tensorflow for JetPack, follow instructions [here](https://docs.nvidia.com/deeplearning/frameworks/install-tf-jetson-platform/index.html) for installation.
       
       ```sh
-      apt update -y
-      apt install swig -y
-      
-      pip3 install 'tensorflow-probability==0.14.1'
+      sudo apt install swig -y
       ```
   2. Install Reverb
-  <br>Download Bazel 3.7.2 for arm64
-  <br>GitHub [here](https://github.com/bazelbuild/bazel)
+  <br>Download Bazel 3.7.2 for arm64, [here](https://github.com/bazelbuild/bazel)
       ```sh
+      mkdir ~/bin
       mv ~/Downloads/bazel-3.7.2-linux-arm64 ~/bin/bazel
       chmod +x ~/bin/bazel
       export PATH=$PATH:~/bin
@@ -67,8 +64,8 @@
       ```sh
       git clone https://github.com/deepmind/reverb
       cd reverb/
-      git checkout r0.5.0   # for TF 2.6.0
-      ```  
+      git checkout r0.9.0
+      ```
       Make changes in Reverb before building !
       <br>In .bazelrc
       ```bazel
@@ -88,20 +85,13 @@
       + PROTOC_SHA256 = "7877fee5793c3aafd704e290230de9348d24e8612036f1d784c8863bc790082e"
       ``` 
       In oss_build.sh
-      ```bazel 
-      -  if [ "$python_version" = "3.7" ]; then
-      +  if [ "$python_version" = "3.6" ]; then
-      +    export PYTHON_BIN_PATH=/usr/bin/python3.6 && export PYTHON_LIB_PATH=/usr/local/lib/python3.6/dist-packages
-      +    ABI=cp36
-      +  elif [ "$python_version" = "3.7" ]; then
-
+      ```bazel
       -  bazel test -c opt --copt=-mavx --config=manylinux2010 --test_output=errors //reverb/cc/...
       +  bazel test -c opt --copt="-march=armv8-a+crypto" --test_output=errors //reverb/cc/...
  
       # Builds Reverb and creates the wheel package.
       -  bazel build -c opt --copt=-mavx $EXTRA_OPT --config=manylinux2010 reverb/pip_package:build_pip_package
       +  bazel build -c opt --copt="-march=armv8-a+crypto" $EXTRA_OPT reverb/pip_package:build_pip_package
-      ./bazel-bin/reverb/pip_package/build_pip_package --dst $OUTPUT_DIR $PIP_PKG_EXTRA_ARGS
       ```
       In reverb/cc/platform/default/repo.bzl
       ```bazel 
@@ -118,7 +108,7 @@
       ```  
       Build and install
       ```sh
-      bash oss_build.sh --clean true --tf_dep_override "tensorflow=2.6.0" --release --python "3.6"
+      bash oss_build.sh --clean true --tf_dep_override "tensorflow=2.9.1" --release --python "3.8"
       bash ./bazel-bin/reverb/pip_package/build_pip_package --dst /tmp/reverb/dist/ --release
       pip3 install /tmp/reverb/dist/dm_reverb-*
       ```
