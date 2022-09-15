@@ -105,7 +105,7 @@
       ```  
       Build and install
       ```sh
-      bash oss_build.sh --clean true --tf_dep_override "tensorflow=2.9.1" --release --python "3.8"
+      bash oss_build.sh --clean true --tf_dep_override "tensorflow~=2.9.1" --release --python "3.8"
       bash ./bazel-bin/reverb/pip_package/build_pip_package --dst /tmp/reverb/dist/ --release
       pip3 install /tmp/reverb/dist/dm_reverb-*
       ```
