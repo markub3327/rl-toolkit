@@ -64,7 +64,7 @@
       ```sh
       git clone https://github.com/deepmind/reverb
       cd reverb/
-      git checkout r0.9.0
+      git checkout r0.8.0
       ```
       Make changes in Reverb before building !
       <br>In .bazelrc
@@ -72,9 +72,6 @@
       - build:manylinux2010 --crosstool_top=//third_party/toolchains/preconfig/ubuntu16.04/gcc7_manylinux2010:toolchain
       + # build:manylinux2010 --crosstool_top=//third_party/toolchains/preconfig/ubuntu16.04/gcc7_manylinux2010:toolchain
  
-      - build --cxxopt="-D_GLIBCXX_USE_CXX11_ABI=0"
-      + build --cxxopt="-D_GLIBCXX_USE_CXX11_ABI=1"
-
       - build --copt=-mavx --copt=-DEIGEN_MAX_ALIGN_BYTES=64
       + build --copt=-DEIGEN_MAX_ALIGN_BYTES=64
       ```
