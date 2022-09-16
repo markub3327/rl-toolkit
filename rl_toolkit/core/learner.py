@@ -5,12 +5,9 @@ import tensorflow as tf
 import reverb
 import wandb
 from tensorflow.keras.optimizers import Adam
-from tensorflow.data import Dataset
-from wandb.keras import WandbCallback
 
-from rl_toolkit.networks.callbacks import AgentCallback
 from rl_toolkit.networks.models import ActorCritic, Counter
-from rl_toolkit.utils import make_reverb_dataset
+from rl_toolkit.utils import VariableContainer
 
 from .process import Process
 
@@ -136,6 +133,35 @@ class Learner(Process):
         # Show models details
         self.model.summary()
         self.counter.summary()
+
+        # Variables
+        self._train_step = tf.Variable(
+            0,
+            trainable=False,
+            dtype=tf.int64,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            shape=(),
+        )
+        self._stop_agents = tf.Variable(
+            False,
+            trainable=False,
+            dtype=tf.bool,
+            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
+            shape=(),
+        )
+
+        # Table for storing variables
+        self._variable_container = VariableContainer(
+            "localhost",
+            "variables",
+            {
+                "train_step": self._train_step,
+                "stop_agents": self._stop_agents,
+                "policy_variables": self.model.actor.variables,
+            },
+        )
+        # Init variable container from DB server
+        self._variable_container.update_variables()
 
         # Initializes the reverb's dataset
         self.dataset_iterator1 = iter(
