@@ -70,4 +70,39 @@ class Counter(Model):
 
         return counter, tf.sigmoid(e_value)
 
-    # TODO(markub3327):    def train_step(self, data):
+    def train_step(self, sample):
+        # Get trainable variables
+        counter_variables = self.counter.trainable_variables
+
+        # -------------------- (SARSA method) -------------------- #
+        next_e_value = self.counter(
+            [
+                sample.data["next_observation"],
+                sample.data["next_action"],
+            ]
+        )
+        target_e_value = tf.stop_gradient(
+            (1.0 - tf.cast(sample.data["terminal"], dtype=tf.float32))
+            * self.gamma
+            * next_e_value
+        )
+
+        with tf.GradientTape() as tape:
+            _, e_value = self.counter(
+                [sample.data["observation"], sample.data["action"]]
+            )
+            counter_loss = tf.nn.compute_average_loss(
+                tf.keras.losses.log_cosh(target_e_value, e_value)
+            )
+
+        # Compute gradients
+        counter_gradients = tape.gradient(counter_loss, counter_variables)
+
+        # Apply gradients
+        self.counter_optimizer.apply_gradients(
+            zip(counter_gradients, counter_variables)
+        )
+
+        return {
+            "counter_loss": counter_loss,
+        }

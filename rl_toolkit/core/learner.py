@@ -8,7 +8,7 @@ from tensorflow.data import Dataset
 from wandb.keras import WandbCallback
 
 from rl_toolkit.networks.callbacks import AgentCallback
-from rl_toolkit.networks.models import ActorCritic
+from rl_toolkit.networks.models import ActorCritic, Counter
 from rl_toolkit.utils import make_reverb_dataset
 
 from .process import Process
@@ -113,11 +113,17 @@ class Learner(Process):
             alpha_optimizer=Adam(
                 learning_rate=alpha_learning_rate, global_clipnorm=alpha_global_clipnorm
             ),
-            counter_optimizer=Adam(
+        )
+
+        # Counter
+        self.counter = Counter(critic_units)
+        self.model.compile(
+            optimizer=Adam(
                 learning_rate=critic_learning_rate,
                 global_clipnorm=critic_global_clipnorm,
             ),
         )
+
 
         if model_path is not None:
             self.model.load_weights(model_path)
@@ -158,7 +164,7 @@ class Learner(Process):
 
     def run(self):
         self.model.fit(
-            Dataset.zip((self.sample_off_policy, self.sample_on_policy)),
+            self.sample_off_policy,
             epochs=self._train_steps,
             steps_per_epoch=1,
             verbose=0,

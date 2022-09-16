@@ -3,7 +3,6 @@ from tensorflow.keras import Model
 
 from .actor import Actor
 from .critic import MultiCritic
-from .counter import Counter
 
 
 class ActorCritic(Model):
@@ -84,16 +83,11 @@ class ActorCritic(Model):
         )
         self._update_target(self.critic, self.critic_target, tau=1.0)
 
-        # Counter
-        self.counter = Counter(critic_units)
-
     def _update_target(self, net, net_targ, tau):
         for source_weight, target_weight in zip(net.variables, net_targ.variables):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
     def train_step(self, sample):
-        sample_off_policy, sample_on_policy = sample[0], sample[1]
-
         # Re-new noise matrix every update
         self.actor.reset_noise()
 
@@ -104,46 +98,15 @@ class ActorCritic(Model):
         actor_variables = self.actor.trainable_variables
         critic_variables = self.critic.trainable_variables
         alpha_variables = [self.log_alpha]
-        counter_variables = self.counter.trainable_variables
-
-        # -------------------- Update 'Counter' -------------------- #
-        # -------------------- (SARSA method) -------------------- #
-        next_e_value = self.counter(
-            [
-                sample_on_policy.data["next_observation"],
-                sample_on_policy.data["next_action"],
-            ]
-        )
-        target_e_value = tf.stop_gradient(
-            (1.0 - tf.cast(sample_on_policy.data["terminal"], dtype=tf.float32))
-            * self.gamma
-            * next_e_value
-        )
-
-        with tf.GradientTape() as tape:
-            _, e_value = self.counter(
-                [sample_on_policy.data["observation"], sample_on_policy.data["action"]]
-            )
-            counter_loss = tf.nn.compute_average_loss(
-                tf.keras.losses.log_cosh(target_e_value, e_value)
-            )
-
-        # Compute gradients
-        counter_gradients = tape.gradient(counter_loss, counter_variables)
-
-        # Apply gradients
-        self.counter_optimizer.apply_gradients(
-            zip(counter_gradients, counter_variables)
-        )
 
         # -------------------- Update 'Critic' -------------------- #
         next_action, next_log_pi = self.actor(
-            sample_off_policy.data["next_observation"],
+            sample.data["next_observation"],
             with_log_prob=True,
             deterministic=False,
         )
         next_quantiles = self.critic_target(
-            [sample_off_policy.data["next_observation"], next_action]
+            [sample.data["next_observation"], next_action]
         )
         next_quantiles = tf.sort(
             tf.reshape(next_quantiles, [next_quantiles.shape[0], -1])
@@ -154,13 +117,13 @@ class ActorCritic(Model):
             - self.critic_target.top_quantiles_to_drop,
         ]
         counter, _ = self.counter(
-            [sample_off_policy.data["observation"], sample_off_policy.data["action"]]
+            [sample.data["observation"], sample.data["action"]]
         )
 
         # Bellman Equation
         target_quantiles = tf.stop_gradient(
-            tf.tanh(sample_off_policy.data["reward"] + counter)
-            + (1.0 - tf.cast(sample_off_policy.data["terminal"], dtype=tf.float32))
+            tf.tanh(sample.data["reward"] + counter)
+            + (1.0 - tf.cast(sample.data["terminal"], dtype=tf.float32))
             * self.gamma
             * (next_quantiles - alpha * next_log_pi)
         )
@@ -168,8 +131,8 @@ class ActorCritic(Model):
         with tf.GradientTape() as tape:
             quantiles = self.critic(
                 [
-                    sample_off_policy.data["observation"],
-                    sample_off_policy.data["action"],
+                    sample.data["observation"],
+                    sample.data["action"],
                 ]
             )
 
@@ -200,7 +163,7 @@ class ActorCritic(Model):
 
         # -------------------- Update 'Actor' & 'Alpha' -------------------- #
         with tf.GradientTape(persistent=True) as tape:
-            quantiles, log_pi, _ = self(sample_off_policy.data["observation"])
+            quantiles, log_pi, _ = self(sample.data["observation"])
 
             # Compute actor loss
             actor_loss = tf.nn.compute_average_loss(
@@ -233,7 +196,6 @@ class ActorCritic(Model):
             "actor_loss": actor_loss,
             "critic_loss": critic_loss,
             "alpha_loss": alpha_loss,
-            "counter_loss": counter_loss,
             "quantiles": quantiles[0],  # logging only one randomly sampled transition
             "counter": counter[0],  # logging only one randomly sampled transition
             "log_alpha": self.log_alpha,
@@ -258,4 +220,3 @@ class ActorCritic(Model):
     def summary(self):
         self.actor.summary()
         self.critic.summary()
-        self.counter.summary()
