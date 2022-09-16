@@ -138,15 +138,23 @@ class Learner(Process):
         self.counter.summary()
 
         # Initializes the reverb's dataset
-        self.sample_off_policy = make_reverb_dataset(
-            server_address=self._db_server,
-            table="experience_off_policy",
-            batch_size=batch_size,
+        self.dataset_iterator1 = iter(
+            reverb.TrajectoryDataset.from_table_signature(
+                server_address=self._db_server,
+                table="experience_on_policy",
+                max_in_flight_samples_per_worker=(2 * batch_size),
+            )
+            .batch(batch_size, drop_remainder=True)
+            .prefetch(tf.data.AUTOTUNE)
         )
-        self.sample_on_policy = make_reverb_dataset(
-            server_address=self._db_server,
-            table="experience_on_policy",
-            batch_size=batch_size,
+        self.dataset_iterator2 = iter(
+            reverb.TrajectoryDataset.from_table_signature(
+                server_address=self._db_server,
+                table="experience_off_policy",
+                max_in_flight_samples_per_worker=(2 * batch_size),
+            )
+            .batch(batch_size, drop_remainder=True)
+            .prefetch(tf.data.AUTOTUNE)
         )
 
         # init Weights & Biases
