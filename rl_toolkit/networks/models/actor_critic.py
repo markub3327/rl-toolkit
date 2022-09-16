@@ -244,11 +244,12 @@ class ActorCritic(Model):
         quantiles = self.critic([inputs, action])
         return [quantiles, log_pi]
 
-    def compile(self, actor_optimizer, critic_optimizer, alpha_optimizer):
+    def compile(self, actor_optimizer, critic_optimizer, alpha_optimizer, counter_optimizer):
         super(ActorCritic, self).compile()
         self.actor_optimizer = actor_optimizer
         self.critic_optimizer = critic_optimizer
         self.alpha_optimizer = alpha_optimizer
+        self.counter_optimizer = counter_optimizer
 
     def summary(self):
         self.actor.summary()
