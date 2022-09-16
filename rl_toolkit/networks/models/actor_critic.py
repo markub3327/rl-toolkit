@@ -91,7 +91,9 @@ class ActorCritic(Model):
         for source_weight, target_weight in zip(net.variables, net_targ.variables):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
-    def train_step(self, sample_off_policy, sample_on_policy):
+    def train_step(self, sample):
+        sample_off_policy, sample_on_policy = sample[0], sample[1]
+
         # Re-new noise matrix every update
         self.actor.reset_noise()
 
@@ -251,4 +253,4 @@ class ActorCritic(Model):
     def summary(self):
         self.actor.summary()
         self.critic.summary()
-        self.counter.summary()
+        #self.counter.summary()
