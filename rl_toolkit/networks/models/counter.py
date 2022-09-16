@@ -72,7 +72,7 @@ class Counter(Model):
 
     def train_step(self, sample):
         # Get trainable variables
-        counter_variables = self.counter.trainable_variables
+        counter_variables = self.trainable_variables
 
         # -------------------- (SARSA method) -------------------- #
         next_e_value = self.counter(
