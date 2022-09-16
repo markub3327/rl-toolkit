@@ -124,7 +124,9 @@ class ActorCritic(Model):
             _, e_value = self.counter(
                 [sample_on_policy.data["observation"], sample_on_policy.data["action"]]
             )
-            counter_loss = tf.keras.losses.log_cosh(target_e_value, e_value)
+            counter_loss = tf.nn.compute_average_loss(
+                tf.keras.losses.log_cosh(target_e_value, e_value)
+            )
 
         # Compute gradients
         counter_gradients = tape.gradient(counter_loss, counter_variables)
@@ -198,7 +200,7 @@ class ActorCritic(Model):
 
         # -------------------- Update 'Actor' & 'Alpha' -------------------- #
         with tf.GradientTape(persistent=True) as tape:
-            quantiles, log_pi = self(sample_off_policy.data["observation"])
+            quantiles, log_pi, _ = self(sample_off_policy.data["observation"])
 
             # Compute actor loss
             actor_loss = tf.nn.compute_average_loss(
@@ -242,7 +244,9 @@ class ActorCritic(Model):
             inputs, with_log_prob=with_log_prob, deterministic=deterministic
         )
         quantiles = self.critic([inputs, action])
-        return [quantiles, log_pi]
+        counter, _ = self.counter([inputs, action])
+
+        return [quantiles, log_pi, counter]
 
     def compile(self, actor_optimizer, critic_optimizer, alpha_optimizer, counter_optimizer):
         super(ActorCritic, self).compile()
