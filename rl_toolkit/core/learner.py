@@ -88,7 +88,7 @@ class Learner(Process):
 
         # Counter
         self.counter = Counter(critic_units)
-        self.model.compile(
+        self.counter.compile(
             optimizer=Adam(
                 learning_rate=critic_learning_rate,
                 global_clipnorm=critic_global_clipnorm,
