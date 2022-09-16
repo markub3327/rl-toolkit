@@ -86,6 +86,15 @@ class Learner(Process):
         self._log_interval = log_interval
         self._db_server = db_server
 
+        # Counter
+        self.counter = Counter(critic_units)
+        self.model.compile(
+            optimizer=Adam(
+                learning_rate=critic_learning_rate,
+                global_clipnorm=critic_global_clipnorm,
+            ),
+        )
+
         # Init actor-critic's network
         self.model = ActorCritic(
             actor_units=actor_units,
@@ -100,6 +109,7 @@ class Learner(Process):
             tau=tau,
             init_alpha=init_alpha,
             init_noise=init_noise,
+            counter=self.counter,
         )
         self.model.build((None,) + self._env.observation_space.shape)
         self.model.compile(
@@ -114,16 +124,6 @@ class Learner(Process):
                 learning_rate=alpha_learning_rate, global_clipnorm=alpha_global_clipnorm
             ),
         )
-
-        # Counter
-        self.counter = Counter(critic_units)
-        self.model.compile(
-            optimizer=Adam(
-                learning_rate=critic_learning_rate,
-                global_clipnorm=critic_global_clipnorm,
-            ),
-        )
-
 
         if model_path is not None:
             self.model.load_weights(model_path)

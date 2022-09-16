@@ -99,7 +99,7 @@ class Counter(Model):
         counter_gradients = tape.gradient(counter_loss, counter_variables)
 
         # Apply gradients
-        self.counter_optimizer.apply_gradients(
+        self.optimizer.apply_gradients(
             zip(counter_gradients, counter_variables)
         )
 
