@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+import tensorflow as tf
 import reverb
 import wandb
 from tensorflow.keras.optimizers import Adam
@@ -82,6 +83,7 @@ class Learner(Process):
         super(Learner, self).__init__(env_name, False)
 
         self._train_steps = train_steps
+        self._train_step = 0
         self._save_path = save_path
         self._log_interval = log_interval
         self._db_server = db_server
@@ -133,6 +135,7 @@ class Learner(Process):
 
         # Show models details
         self.model.summary()
+        self.counter.summary()
 
         # Initializes the reverb's dataset
         self.sample_off_policy = make_reverb_dataset(
@@ -165,21 +168,50 @@ class Learner(Process):
         wandb.config.init_alpha = init_alpha
         wandb.config.init_noise = init_noise
 
+    @tf.function
+    def _train(self):
+        # Get data from replay buffer
+        sample_on_policy = self.dataset_iterator1.get_next()
+        sample_off_policy = self.dataset_iterator2.get_next()
+
+        # Train the Actor-Critic model & Counter model
+        history1 = self.counter.train_step(
+                sample_on_policy.data
+        )
+        history2 = self.model.train_step(
+                sample_off_policy.data
+        )
+
+        # Store new actor's params
+        self._variable_container.push_variables()
+
+        return history1, history2
+
     def run(self):
-        self.counter.fit(
-            self.sample_on_policy,
-            epochs=10,
-            steps_per_epoch=1,
-            verbose=0,
-            callbacks=[WandbCallback(save_model=False)],
-        )
-        self.model.fit(
-            self.sample_off_policy,
-            epochs=10,
-            steps_per_epoch=1,
-            verbose=0,
-            callbacks=[AgentCallback(self._db_server), WandbCallback(save_model=False)],
-        )
+        while self._train_step <  self._train_steps:
+            # update models
+            history1, history2 = self._train()
+    
+            # log of epoch's mean loss
+            wandb.log(
+                {
+                    "log_alpha": history2["log_alpha"],
+                    "counter": history2["counter"],
+                    "quantiles": history2["quantiles"],
+                    "alpha_loss": history2["alpha_loss"],
+                    "critic_loss": history2["critic_loss"],
+                    "actor_loss": history2["actor_loss"],
+                    "counter_loss": history1["counter_loss"],
+                },
+                step=self._train_step.numpy(),
+            )
+
+            # increase the training step
+            self._train_step.assign_add(1)
+
+        # Stop the agents
+        self._stop_agents.assign(True)
+        self._variable_container.push_variables()
 
     def save(self):
         if self._save_path:
