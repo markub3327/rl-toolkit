@@ -184,10 +184,10 @@ class Learner(Process):
 
         # Train the Actor-Critic model & Counter model
         history1 = self.counter.train_step(
-                sample_on_policy.data
+                sample_on_policy
         )
         history2 = self.model.train_step(
-                sample_off_policy.data
+                sample_off_policy
         )
 
         # Store new actor's params
