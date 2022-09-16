@@ -86,7 +86,11 @@ class Learner(Process):
         self._db_server = db_server
 
         # Counter
-        self.counter = Counter(critic_units, gamma=gamma)
+        self.target_counter = Counter(critic_units, gamma=gamma, target_model=None)
+        self.target_counter.build(
+            [(None,) + self._env.observation_space.shape, (None,) + self._env.action_space.shape] 
+        )
+        self.counter = Counter(critic_units, gamma=gamma, target_model=self.target_counter)
         self.counter.compile(
             optimizer=Adam(
                 learning_rate=critic_learning_rate,

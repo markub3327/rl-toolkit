@@ -17,10 +17,11 @@ class Counter(Model):
         - [DORA The Explorer: Directed Outreaching Reinforcement Action-Selection](https://arxiv.org/abs/1804.04012)
     """
 
-    def __init__(self, units: list, gamma: float, **kwargs):
+    def __init__(self, units: list, gamma: float, target_model: Model, **kwargs):
         super(Counter, self).__init__(**kwargs)
 
         self.gamma = tf.constant(gamma)
+        self._target_model = target_model
 
         # 1. layer
         self.fc_0 = Dense(
@@ -56,6 +57,14 @@ class Counter(Model):
             name="e_value",
         )
 
+        if target_model is not None:
+            self._update_target(self, self._target_model, tau=1.0)
+
+
+    def _update_target(self, net, net_targ, tau):
+        for source_weight, target_weight in zip(net.variables, net_targ.variables):
+            target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
+
     def call(self, inputs):
         # 1. layer
         state = self.fc_0(inputs[0])
@@ -78,7 +87,7 @@ class Counter(Model):
         counter_variables = self.trainable_variables
 
         # -------------------- (SARSA method) -------------------- #
-        next_e_value = self(
+        next_e_value = self._target_model(
             [
                 sample.data["next_observation"],
                 sample.data["next_action"],
@@ -105,6 +114,9 @@ class Counter(Model):
         self.optimizer.apply_gradients(
             zip(counter_gradients, counter_variables)
         )
+
+        # -------------------- Soft update target networks -------------------- #
+        self._update_target(self, self._target_model, tau=self.tau)
 
         return {
             "counter_loss": counter_loss,
