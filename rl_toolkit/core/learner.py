@@ -138,7 +138,7 @@ class Learner(Process):
         self._train_step = tf.Variable(
             0,
             trainable=False,
-            dtype=tf.int64,
+            dtype=tf.uint64,
             aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
             shape=(),
         )
@@ -152,14 +152,15 @@ class Learner(Process):
 
         # Table for storing variables
         self._variable_container = VariableContainer(
-            self._db_server,
-            "variable",
-            {
+            db_server=self._db_server,
+            table="variable",
+            variables={
                 "train_step": self._train_step,
                 "stop_agents": self._stop_agents,
-                "policy_variables": self.model.actor.variables,
+                "policy_variables": self.actor.variables,
             },
         )
+
 
         # Initializes the reverb's dataset
         self.dataset_iterator1 = iter(
