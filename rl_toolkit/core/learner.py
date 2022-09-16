@@ -163,9 +163,16 @@ class Learner(Process):
         wandb.config.init_noise = init_noise
 
     def run(self):
+        self.counter.fit(
+            self.sample_on_policy,
+            epochs=10,
+            steps_per_epoch=1,
+            verbose=0,
+            callbacks=[WandbCallback(save_model=False)],
+        )
         self.model.fit(
             self.sample_off_policy,
-            epochs=self._train_steps,
+            epochs=10,
             steps_per_epoch=1,
             verbose=0,
             callbacks=[AgentCallback(self._db_server), WandbCallback(save_model=False)],
