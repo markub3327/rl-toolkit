@@ -152,7 +152,7 @@ class Learner(Process):
 
         # Table for storing variables
         self._variable_container = VariableContainer(
-            "localhost",
+            self._db_server,
             "variables",
             {
                 "train_step": self._train_step,
