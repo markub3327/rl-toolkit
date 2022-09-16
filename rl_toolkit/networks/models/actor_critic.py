@@ -165,7 +165,7 @@ class ActorCritic(Model):
 
         # -------------------- Update 'Actor' & 'Alpha' -------------------- #
         with tf.GradientTape(persistent=True) as tape:
-            quantiles, log_pi, _ = self(sample.data["observation"])
+            quantiles, log_pi = self(sample.data["observation"])
 
             # Compute actor loss
             actor_loss = tf.nn.compute_average_loss(
