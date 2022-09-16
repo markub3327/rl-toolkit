@@ -87,7 +87,7 @@ class Learner(Process):
         self._db_server = db_server
 
         # Counter
-        self.counter = Counter(critic_units)
+        self.counter = Counter(critic_units, gamma=gamma)
         self.counter.compile(
             optimizer=Adam(
                 learning_rate=critic_learning_rate,

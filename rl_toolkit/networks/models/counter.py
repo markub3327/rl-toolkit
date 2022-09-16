@@ -11,13 +11,16 @@ class Counter(Model):
 
     Attributes:
         units (list): list of the numbers of units in each layer
+        gamma (float): the discount factor
 
     References:
         - [DORA The Explorer: Directed Outreaching Reinforcement Action-Selection](https://arxiv.org/abs/1804.04012)
     """
 
-    def __init__(self, units: list, **kwargs):
+    def __init__(self, units: list, gamma: float, **kwargs):
         super(Counter, self).__init__(**kwargs)
+
+        self.gamma = tf.constant(gamma)
 
         # 1. layer
         self.fc_0 = Dense(
