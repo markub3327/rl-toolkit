@@ -43,10 +43,12 @@ class ActorCritic(Model):
         tau: float,
         init_alpha: float,
         init_noise: float,
+        counter: Model,
         **kwargs,
     ):
         super(ActorCritic, self).__init__(**kwargs)
 
+        self.counter = counter
         self.gamma = tf.constant(gamma)
         self.tau = tf.constant(tau)
         self.cum_prob = ((tf.range(n_quantiles, dtype=tf.float32) + 0.5) / n_quantiles)[
@@ -206,16 +208,14 @@ class ActorCritic(Model):
             inputs, with_log_prob=with_log_prob, deterministic=deterministic
         )
         quantiles = self.critic([inputs, action])
-        counter, _ = self.counter([inputs, action])
 
-        return [quantiles, log_pi, counter]
+        return [quantiles, log_pi]
 
-    def compile(self, actor_optimizer, critic_optimizer, alpha_optimizer, counter_optimizer):
+    def compile(self, actor_optimizer, critic_optimizer, alpha_optimizer):
         super(ActorCritic, self).compile()
         self.actor_optimizer = actor_optimizer
         self.critic_optimizer = critic_optimizer
         self.alpha_optimizer = alpha_optimizer
-        self.counter_optimizer = counter_optimizer
 
     def summary(self):
         self.actor.summary()
