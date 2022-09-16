@@ -160,8 +160,6 @@ class Learner(Process):
                 "policy_variables": self.model.actor.variables,
             },
         )
-        # Init variable container from DB server
-        self._variable_container.update_variables()
 
         # Initializes the reverb's dataset
         self.dataset_iterator1 = iter(
