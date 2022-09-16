@@ -75,7 +75,7 @@ class Counter(Model):
         counter_variables = self.trainable_variables
 
         # -------------------- (SARSA method) -------------------- #
-        next_e_value = self.counter(
+        next_e_value = self(
             [
                 sample.data["next_observation"],
                 sample.data["next_action"],
@@ -88,7 +88,7 @@ class Counter(Model):
         )
 
         with tf.GradientTape() as tape:
-            _, e_value = self.counter(
+            _, e_value = self(
                 [sample.data["observation"], sample.data["action"]]
             )
             counter_loss = tf.nn.compute_average_loss(
