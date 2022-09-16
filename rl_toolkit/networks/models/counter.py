@@ -57,6 +57,7 @@ class Counter(Model):
             bias_initializer="zeros",
             name="e_value",
         )
+        self.activ_1 = Activation("sigmoid")
 
         if target_model is not None:
             self._update_target(self, self._target_model, tau=1.0)
@@ -81,7 +82,9 @@ class Counter(Model):
 
         counter = 1.0 / tf.math.sqrt(-tf.math.log_sigmoid(e_value))
 
-        return counter, tf.sigmoid(e_value)
+        e_value = self.activ_1(e_value)
+
+        return counter, e_value
 
     def train_step(self, sample):
         # Get trainable variables
