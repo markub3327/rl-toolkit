@@ -142,7 +142,7 @@ class Agent(Process):
             # Ak je v cyklickom bufferi dostatok prikladov
             if self._episode_steps > 1:
                 writer.create_item(
-                    table="experience",
+                    table="experience_off_policy",
                     priority=1.0,
                     trajectory={
                         "observation": writer.history["observation"][-2],
@@ -152,19 +152,41 @@ class Agent(Process):
                         "terminal": writer.history["terminal"][-2],
                     },
                 )
+                writer.create_item(
+                    table="experience_on_policy",
+                    priority=1.0,
+                    trajectory={
+                        "observation": writer.history["observation"][-2],
+                        "action": writer.history["action"][-2],
+                        "next_observation": writer.history["observation"][-1],
+                        "next_action": writer.history["action"][-1],
+                        "terminal": writer.history["terminal"][-2],
+                    },
+                )
 
             # Check the end of episode
             if terminal or self._episode_steps >= self._env.spec.max_episode_steps:
                 # Write the final interaction !!!
                 writer.append({"observation": new_obs.astype("float32", copy=False)})
                 writer.create_item(
-                    table="experience",
+                    table="experience_off_policy",
                     priority=1.0,
                     trajectory={
                         "observation": writer.history["observation"][-2],
                         "action": writer.history["action"][-2],
                         "reward": writer.history["reward"][-2],
                         "next_observation": writer.history["observation"][-1],
+                        "terminal": writer.history["terminal"][-2],
+                    },
+                )
+                writer.create_item(
+                    table="experience_on_policy",
+                    priority=1.0,
+                    trajectory={
+                        "observation": writer.history["observation"][-2],
+                        "action": writer.history["action"][-2],
+                        "next_observation": writer.history["observation"][-1],
+                        "next_action": writer.history["action"][-1],
                         "terminal": writer.history["terminal"][-2],
                     },
                 )

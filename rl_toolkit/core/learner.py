@@ -4,6 +4,7 @@ import numpy as np
 import reverb
 import wandb
 from tensorflow.keras.optimizers import Adam
+from tensorflow.data import Dataset
 from wandb.keras import WandbCallback
 
 from rl_toolkit.networks.callbacks import AgentCallback
@@ -121,9 +122,14 @@ class Learner(Process):
         self.model.summary()
 
         # Initializes the reverb's dataset
-        self.dataset = make_reverb_dataset(
+        self.sample_off_policy = make_reverb_dataset(
             server_address=self._db_server,
-            table="experience",
+            table="experience_off_policy",
+            batch_size=batch_size,
+        )
+        self.sample_on_policy = make_reverb_dataset(
+            server_address=self._db_server,
+            table="experience_on_policy",
             batch_size=batch_size,
         )
 
@@ -148,7 +154,7 @@ class Learner(Process):
 
     def run(self):
         self.model.fit(
-            self.dataset,
+            Dataset.zip((self.sample_off_policy, self.sample_on_policy)),
             epochs=self._train_steps,
             steps_per_epoch=1,
             verbose=0,
