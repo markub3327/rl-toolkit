@@ -157,7 +157,7 @@ class Learner(Process):
             variables={
                 "train_step": self._train_step,
                 "stop_agents": self._stop_agents,
-                "policy_variables": self.actor.variables,
+                "policy_variables": self.model.actor.variables,
             },
         )
 
