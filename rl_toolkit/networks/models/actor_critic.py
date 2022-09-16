@@ -258,4 +258,4 @@ class ActorCritic(Model):
     def summary(self):
         self.actor.summary()
         self.critic.summary()
-        #self.counter.summary()
+        self.counter.summary()
