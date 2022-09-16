@@ -154,7 +154,7 @@ class Learner(Process):
 
     def run(self):
         self.model.fit(
-            [self.sample_off_policy, self.sample_on_policy],
+            Dataset.zip((self.sample_off_policy, self.sample_on_policy)),
             epochs=self._train_steps,
             steps_per_epoch=1,
             verbose=0,
