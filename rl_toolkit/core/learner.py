@@ -153,7 +153,7 @@ class Learner(Process):
         # Table for storing variables
         self._variable_container = VariableContainer(
             self._db_server,
-            "variables",
+            "variable",
             {
                 "train_step": self._train_step,
                 "stop_agents": self._stop_agents,
