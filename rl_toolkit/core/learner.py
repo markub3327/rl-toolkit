@@ -94,6 +94,9 @@ class Learner(Process):
                 global_clipnorm=critic_global_clipnorm,
             ),
         )
+        self.counter.build(
+            [(None,) + self._env.observation_space.shape, (None,) + self._env.action_space.shape] 
+        )
 
         # Init actor-critic's network
         self.model = ActorCritic(
