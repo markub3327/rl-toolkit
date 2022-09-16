@@ -17,10 +17,11 @@ class Counter(Model):
         - [DORA The Explorer: Directed Outreaching Reinforcement Action-Selection](https://arxiv.org/abs/1804.04012)
     """
 
-    def __init__(self, units: list, gamma: float, target_model: Model, **kwargs):
+    def __init__(self, units: list, gamma: float, target_model: Model, tau: float, **kwargs):
         super(Counter, self).__init__(**kwargs)
 
         self.gamma = tf.constant(gamma)
+        self.tau = tf.constant(tau)
         self._target_model = target_model
 
         # 1. layer
