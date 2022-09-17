@@ -88,7 +88,7 @@ class Learner(Process):
 
         # Counter
         self.target_counter = Counter(
-            critic_units, gamma=gamma, target_model=None, tau=tau, beta=0.05
+            critic_units, gamma=gamma, target_model=None, tau=tau, beta=0.5
         )
         self.target_counter.build(
             [
@@ -101,7 +101,7 @@ class Learner(Process):
             gamma=gamma,
             target_model=self.target_counter,
             tau=tau,
-            beta=0.05,
+            beta=0.5,
         )
         self.counter.compile(
             optimizer=Adam(

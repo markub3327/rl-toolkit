@@ -101,7 +101,7 @@ class Counter(Model):
         counter_variables = self.trainable_variables
 
         # -------------------- (SARSA method) -------------------- #
-        next_e_value = self._target_model(
+        _, next_e_value = self._target_model(
             [
                 sample.data["next_observation"],
                 sample.data["next_action"],
