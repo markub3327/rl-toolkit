@@ -81,8 +81,10 @@ class Counter(Model):
         # Output layer
         e_value = self.e_value(x)
 
+        # Intrinsic Reward
         counter = 1.0 / tf.math.sqrt(-tf.math.log_sigmoid(e_value))
 
+        # E-value
         e_value = self.activ_1(e_value)
 
         return counter, e_value

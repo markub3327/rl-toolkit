@@ -260,7 +260,7 @@ class Learner(Process):
             wandb.log(
                 {
                     "log_alpha": history["log_alpha"],
-                    "counter": history["counter"],
+                    "intrinsic_reward": history["counter"],
                     "quantiles": history["quantiles"],
                     "alpha_loss": history["alpha_loss"],
                     "critic_loss": history["critic_loss"],
