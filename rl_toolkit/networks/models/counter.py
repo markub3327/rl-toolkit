@@ -17,7 +17,9 @@ class Counter(Model):
         - [DORA The Explorer: Directed Outreaching Reinforcement Action-Selection](https://arxiv.org/abs/1804.04012)
     """
 
-    def __init__(self, units: list, gamma: float, target_model: Model, tau: float, **kwargs):
+    def __init__(
+        self, units: list, gamma: float, target_model: Model, tau: float, **kwargs
+    ):
         super(Counter, self).__init__(**kwargs)
 
         self.gamma = tf.constant(gamma)
@@ -62,7 +64,6 @@ class Counter(Model):
         if target_model is not None:
             self._update_target(self, self._target_model, tau=1.0)
 
-
     def _update_target(self, net, net_targ, tau):
         for source_weight, target_weight in zip(net.variables, net_targ.variables):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
@@ -104,9 +105,7 @@ class Counter(Model):
         )
 
         with tf.GradientTape() as tape:
-            _, e_value = self(
-                [sample.data["observation"], sample.data["action"]]
-            )
+            _, e_value = self([sample.data["observation"], sample.data["action"]])
             counter_loss = tf.nn.compute_average_loss(
                 tf.keras.losses.log_cosh(target_e_value, e_value)
             )
@@ -115,9 +114,7 @@ class Counter(Model):
         counter_gradients = tape.gradient(counter_loss, counter_variables)
 
         # Apply gradients
-        self.optimizer.apply_gradients(
-            zip(counter_gradients, counter_variables)
-        )
+        self.optimizer.apply_gradients(zip(counter_gradients, counter_variables))
 
         # -------------------- Soft update target networks -------------------- #
         self._update_target(self, self._target_model, tau=self.tau)

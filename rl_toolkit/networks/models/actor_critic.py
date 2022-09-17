@@ -118,9 +118,7 @@ class ActorCritic(Model):
             : self.critic_target.quantiles_total
             - self.critic_target.top_quantiles_to_drop,
         ]
-        counter, _ = self.counter(
-            [sample.data["observation"], sample.data["action"]]
-        )
+        counter, _ = self.counter([sample.data["observation"], sample.data["action"]])
 
         # Bellman Equation
         target_quantiles = tf.stop_gradient(

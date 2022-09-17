@@ -4,6 +4,7 @@ import numpy as np
 import tensorflow as tf
 import reverb
 import wandb
+import threading
 from tensorflow.keras.optimizers import Adam
 
 from rl_toolkit.networks.models import ActorCritic, Counter
@@ -86,11 +87,18 @@ class Learner(Process):
         self._db_server = db_server
 
         # Counter
-        self.target_counter = Counter(critic_units, gamma=gamma, target_model=None, tau=tau)
-        self.target_counter.build(
-            [(None,) + self._env.observation_space.shape, (None,) + self._env.action_space.shape] 
+        self.target_counter = Counter(
+            critic_units, gamma=gamma, target_model=None, tau=tau
         )
-        self.counter = Counter(critic_units, gamma=gamma, target_model=self.target_counter, tau=tau)
+        self.target_counter.build(
+            [
+                (None,) + self._env.observation_space.shape,
+                (None,) + self._env.action_space.shape,
+            ]
+        )
+        self.counter = Counter(
+            critic_units, gamma=gamma, target_model=self.target_counter, tau=tau
+        )
         self.counter.compile(
             optimizer=Adam(
                 learning_rate=critic_learning_rate,
@@ -98,7 +106,10 @@ class Learner(Process):
             ),
         )
         self.counter.build(
-            [(None,) + self._env.observation_space.shape, (None,) + self._env.action_space.shape] 
+            [
+                (None,) + self._env.observation_space.shape,
+                (None,) + self._env.action_space.shape,
+            ]
         )
 
         # Init actor-critic's network
@@ -165,7 +176,6 @@ class Learner(Process):
             },
         )
 
-
         # Initializes the reverb's dataset
         self.dataset_iterator1 = iter(
             reverb.TrajectoryDataset.from_table_signature(
@@ -206,45 +216,71 @@ class Learner(Process):
         wandb.config.init_noise = init_noise
 
     @tf.function
-    def _train(self):
+    def _train_counter(self):
         # Get data from replay buffer
         sample_on_policy = self.dataset_iterator1.get_next()
+
+        # Train the Counter model
+        history = self.counter.train_step(sample_on_policy)
+
+        return history
+
+    @tf.function
+    def _train_agent(self):
+        # Get data from replay buffer
         sample_off_policy = self.dataset_iterator2.get_next()
 
-        # Train the Actor-Critic model & Counter model
-        history1 = self.counter.train_step(
-                sample_on_policy
-        )
-        history2 = self.model.train_step(
-                sample_off_policy
-        )
+        # Train the Actor-Critic model
+        history = self.model.train_step(sample_off_policy)
 
         # Store new actor's params
         self._variable_container.push_variables()
 
-        return history1, history2
+        return history
 
-    def run(self):
-        while self._train_step <  self._train_steps:
+    def train_counter(self):
+        while self._train_step < self._train_steps:
             # update models
-            history1, history2 = self._train()
-    
+            history = self._train_counter()
+
             # log of epoch's mean loss
             wandb.log(
                 {
-                    "log_alpha": history2["log_alpha"],
-                    "counter": history2["counter"],
-                    "quantiles": history2["quantiles"],
-                    "alpha_loss": history2["alpha_loss"],
-                    "critic_loss": history2["critic_loss"],
-                    "actor_loss": history2["actor_loss"],
-                    "counter_loss": history1["counter_loss"],
+                    "counter_loss": history["counter_loss"],
+                },
+                step=self._train_step.numpy(),
+            )
+
+    def train_agent(self):
+        while self._train_step < self._train_steps:
+            # update models
+            history = self._train_agent()
+
+            # log of epoch's mean loss
+            wandb.log(
+                {
+                    "log_alpha": history["log_alpha"],
+                    "counter": history["counter"],
+                    "quantiles": history["quantiles"],
+                    "alpha_loss": history["alpha_loss"],
+                    "critic_loss": history["critic_loss"],
+                    "actor_loss": history["actor_loss"],
                 },
                 step=self._train_step.numpy(),
             )
 
             # increase the training step
             self._train_step.assign_add(1)
+
+    def run(self):
+        self.t_counter = threading.Thread(name="counter", target=self.train_counter)
+        self.t_agent = threading.Thread(name="agent", target=self.train_agent)
+        self.t_counter.start()
+        self.t_agent.start()
+
+        # Wait until training is done ...
+        self.t_agent.join()
+        self.t_counter.join()
 
         # Stop the agents
         self._stop_agents.assign(True)
