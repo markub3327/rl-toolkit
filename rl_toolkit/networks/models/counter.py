@@ -130,4 +130,5 @@ class Counter(Model):
 
         return {
             "counter_loss": counter_loss,
+            "e_value": e_value[0]   # logging only one randomly sampled transition
         }

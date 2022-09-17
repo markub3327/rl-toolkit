@@ -251,6 +251,7 @@ class Learner(Process):
             wandb.log(
                 {
                     "counter_loss": history["counter_loss"],
+                    "e_value": history["e_value"],
                 },
                 step=self._train_step.numpy(),
             )
