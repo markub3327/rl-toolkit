@@ -18,12 +18,19 @@ class Counter(Model):
     """
 
     def __init__(
-        self, units: list, gamma: float, target_model: Model, tau: float, **kwargs
+        self,
+        units: list,
+        gamma: float,
+        target_model: Model,
+        tau: float,
+        beta: float,
+        **kwargs
     ):
         super(Counter, self).__init__(**kwargs)
 
         self.gamma = tf.constant(gamma)
         self.tau = tf.constant(tau)
+        self.beta = tf.constant(beta)
         self._target_model = target_model
 
         # 1. layer
@@ -82,7 +89,7 @@ class Counter(Model):
         e_value = self.e_value(x)
 
         # Intrinsic Reward
-        counter = 1.0 / tf.math.sqrt(-tf.math.log_sigmoid(e_value))
+        counter = self.beta / tf.math.sqrt(-tf.math.log_sigmoid(e_value))
 
         # E-value
         e_value = self.activ_1(e_value)
