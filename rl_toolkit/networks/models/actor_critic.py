@@ -3,6 +3,7 @@ from tensorflow.keras import Model
 
 from .actor import Actor
 from .critic import MultiCritic
+from .counter import Counter
 
 
 class ActorCritic(Model):
@@ -43,12 +44,10 @@ class ActorCritic(Model):
         tau: float,
         init_alpha: float,
         init_noise: float,
-        counter: Model,
         **kwargs,
     ):
         super(ActorCritic, self).__init__(**kwargs)
 
-        self.counter = counter
         self.gamma = tf.constant(gamma)
         self.tau = tf.constant(tau)
         self.cum_prob = ((tf.range(n_quantiles, dtype=tf.float32) + 0.5) / n_quantiles)[
@@ -58,6 +57,11 @@ class ActorCritic(Model):
         # init Lagrangian constraint
         self.log_alpha = tf.Variable(init_alpha, trainable=True, name="log_alpha")
         self.target_entropy = tf.cast(-n_outputs, dtype=tf.float32)
+
+        # Counter
+        self.counter = Counter(critic_units, beta=0.25)
+        self.counter_target = Counter(critic_units, beta=0.25)
+        self._update_target(self.counter, self.counter_target, tau=1.0)
 
         # Actor
         self.actor = Actor(
@@ -100,6 +104,34 @@ class ActorCritic(Model):
         actor_variables = self.actor.trainable_variables
         critic_variables = self.critic.trainable_variables
         alpha_variables = [self.log_alpha]
+        counter_variables = self.trainable_variables
+
+        # -------------------- Update 'Counter' -------------------- #
+        _, next_e_value = self.counter_target(
+            [
+                sample.data["next_observation"],
+                sample.data["next_action"],
+            ]
+        )
+        target_e_value = tf.stop_gradient(
+            (1.0 - tf.cast(sample.data["terminal"], dtype=tf.float32))
+            * self.gamma
+            * next_e_value
+        )
+
+        with tf.GradientTape() as tape:
+            _, e_value = self([sample.data["observation"], sample.data["action"]])
+            counter_loss = tf.nn.compute_average_loss(
+                tf.keras.losses.log_cosh(target_e_value, e_value)
+            )
+
+        # Compute gradients
+        counter_gradients = tape.gradient(counter_loss, counter_variables)
+
+        # Apply gradients
+        self.counter_optimizer.apply_gradients(
+            zip(counter_gradients, counter_variables)
+        )
 
         # -------------------- Update 'Critic' -------------------- #
         next_action, next_log_pi = self.actor(
@@ -191,6 +223,7 @@ class ActorCritic(Model):
 
         # -------------------- Soft update target networks -------------------- #
         self._update_target(self.critic, self.critic_target, tau=self.tau)
+        self._update_target(self.counter, self.counter_target, tau=self.tau)
 
         return {
             "actor_loss": actor_loss,
@@ -199,6 +232,8 @@ class ActorCritic(Model):
             "quantiles": quantiles[0],  # logging only one randomly sampled transition
             "counter": counter[0],  # logging only one randomly sampled transition
             "log_alpha": self.log_alpha,
+            "counter_loss": counter_loss,
+            "e_value": e_value[0],  # logging only one randomly sampled transition
         }
 
     def call(self, inputs, with_log_prob=True, deterministic=None):

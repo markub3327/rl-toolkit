@@ -11,27 +11,15 @@ class Counter(Model):
 
     Attributes:
         units (list): list of the numbers of units in each layer
-        gamma (float): the discount factor
 
     References:
         - [DORA The Explorer: Directed Outreaching Reinforcement Action-Selection](https://arxiv.org/abs/1804.04012)
     """
 
-    def __init__(
-        self,
-        units: list,
-        gamma: float,
-        target_model: Model,
-        tau: float,
-        beta: float,
-        **kwargs
-    ):
+    def __init__(self, units: list, beta: float, **kwargs):
         super(Counter, self).__init__(**kwargs)
 
-        self.gamma = tf.constant(gamma)
-        self.tau = tf.constant(tau)
         self.beta = tf.constant(beta)
-        self._target_model = target_model
 
         # 1. layer
         self.fc_0 = Dense(
@@ -68,13 +56,6 @@ class Counter(Model):
         )
         self.activ_1 = Activation("sigmoid")
 
-        if target_model is not None:
-            self._update_target(self, self._target_model, tau=1.0)
-
-    def _update_target(self, net, net_targ, tau):
-        for source_weight, target_weight in zip(net.variables, net_targ.variables):
-            target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
-
     def call(self, inputs):
         # 1. layer
         state = self.fc_0(inputs[0])
@@ -95,40 +76,3 @@ class Counter(Model):
         e_value = self.activ_1(e_value)
 
         return counter, e_value
-
-    def train_step(self, sample):
-        # Get trainable variables
-        counter_variables = self.trainable_variables
-
-        # -------------------- (SARSA method) -------------------- #
-        _, next_e_value = self._target_model(
-            [
-                sample.data["next_observation"],
-                sample.data["next_action"],
-            ]
-        )
-        target_e_value = tf.stop_gradient(
-            (1.0 - tf.cast(sample.data["terminal"], dtype=tf.float32))
-            * self.gamma
-            * next_e_value
-        )
-
-        with tf.GradientTape() as tape:
-            _, e_value = self([sample.data["observation"], sample.data["action"]])
-            counter_loss = tf.nn.compute_average_loss(
-                tf.keras.losses.log_cosh(target_e_value, e_value)
-            )
-
-        # Compute gradients
-        counter_gradients = tape.gradient(counter_loss, counter_variables)
-
-        # Apply gradients
-        self.optimizer.apply_gradients(zip(counter_gradients, counter_variables))
-
-        # -------------------- Soft update target networks -------------------- #
-        self._update_target(self, self._target_model, tau=self.tau)
-
-        return {
-            "counter_loss": counter_loss,
-            "e_value": e_value[0],  # logging only one randomly sampled transition
-        }

@@ -1,14 +1,14 @@
 import os
 
 import numpy as np
-import tensorflow as tf
 import reverb
 import wandb
-import threading
 from tensorflow.keras.optimizers import Adam
+from wandb.keras import WandbCallback
 
-from rl_toolkit.networks.models import ActorCritic, Counter
-from rl_toolkit.utils import VariableContainer
+from rl_toolkit.networks.callbacks import AgentCallback
+from rl_toolkit.networks.models import ActorCritic
+from rl_toolkit.utils import make_reverb_dataset
 
 from .process import Process
 
@@ -17,7 +17,6 @@ class Learner(Process):
     """
     Learner
     =================
-
     Attributes:
         env_name (str): the name of environment
         db_server (str): database server name (IP or domain name)
@@ -64,10 +63,6 @@ class Learner(Process):
         clip_mean_min: float,
         clip_mean_max: float,
         # ---
-        actor_global_clipnorm: float,
-        critic_global_clipnorm: float,
-        alpha_global_clipnorm: float,
-        # ---
         gamma: float,
         tau: float,
         init_alpha: float,
@@ -81,40 +76,9 @@ class Learner(Process):
         super(Learner, self).__init__(env_name, False)
 
         self._train_steps = train_steps
-        self._train_step = 0
         self._save_path = save_path
         self._log_interval = log_interval
         self._db_server = db_server
-
-        # Counter
-        self.target_counter = Counter(
-            critic_units, gamma=gamma, target_model=None, tau=tau, beta=0.5
-        )
-        self.target_counter.build(
-            [
-                (None,) + self._env.observation_space.shape,
-                (None,) + self._env.action_space.shape,
-            ]
-        )
-        self.counter = Counter(
-            critic_units,
-            gamma=gamma,
-            target_model=self.target_counter,
-            tau=tau,
-            beta=0.5,
-        )
-        self.counter.compile(
-            optimizer=Adam(
-                learning_rate=critic_learning_rate,
-                global_clipnorm=critic_global_clipnorm,
-            ),
-        )
-        self.counter.build(
-            [
-                (None,) + self._env.observation_space.shape,
-                (None,) + self._env.action_space.shape,
-            ]
-        )
 
         # Init actor-critic's network
         self.model = ActorCritic(
@@ -130,20 +94,16 @@ class Learner(Process):
             tau=tau,
             init_alpha=init_alpha,
             init_noise=init_noise,
-            counter=self.counter,
         )
         self.model.build((None,) + self._env.observation_space.shape)
         self.model.compile(
             actor_optimizer=Adam(
-                learning_rate=actor_learning_rate, global_clipnorm=actor_global_clipnorm
+                learning_rate=actor_learning_rate, global_clipnorm=40.0
             ),
             critic_optimizer=Adam(
-                learning_rate=critic_learning_rate,
-                global_clipnorm=critic_global_clipnorm,
+                learning_rate=critic_learning_rate, global_clipnorm=40.0
             ),
-            alpha_optimizer=Adam(
-                learning_rate=alpha_learning_rate, global_clipnorm=alpha_global_clipnorm
-            ),
+            alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
         )
 
         if model_path is not None:
@@ -151,53 +111,12 @@ class Learner(Process):
 
         # Show models details
         self.model.summary()
-        self.counter.summary()
-
-        # Variables
-        self._train_step = tf.Variable(
-            0,
-            trainable=False,
-            dtype=tf.uint64,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            shape=(),
-        )
-        self._stop_agents = tf.Variable(
-            False,
-            trainable=False,
-            dtype=tf.bool,
-            aggregation=tf.VariableAggregation.ONLY_FIRST_REPLICA,
-            shape=(),
-        )
-
-        # Table for storing variables
-        self._variable_container = VariableContainer(
-            db_server=self._db_server,
-            table="variable",
-            variables={
-                "train_step": self._train_step,
-                "stop_agents": self._stop_agents,
-                "policy_variables": self.model.actor.variables,
-            },
-        )
 
         # Initializes the reverb's dataset
-        # self.dataset_iterator1 = iter(
-        #     reverb.TrajectoryDataset.from_table_signature(
-        #         server_address=self._db_server,
-        #         table="experience_on_policy",
-        #         max_in_flight_samples_per_worker=(2 * batch_size),
-        #     )
-        #     .batch(batch_size, drop_remainder=True)
-        #     .prefetch(tf.data.AUTOTUNE)
-        # )
-        self.dataset_iterator1 = self.dataset_iterator2 = iter(
-            reverb.TrajectoryDataset.from_table_signature(
-                server_address=self._db_server,
-                table="experience_off_policy",
-                max_in_flight_samples_per_worker=(2 * batch_size),
-            )
-            .batch(batch_size, drop_remainder=True)
-            .prefetch(tf.data.AUTOTUNE)
+        self.dataset = make_reverb_dataset(
+            server_address=self._db_server,
+            table="experience",
+            batch_size=batch_size,
         )
 
         # init Weights & Biases
@@ -219,84 +138,14 @@ class Learner(Process):
         wandb.config.init_alpha = init_alpha
         wandb.config.init_noise = init_noise
 
-    # @tf.function
-    # def _train_counter(self):
-    #     # Get data from replay buffer
-    #     sample_on_policy = self.dataset_iterator1.get_next()
-
-    #     # Train the Counter model
-    #     history = self.counter.train_step(sample_on_policy)
-
-    #     return history
-
-    @tf.function
-    def _train_agent(self):
-        # Get data from replay buffer
-        sample_off_policy = self.dataset_iterator2.get_next()
-
-        # Train the Counter model
-        history2 = self.counter.train_step(sample_off_policy)
-
-        # Train the Actor-Critic model
-        history1 = self.model.train_step(sample_off_policy)
-
-        # Store new actor's params
-        self._variable_container.push_variables()
-
-        return history1, history2
-
-    # def train_counter(self):
-    #     while self._train_step < self._train_steps:
-    #         # update models
-    #         history = self._train_counter()
-
-    #         # log of epoch's mean loss
-    #         wandb.log(
-    #             {
-    #                 "counter_loss": history["counter_loss"],
-    #                 "e_value": history["e_value"],
-    #             },
-    #             step=self._train_step.numpy(),
-    #         )
-
-    def train_agent(self):
-        while self._train_step < self._train_steps:
-            # update models
-            history1, history2 = self._train_agent()
-
-            # log of epoch's mean loss
-            wandb.log(
-                {
-                    "log_alpha": history1["log_alpha"],
-                    "intrinsic_reward": history1["counter"],
-                    "quantiles": history1["quantiles"],
-                    "alpha_loss": history1["alpha_loss"],
-                    "critic_loss": history1["critic_loss"],
-                    "actor_loss": history1["actor_loss"],
-                    "counter_loss": history2["counter_loss"],
-                    "e_value": history2["e_value"],
-                },
-                step=self._train_step.numpy(),
-            )
-
-            # increase the training step
-            self._train_step.assign_add(1)
-
     def run(self):
-        self.train_agent()
-
-        #self.t_counter = threading.Thread(name="counter", target=self.train_counter)
-        #self.t_agent = threading.Thread(name="agent", target=self.train_agent)
-        #self.t_counter.start()
-        #self.t_agent.start()
-
-        # Wait until training is done ...
-        #self.t_agent.join()
-        #self.t_counter.join()
-
-        # Stop the agents
-        self._stop_agents.assign(True)
-        self._variable_container.push_variables()
+        self.model.fit(
+            self.dataset,
+            epochs=self._train_steps,
+            steps_per_epoch=1,
+            verbose=0,
+            callbacks=[AgentCallback(self._db_server), WandbCallback(save_model=False)],
+        )
 
     def save(self):
         if self._save_path:
