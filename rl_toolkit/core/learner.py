@@ -219,57 +219,62 @@ class Learner(Process):
         wandb.config.init_alpha = init_alpha
         wandb.config.init_noise = init_noise
 
-    @tf.function
-    def _train_counter(self):
-        # Get data from replay buffer
-        sample_on_policy = self.dataset_iterator1.get_next()
+    # @tf.function
+    # def _train_counter(self):
+    #     # Get data from replay buffer
+    #     sample_on_policy = self.dataset_iterator1.get_next()
 
-        # Train the Counter model
-        history = self.counter.train_step(sample_on_policy)
+    #     # Train the Counter model
+    #     history = self.counter.train_step(sample_on_policy)
 
-        return history
+    #     return history
 
     @tf.function
     def _train_agent(self):
         # Get data from replay buffer
         sample_off_policy = self.dataset_iterator2.get_next()
 
+        # Train the Counter model
+        history2 = self.counter.train_step(sample_off_policy)
+
         # Train the Actor-Critic model
-        history = self.model.train_step(sample_off_policy)
+        history1 = self.model.train_step(sample_off_policy)
 
         # Store new actor's params
         self._variable_container.push_variables()
 
-        return history
+        return history1, history2
 
-    def train_counter(self):
-        while self._train_step < self._train_steps:
-            # update models
-            history = self._train_counter()
+    # def train_counter(self):
+    #     while self._train_step < self._train_steps:
+    #         # update models
+    #         history = self._train_counter()
 
-            # log of epoch's mean loss
-            wandb.log(
-                {
-                    "counter_loss": history["counter_loss"],
-                    "e_value": history["e_value"],
-                },
-                step=self._train_step.numpy(),
-            )
+    #         # log of epoch's mean loss
+    #         wandb.log(
+    #             {
+    #                 "counter_loss": history["counter_loss"],
+    #                 "e_value": history["e_value"],
+    #             },
+    #             step=self._train_step.numpy(),
+    #         )
 
     def train_agent(self):
         while self._train_step < self._train_steps:
             # update models
-            history = self._train_agent()
+            history1, history2 = self._train_agent()
 
             # log of epoch's mean loss
             wandb.log(
                 {
-                    "log_alpha": history["log_alpha"],
-                    "intrinsic_reward": history["counter"],
-                    "quantiles": history["quantiles"],
-                    "alpha_loss": history["alpha_loss"],
-                    "critic_loss": history["critic_loss"],
-                    "actor_loss": history["actor_loss"],
+                    "log_alpha": history1["log_alpha"],
+                    "intrinsic_reward": history1["counter"],
+                    "quantiles": history1["quantiles"],
+                    "alpha_loss": history1["alpha_loss"],
+                    "critic_loss": history1["critic_loss"],
+                    "actor_loss": history1["actor_loss"],
+                    "counter_loss": history2["counter_loss"],
+                    "e_value": history2["e_value"],
                 },
                 step=self._train_step.numpy(),
             )
@@ -278,14 +283,16 @@ class Learner(Process):
             self._train_step.assign_add(1)
 
     def run(self):
-        self.t_counter = threading.Thread(name="counter", target=self.train_counter)
-        self.t_agent = threading.Thread(name="agent", target=self.train_agent)
-        self.t_counter.start()
-        self.t_agent.start()
+        self.train_agent()
+
+        #self.t_counter = threading.Thread(name="counter", target=self.train_counter)
+        #self.t_agent = threading.Thread(name="agent", target=self.train_agent)
+        #self.t_counter.start()
+        #self.t_agent.start()
 
         # Wait until training is done ...
-        self.t_agent.join()
-        self.t_counter.join()
+        #self.t_agent.join()
+        #self.t_counter.join()
 
         # Stop the agents
         self._stop_agents.assign(True)
