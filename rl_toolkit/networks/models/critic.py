@@ -46,13 +46,21 @@ class Critic(Model):
         self.activ_0 = Activation("relu")
 
         # Output layer
-        self.quantiles = Dense(
+        self.quantiles_int = Dense(
             n_quantiles,
             activation="linear",
             kernel_initializer=VarianceScaling(
                 distribution="uniform", mode="fan_in", scale=1.0
             ),
-            name="quantiles",
+            name="quantiles_int",
+        )
+        self.quantiles_ext = Dense(
+            n_quantiles,
+            activation="linear",
+            kernel_initializer=VarianceScaling(
+                distribution="uniform", mode="fan_in", scale=1.0
+            ),
+            name="quantiles_ext",
         )
 
     def call(self, inputs):
@@ -66,8 +74,9 @@ class Critic(Model):
         x = self.activ_0(x)
 
         # Output layer
-        quantiles = self.quantiles(x)
-        return quantiles
+        quantiles_int = self.quantiles_int(x)
+        quantiles_ext = self.quantiles_ext(x)
+        return [quantiles_int, quantiles_ext]
 
 
 class MultiCritic(Model):
@@ -100,8 +109,15 @@ class MultiCritic(Model):
         self.models = [Critic(units, n_quantiles) for _ in range(n_critics)]
 
     def call(self, inputs):
-        quantiles = tf.stack([model(inputs) for model in self.models], axis=1)
-        return quantiles
+        all_quantiles_int, all_quantiles_ext = [], []
+        for model in self.models:
+            quantiles_int, quantiles_ext = model(inputs)
+            all_quantiles_int.append(quantiles_int)
+            all_quantiles_ext.append(quantiles_ext)
+
+        all_quantiles_int = tf.stack(all_quantiles_int, axis=1)
+        all_quantiles_ext = tf.stack(all_quantiles_ext, axis=1)
+        return all_quantiles_int, all_quantiles_ext
 
     def summary(self):
         for model in self.models:
