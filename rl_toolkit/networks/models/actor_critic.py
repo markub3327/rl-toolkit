@@ -102,7 +102,7 @@ class ActorCritic(Model):
         actor_variables = self.actor.trainable_variables
         critic_variables = self.critic.trainable_variables
         alpha_variables = [self.log_alpha]
-        counter_variables = self.trainable_variables
+        counter_variables = self.counter.trainable_variables
 
         # -------------------- Update 'Counter' -------------------- #
         _, next_e_value = self.counter_target(
@@ -118,7 +118,7 @@ class ActorCritic(Model):
         )
 
         with tf.GradientTape() as tape:
-            _, e_value = self([sample.data["observation"], sample.data["action"]])
+            _, e_value = self.counter([sample.data["observation"], sample.data["action"]])
             counter_loss = tf.nn.compute_average_loss(
                 tf.keras.losses.log_cosh(target_e_value, e_value)
             )
