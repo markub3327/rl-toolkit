@@ -59,8 +59,8 @@ class ActorCritic(Model):
         self.target_entropy = tf.cast(-n_outputs, dtype=tf.float32)
 
         # Counter
-        self.counter = Counter(critic_units, beta=0.25)
-        self.counter_target = Counter(critic_units, beta=0.25)
+        self.counter = Counter(critic_units, beta=1.0)
+        self.counter_target = Counter(critic_units, beta=1.0)
 
         # Actor
         self.actor = Actor(
@@ -230,7 +230,7 @@ class ActorCritic(Model):
             "critic_loss": critic_loss,
             "alpha_loss": alpha_loss,
             "quantiles": quantiles[0],  # logging only one randomly sampled transition
-            "counter": counter[0],  # logging only one randomly sampled transition
+            "intrinsic_reward": counter[0],  # logging only one randomly sampled transition
             "log_alpha": self.log_alpha,
             "counter_loss": counter_loss,
             "e_value": e_value[0],  # logging only one randomly sampled transition
