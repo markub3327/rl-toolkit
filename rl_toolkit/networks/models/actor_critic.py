@@ -195,7 +195,7 @@ class ActorCritic(Model):
 
         # -------------------- Update 'Actor' & 'Alpha' -------------------- #
         with tf.GradientTape(persistent=True) as tape:
-            quantiles, log_pi = self(sample.data["observation"])
+            quantiles, log_pi, _ = self(sample.data["observation"])
 
             # Compute actor loss
             actor_loss = tf.nn.compute_average_loss(
@@ -241,8 +241,9 @@ class ActorCritic(Model):
             inputs, with_log_prob=with_log_prob, deterministic=deterministic
         )
         quantiles = self.critic([inputs, action])
+        _, e_value = self.counter([inputs, action])
 
-        return [quantiles, log_pi]
+        return [quantiles, log_pi, e_value]
 
     def compile(
         self, actor_optimizer, critic_optimizer, alpha_optimizer, counter_optimizer
@@ -256,7 +257,6 @@ class ActorCritic(Model):
     def build(self, input_shape):
         super(ActorCritic, self).build(input_shape)
 
-        self.counter.build(input_shape)
         self.counter_target.build(input_shape)
         self.critic_target.build(input_shape)
 
