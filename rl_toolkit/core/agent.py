@@ -149,20 +149,21 @@ class Agent(Process):
                         "action": writer.history["action"][-2],
                         "reward": writer.history["reward"][-2],
                         "next_observation": writer.history["observation"][-1],
-                        "terminal": writer.history["terminal"][-2],
-                    },
-                )
-                writer.create_item(
-                    table="experience_on_policy",
-                    priority=1.0,
-                    trajectory={
-                        "observation": writer.history["observation"][-2],
-                        "action": writer.history["action"][-2],
-                        "next_observation": writer.history["observation"][-1],
                         "next_action": writer.history["action"][-1],
                         "terminal": writer.history["terminal"][-2],
                     },
                 )
+                # writer.create_item(
+                #     table="experience_on_policy",
+                #     priority=1.0,
+                #     trajectory={
+                #         "observation": writer.history["observation"][-2],
+                #         "action": writer.history["action"][-2],
+                #         "next_observation": writer.history["observation"][-1],
+                #         "next_action": writer.history["action"][-1],
+                #         "terminal": writer.history["terminal"][-2],
+                #     },
+                # )
 
             # Check the end of episode
             if terminal or self._episode_steps >= self._env.spec.max_episode_steps:
@@ -181,20 +182,21 @@ class Agent(Process):
                         "action": writer.history["action"][-2],
                         "reward": writer.history["reward"][-2],
                         "next_observation": writer.history["observation"][-1],
-                        "terminal": writer.history["terminal"][-2],
-                    },
-                )
-                writer.create_item(
-                    table="experience_on_policy",
-                    priority=1.0,
-                    trajectory={
-                        "observation": writer.history["observation"][-2],
-                        "action": writer.history["action"][-2],
-                        "next_observation": writer.history["observation"][-1],
                         "next_action": writer.history["action"][-1],
                         "terminal": writer.history["terminal"][-2],
                     },
                 )
+                # writer.create_item(
+                #     table="experience_on_policy",
+                #     priority=1.0,
+                #     trajectory={
+                #         "observation": writer.history["observation"][-2],
+                #         "action": writer.history["action"][-2],
+                #         "next_observation": writer.history["observation"][-1],
+                #         "next_action": writer.history["action"][-1],
+                #         "terminal": writer.history["terminal"][-2],
+                #     },
+                # )
 
                 # Block until all the items have been sent to the server
                 writer.end_episode()

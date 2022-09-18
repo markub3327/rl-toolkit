@@ -181,16 +181,16 @@ class Learner(Process):
         )
 
         # Initializes the reverb's dataset
-        self.dataset_iterator1 = iter(
-            reverb.TrajectoryDataset.from_table_signature(
-                server_address=self._db_server,
-                table="experience_on_policy",
-                max_in_flight_samples_per_worker=(2 * batch_size),
-            )
-            .batch(batch_size, drop_remainder=True)
-            .prefetch(tf.data.AUTOTUNE)
-        )
-        self.dataset_iterator2 = iter(
+        # self.dataset_iterator1 = iter(
+        #     reverb.TrajectoryDataset.from_table_signature(
+        #         server_address=self._db_server,
+        #         table="experience_on_policy",
+        #         max_in_flight_samples_per_worker=(2 * batch_size),
+        #     )
+        #     .batch(batch_size, drop_remainder=True)
+        #     .prefetch(tf.data.AUTOTUNE)
+        # )
+        self.dataset_iterator1 = self.dataset_iterator2 = iter(
             reverb.TrajectoryDataset.from_table_signature(
                 server_address=self._db_server,
                 table="experience_off_policy",

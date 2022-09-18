@@ -128,36 +128,40 @@ class Server(Process):
                             [*self._env.observation_space.shape],
                             self._env.observation_space.dtype,
                         ),
-                        "terminal": tf.TensorSpec([1], tf.bool),
-                    },
-                ),
-                reverb.Table(  # On-policy Replay buffer
-                    name="experience_on_policy",
-                    sampler=reverb.selectors.Fifo(),
-                    remover=reverb.selectors.Fifo(),
-                    rate_limiter=reverb.rate_limiters.Queue(size=max_replay_size),
-                    max_size=max_replay_size,
-                    max_times_sampled=1,
-                    signature={
-                        "observation": tf.TensorSpec(
-                            [*self._env.observation_space.shape],
-                            self._env.observation_space.dtype,
-                        ),
-                        "action": tf.TensorSpec(
-                            [*self._env.action_space.shape],
-                            self._env.action_space.dtype,
-                        ),
-                        "next_observation": tf.TensorSpec(
-                            [*self._env.observation_space.shape],
-                            self._env.observation_space.dtype,
-                        ),
                         "next_action": tf.TensorSpec(
-                            [*self._env.action_space.shape],
-                            self._env.action_space.dtype,
+                             [*self._env.action_space.shape],
+                             self._env.action_space.dtype,
                         ),
                         "terminal": tf.TensorSpec([1], tf.bool),
                     },
                 ),
+                # reverb.Table(  # On-policy Replay buffer
+                #     name="experience_on_policy",
+                #     sampler=reverb.selectors.Fifo(),
+                #     remover=reverb.selectors.Fifo(),
+                #     rate_limiter=reverb.rate_limiters.Queue(size=max_replay_size),
+                #     max_size=max_replay_size,
+                #     max_times_sampled=1,
+                #     signature={
+                #         "observation": tf.TensorSpec(
+                #             [*self._env.observation_space.shape],
+                #             self._env.observation_space.dtype,
+                #         ),
+                #         "action": tf.TensorSpec(
+                #             [*self._env.action_space.shape],
+                #             self._env.action_space.dtype,
+                #         ),
+                #         "next_observation": tf.TensorSpec(
+                #             [*self._env.observation_space.shape],
+                #             self._env.observation_space.dtype,
+                #         ),
+                #         "next_action": tf.TensorSpec(
+                #             [*self._env.action_space.shape],
+                #             self._env.action_space.dtype,
+                #         ),
+                #         "terminal": tf.TensorSpec([1], tf.bool),
+                #     },
+                # ),
                 reverb.Table(  # Variables container
                     name="variable",
                     sampler=reverb.selectors.Uniform(),
