@@ -114,7 +114,7 @@ class Learner(Process):
             ),
             counter_optimizer=Adam(
                 learning_rate=critic_learning_rate,
-                global_clipnorm=critic_global_clipnorm,
+                global_clipnorm=1.0,
             ),
         )
 

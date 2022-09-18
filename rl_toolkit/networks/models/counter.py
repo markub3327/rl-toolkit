@@ -16,10 +16,8 @@ class Counter(Model):
         - [DORA The Explorer: Directed Outreaching Reinforcement Action-Selection](https://arxiv.org/abs/1804.04012)
     """
 
-    def __init__(self, units: list, beta: float, **kwargs):
+    def __init__(self, units: list, **kwargs):
         super(Counter, self).__init__(**kwargs)
-
-        self.beta = tf.constant(beta)
 
         # 1. layer
         self.fc_0 = Dense(
@@ -70,7 +68,7 @@ class Counter(Model):
         e_value = self.e_value(x)
 
         # Intrinsic Reward
-        counter = self.beta / tf.math.sqrt(-tf.math.log_sigmoid(e_value))
+        counter = 1.0 / tf.math.sqrt(-tf.math.log_sigmoid(e_value))
 
         # E-value
         e_value = self.activ_1(e_value)
