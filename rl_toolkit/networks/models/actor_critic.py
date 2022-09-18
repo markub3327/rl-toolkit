@@ -221,7 +221,7 @@ class ActorCritic(Model):
             actor_loss = tf.nn.compute_average_loss(
                 alpha * log_pi
                 - tf.reduce_mean(
-                    tf.reduce_mean((0.5 * quantiles_int + quantiles_ext), axis=2),
+                    tf.reduce_mean((0.25 * quantiles_int + quantiles_ext), axis=2),
                     axis=1,
                     keepdims=True,
                 )
