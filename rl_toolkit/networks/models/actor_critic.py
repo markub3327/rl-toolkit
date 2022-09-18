@@ -59,8 +59,8 @@ class ActorCritic(Model):
         self.target_entropy = tf.cast(-n_outputs, dtype=tf.float32)
 
         # Counter
-        self.counter = Counter(critic_units, beta=1.0)
-        self.counter_target = Counter(critic_units, beta=1.0)
+        self.counter = Counter(critic_units)
+        self.counter_target = Counter(critic_units)
 
         # Actor
         self.actor = Actor(
