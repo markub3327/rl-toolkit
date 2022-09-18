@@ -17,6 +17,7 @@ class Learner(Process):
     """
     Learner
     =================
+
     Attributes:
         env_name (str): the name of environment
         db_server (str): database server name (IP or domain name)
@@ -63,6 +64,10 @@ class Learner(Process):
         clip_mean_min: float,
         clip_mean_max: float,
         # ---
+        actor_global_clipnorm: float,
+        critic_global_clipnorm: float,
+        alpha_global_clipnorm: float,
+        # ---
         gamma: float,
         tau: float,
         init_alpha: float,
@@ -98,12 +103,19 @@ class Learner(Process):
         self.model.build((None,) + self._env.observation_space.shape)
         self.model.compile(
             actor_optimizer=Adam(
-                learning_rate=actor_learning_rate, global_clipnorm=40.0
+                learning_rate=actor_learning_rate, global_clipnorm=actor_global_clipnorm
             ),
             critic_optimizer=Adam(
-                learning_rate=critic_learning_rate, global_clipnorm=40.0
+                learning_rate=critic_learning_rate,
+                global_clipnorm=critic_global_clipnorm,
             ),
-            alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
+            alpha_optimizer=Adam(
+                learning_rate=alpha_learning_rate, global_clipnorm=alpha_global_clipnorm
+            ),
+            counter_optimizer=Adam(
+                learning_rate=critic_learning_rate,
+                global_clipnorm=critic_global_clipnorm,
+            ),
         )
 
         if model_path is not None:

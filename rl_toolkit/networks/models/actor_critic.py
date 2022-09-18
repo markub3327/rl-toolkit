@@ -61,7 +61,6 @@ class ActorCritic(Model):
         # Counter
         self.counter = Counter(critic_units, beta=0.25)
         self.counter_target = Counter(critic_units, beta=0.25)
-        self._update_target(self.counter, self.counter_target, tau=1.0)
 
         # Actor
         self.actor = Actor(
@@ -87,7 +86,6 @@ class ActorCritic(Model):
             top_quantiles_to_drop=top_quantiles_to_drop,
             n_critics=n_critics,
         )
-        self._update_target(self.critic, self.critic_target, tau=1.0)
 
     def _update_target(self, net, net_targ, tau):
         for source_weight, target_weight in zip(net.variables, net_targ.variables):
@@ -222,8 +220,8 @@ class ActorCritic(Model):
         self.alpha_optimizer.apply_gradients(zip(alpha_gradients, alpha_variables))
 
         # -------------------- Soft update target networks -------------------- #
-        self._update_target(self.critic, self.critic_target, tau=self.tau)
         self._update_target(self.counter, self.counter_target, tau=self.tau)
+        self._update_target(self.critic, self.critic_target, tau=self.tau)
 
         return {
             "actor_loss": actor_loss,
@@ -244,11 +242,20 @@ class ActorCritic(Model):
 
         return [quantiles, log_pi]
 
-    def compile(self, actor_optimizer, critic_optimizer, alpha_optimizer):
+    def compile(
+        self, actor_optimizer, critic_optimizer, alpha_optimizer, counter_optimizer
+    ):
         super(ActorCritic, self).compile()
         self.actor_optimizer = actor_optimizer
         self.critic_optimizer = critic_optimizer
         self.alpha_optimizer = alpha_optimizer
+        self.counter_optimizer = counter_optimizer
+
+    def build(self, input_shape):
+        super(ActorCritic, self).build(input_shape)
+
+        self._update_target(self.counter, self.counter_target, tau=1.0)
+        self._update_target(self.critic, self.critic_target, tau=1.0)
 
     def summary(self):
         self.actor.summary()
