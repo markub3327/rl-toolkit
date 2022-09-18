@@ -118,7 +118,9 @@ class ActorCritic(Model):
         )
 
         with tf.GradientTape() as tape:
-            _, e_value = self.counter([sample.data["observation"], sample.data["action"]])
+            _, e_value = self.counter(
+                [sample.data["observation"], sample.data["action"]]
+            )
             counter_loss = tf.nn.compute_average_loss(
                 tf.keras.losses.log_cosh(target_e_value, e_value)
             )
@@ -253,6 +255,10 @@ class ActorCritic(Model):
 
     def build(self, input_shape):
         super(ActorCritic, self).build(input_shape)
+
+        self.counter.build(input_shape)
+        self.counter_target.build(input_shape)
+        self.critic_target.build(input_shape)
 
         self._update_target(self.counter, self.counter_target, tau=1.0)
         self._update_target(self.critic, self.critic_target, tau=1.0)
