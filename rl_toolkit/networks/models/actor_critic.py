@@ -121,10 +121,10 @@ class ActorCritic(Model):
             - self.critic_target.top_quantiles_to_drop,
         ]
         target_quantiles = tf.stop_gradient(
-            reward,
-            +(1.0 - tf.cast(terminal, dtype=tf.float32))
+            reward
+            + (1.0 - tf.cast(terminal, dtype=tf.float32))
             * self.gamma
-            * (next_quantiles - alpha * next_log_pi),
+            * (next_quantiles - alpha * next_log_pi)
         )
 
         return target_quantiles
