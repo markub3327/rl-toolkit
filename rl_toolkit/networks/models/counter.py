@@ -1,4 +1,3 @@
-import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.initializers import VarianceScaling
 from tensorflow.keras.layers import Activation, Add, Dense
