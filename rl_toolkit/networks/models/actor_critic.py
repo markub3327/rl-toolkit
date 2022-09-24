@@ -121,10 +121,10 @@ class ActorCritic(Model):
             - self.critic_target.top_quantiles_to_drop,
         ]
         target_quantiles = tf.stop_gradient(
-            tf.tanh(reward)
-            + (1.0 - tf.cast(terminal, dtype=tf.float32))
+            reward,
+            +(1.0 - tf.cast(terminal, dtype=tf.float32))
             * self.gamma
-            * (next_quantiles - alpha * next_log_pi)
+            * (next_quantiles - alpha * next_log_pi),
         )
 
         return target_quantiles
@@ -143,7 +143,7 @@ class ActorCritic(Model):
         counter_variables = self.counter.trainable_variables
 
         # -------------------- Update 'Counter' -------------------- #
-        _, next_e_value = self.counter_target(
+        next_e_value = self.counter_target(
             [
                 sample.data["next_observation"],
                 sample.data["next_action"],
@@ -156,9 +156,7 @@ class ActorCritic(Model):
         )
 
         with tf.GradientTape() as tape:
-            _, e_value = self.counter(
-                [sample.data["observation"], sample.data["action"]]
-            )
+            e_value = self.counter([sample.data["observation"], sample.data["action"]])
             counter_loss = tf.nn.compute_average_loss(
                 tf.keras.losses.log_cosh(target_e_value, e_value)
             )
@@ -180,14 +178,14 @@ class ActorCritic(Model):
         next_quantiles_int, next_quantiles_ext = self.critic_target(
             [sample.data["next_observation"], next_action]
         )
-        counter, _ = self.counter([sample.data["observation"], sample.data["action"]])
+        e_value = self.counter([sample.data["observation"], sample.data["action"]])
 
         # Bellman Equation
         target_quantiles_int = self._critic_bellman(
-            counter, sample.data["terminal"], next_quantiles_int, alpha, next_log_pi
+            e_value, sample.data["terminal"], next_quantiles_int, alpha, next_log_pi
         )
         target_quantiles_ext = self._critic_bellman(
-            sample.data["reward"],
+            tf.tanh(sample.data["reward"]),
             sample.data["terminal"],
             next_quantiles_ext,
             alpha,
@@ -221,7 +219,7 @@ class ActorCritic(Model):
             actor_loss = tf.nn.compute_average_loss(
                 alpha * log_pi
                 - tf.reduce_mean(
-                    tf.reduce_mean((0.25 * quantiles_int + quantiles_ext), axis=2),
+                    tf.reduce_mean((quantiles_int + quantiles_ext), axis=2),
                     axis=1,
                     keepdims=True,
                 )
@@ -257,9 +255,6 @@ class ActorCritic(Model):
             "quantiles_ext": quantiles_ext[
                 0
             ],  # logging only one randomly sampled transition
-            "intrinsic_reward": counter[
-                0
-            ],  # logging only one randomly sampled transition
             "log_alpha": self.log_alpha,
             "counter_loss": counter_loss,
             "e_value": e_value[0],  # logging only one randomly sampled transition
@@ -270,7 +265,7 @@ class ActorCritic(Model):
             inputs, with_log_prob=with_log_prob, deterministic=deterministic
         )
         quantiles_int, quantiles_ext = self.critic([inputs, action])
-        _, e_value = self.counter([inputs, action])
+        e_value = self.counter([inputs, action])
 
         return [quantiles_int, quantiles_ext, log_pi, e_value]
 

@@ -47,12 +47,11 @@ class Counter(Model):
         # Output layer
         self.e_value = Dense(
             1,
-            activation="linear",
+            activation="sigmoid",
             kernel_initializer="zeros",
             bias_initializer="zeros",
             name="e_value",
         )
-        self.activ_1 = Activation("sigmoid")
 
     def call(self, inputs):
         # 1. layer
@@ -64,13 +63,7 @@ class Counter(Model):
         x = self.add_0([state, action])
         x = self.activ_0(x)
 
-        # Output layer
+        # Output layer (E-value)
         e_value = self.e_value(x)
 
-        # Intrinsic Reward
-        counter = 1.0 / tf.math.sqrt(-tf.math.log_sigmoid(e_value))
-
-        # E-value
-        e_value = self.activ_1(e_value)
-
-        return counter, e_value
+        return e_value
