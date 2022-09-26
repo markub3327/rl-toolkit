@@ -31,7 +31,7 @@ Actor:
 # Critic model
 Critic:
   count: 5
-  units: [400, 300]
+  units: [512, 512, 512]
   n_quantiles: 35
   top_quantiles_to_drop: 3
   learning_rate: !!float 7.3e-4
