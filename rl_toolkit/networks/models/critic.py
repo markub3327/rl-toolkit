@@ -45,6 +45,15 @@ class Critic(Model):
         self.add_0 = Add()
         self.activ_0 = Activation("relu")
 
+        # 3. layer
+        self.fc_3 = Dense(
+            units=units[2],
+            activation="relu",
+            kernel_initializer=VarianceScaling(
+                distribution="uniform", mode="fan_in", scale=1.0
+            ),
+        )
+
         # Output layer
         self.quantiles_int = Dense(
             n_quantiles,
@@ -72,6 +81,9 @@ class Critic(Model):
         action = self.fc_2(inputs[1])
         x = self.add_0([state, action])
         x = self.activ_0(x)
+
+        # 3. layer
+        x = self.fc_3(x)
 
         # Output layer
         quantiles_int = self.quantiles_int(x)
