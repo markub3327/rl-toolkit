@@ -8,7 +8,7 @@ from .counter import Counter
 
 def safe_log(values):
     eps = 1e-10  # avoid zero in log
-    if tf.reduce_sum(tf.cast(tf.math.less(values, 1e-8), tf.int32)) > 0:
+    if tf.math.greater(tf.reduce_sum(tf.cast(tf.math.less(values, 1e-8), tf.int32)), 0):
         values += eps
 
     return tf.math.log(values)
