@@ -196,6 +196,7 @@ class ActorCritic(Model):
         # -------------------- Update 'Actor' & 'Alpha' -------------------- #
         with tf.GradientTape(persistent=True) as tape:
             quantiles, log_pi, e_value = self(sample.data["observation"])
+            loglogE = safe_log(-safe_log(e_value))
 
             # Compute actor loss
             actor_loss = tf.nn.compute_average_loss(
@@ -203,7 +204,7 @@ class ActorCritic(Model):
                 - tf.reduce_mean(
                     tf.reduce_mean(quantiles, axis=2), axis=1, keepdims=True
                 )
-                + safe_log(-safe_log(e_value))
+                + loglogE
             )
 
             # Compute alpha loss
@@ -234,6 +235,7 @@ class ActorCritic(Model):
             "log_alpha": self.log_alpha,
             "counter_loss": counter_loss,
             "e_value": e_value[0],  # logging only one randomly sampled transition
+            "loglogE": loglogE[0],  # logging only one randomly sampled transition
         }
 
     def call(self, inputs, with_log_prob=True, deterministic=None):
