@@ -3,16 +3,16 @@ from tensorflow.keras import Model
 from tensorflow.keras.initializers import VarianceScaling
 from tensorflow.keras.layers import Activation, Add, Dense
 
+uniform_initializer = VarianceScaling(distribution="uniform", mode="fan_in", scale=1.0)
+
 
 class Critic(Model):
     """
     Critic
     ===============
-
     Attributes:
         units (list): list of the numbers of units in each layer
         n_quantiles (int): number of predicted quantiles
-
     References:
         - [Controlling Overestimation Bias with Truncated Mixture of Continuous Distributional Quantile Critics](https://arxiv.org/abs/2005.04269)
     """
@@ -24,52 +24,27 @@ class Critic(Model):
         self.fc_0 = Dense(
             units=units[0],
             activation="relu",
-            kernel_initializer=VarianceScaling(
-                distribution="uniform", mode="fan_in", scale=1.0
-            ),
+            kernel_initializer=uniform_initializer,
         )
 
         # 2. layer     TODO(markub3327): Transformer
         self.fc_1 = Dense(
             units=units[1],
-            kernel_initializer=VarianceScaling(
-                distribution="uniform", mode="fan_in", scale=1.0
-            ),
+            kernel_initializer=uniform_initializer,
         )
         self.fc_2 = Dense(
             units=units[1],
-            kernel_initializer=VarianceScaling(
-                distribution="uniform", mode="fan_in", scale=1.0
-            ),
+            kernel_initializer=uniform_initializer,
         )
         self.add_0 = Add()
         self.activ_0 = Activation("relu")
 
-        # 3. layer
-        self.fc_3 = Dense(
-            units=units[2],
-            activation="relu",
-            kernel_initializer=VarianceScaling(
-                distribution="uniform", mode="fan_in", scale=1.0
-            ),
-        )
-
         # Output layer
-        self.quantiles_int = Dense(
+        self.quantiles = Dense(
             n_quantiles,
             activation="linear",
-            kernel_initializer=VarianceScaling(
-                distribution="uniform", mode="fan_in", scale=1.0
-            ),
-            name="quantiles_int",
-        )
-        self.quantiles_ext = Dense(
-            n_quantiles,
-            activation="linear",
-            kernel_initializer=VarianceScaling(
-                distribution="uniform", mode="fan_in", scale=1.0
-            ),
-            name="quantiles_ext",
+            kernel_initializer=uniform_initializer,
+            name="quantiles",
         )
 
     def call(self, inputs):
@@ -82,20 +57,15 @@ class Critic(Model):
         x = self.add_0([state, action])
         x = self.activ_0(x)
 
-        # 3. layer
-        x = self.fc_3(x)
-
         # Output layer
-        quantiles_int = self.quantiles_int(x)
-        quantiles_ext = self.quantiles_ext(x)
-        return [quantiles_int, quantiles_ext]
+        quantiles = self.quantiles(x)
+        return quantiles
 
 
 class MultiCritic(Model):
     """
     MultiCritic
     ===============
-
     Attributes:
         units (list): list of the numbers of units in each layer
         n_quantiles (int): number of predicted quantiles
@@ -121,15 +91,8 @@ class MultiCritic(Model):
         self.models = [Critic(units, n_quantiles) for _ in range(n_critics)]
 
     def call(self, inputs):
-        all_quantiles_int, all_quantiles_ext = [], []
-        for model in self.models:
-            quantiles_int, quantiles_ext = model(inputs)
-            all_quantiles_int.append(quantiles_int)
-            all_quantiles_ext.append(quantiles_ext)
-
-        all_quantiles_int = tf.stack(all_quantiles_int, axis=1)
-        all_quantiles_ext = tf.stack(all_quantiles_ext, axis=1)
-        return all_quantiles_int, all_quantiles_ext
+        quantiles = tf.stack([model(inputs) for model in self.models], axis=1)
+        return quantiles
 
     def summary(self):
         for model in self.models:

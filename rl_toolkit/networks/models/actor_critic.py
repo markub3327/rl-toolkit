@@ -91,44 +91,6 @@ class ActorCritic(Model):
         for source_weight, target_weight in zip(net.variables, net_targ.variables):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
-    def _critic_loss(self, y_true, y_pred):
-        pairwise_delta = (
-            y_true[:, tf.newaxis, tf.newaxis, :] - y_pred[:, :, :, tf.newaxis]
-        )  # batch_size, n_critics, n_quantiles, n_target_quantiles
-        loss = tf.nn.compute_average_loss(
-            tf.reduce_mean(
-                tf.math.abs(
-                    self.cum_prob - tf.cast(pairwise_delta < 0.0, dtype=tf.float32)
-                )
-                * (
-                    pairwise_delta
-                    + tf.math.softplus(-2.0 * pairwise_delta)
-                    - tf.math.log(2.0)
-                ),
-                axis=[1, 2, 3],
-            )
-        )
-
-        return loss
-
-    def _critic_bellman(self, reward, terminal, next_quantiles, alpha, next_log_pi):
-        next_quantiles = tf.sort(
-            tf.reshape(next_quantiles, [next_quantiles.shape[0], -1])
-        )
-        next_quantiles = next_quantiles[
-            :,
-            : self.critic_target.quantiles_total
-            - self.critic_target.top_quantiles_to_drop,
-        ]
-        target_quantiles = tf.stop_gradient(
-            reward
-            + (1.0 - tf.cast(terminal, dtype=tf.float32))
-            * self.gamma
-            * (next_quantiles - alpha * next_log_pi)
-        )
-
-        return target_quantiles
-
     def train_step(self, sample):
         # Re-new noise matrix every update
         self.actor.reset_noise()
@@ -175,35 +137,47 @@ class ActorCritic(Model):
             with_log_prob=True,
             deterministic=False,
         )
-        next_quantiles_int, next_quantiles_ext = self.critic_target(
+        next_quantiles = self.critic_target(
             [sample.data["next_observation"], next_action]
         )
-        e_value = self.counter([sample.data["observation"], sample.data["action"]])
+        next_quantiles = tf.sort(
+            tf.reshape(next_quantiles, [next_quantiles.shape[0], -1])
+        )
+        next_quantiles = next_quantiles[
+            :,
+            : self.critic_target.quantiles_total
+            - self.critic_target.top_quantiles_to_drop,
+        ]
 
         # Bellman Equation
-        target_quantiles_int = self._critic_bellman(
-            e_value, sample.data["terminal"], next_quantiles_int, alpha, next_log_pi
-        )
-        target_quantiles_ext = self._critic_bellman(
-            tf.tanh(sample.data["reward"]),
-            sample.data["terminal"],
-            next_quantiles_ext,
-            alpha,
-            next_log_pi,
+        target_quantiles = tf.stop_gradient(
+            tf.tanh(sample.data["reward"])
+            + (1.0 - tf.cast(sample.data["terminal"], dtype=tf.float32))
+            * self.gamma
+            * (next_quantiles - alpha * next_log_pi)
         )
 
         with tf.GradientTape() as tape:
-            quantiles_int, quantiles_ext = self.critic(
-                [
-                    sample.data["observation"],
-                    sample.data["action"],
-                ]
-            )
+            quantiles = self.critic([sample.data["observation"], sample.data["action"]])
 
             # Compute critic loss
-            critic_loss_int = self._critic_loss(target_quantiles_int, quantiles_int)
-            critic_loss_ext = self._critic_loss(target_quantiles_ext, quantiles_ext)
-            critic_loss = critic_loss_int + critic_loss_ext
+            pairwise_delta = (
+                target_quantiles[:, tf.newaxis, tf.newaxis, :]
+                - quantiles[:, :, :, tf.newaxis]
+            )  # batch_size, n_critics, n_quantiles, n_target_quantiles
+            critic_loss = tf.nn.compute_average_loss(
+                tf.reduce_mean(
+                    tf.math.abs(
+                        self.cum_prob - tf.cast(pairwise_delta < 0.0, dtype=tf.float32)
+                    )
+                    * (
+                        pairwise_delta
+                        + tf.math.softplus(-2.0 * pairwise_delta)
+                        - tf.math.log(2.0)
+                    ),
+                    axis=[1, 2, 3],
+                )
+            )
 
         # Compute gradients
         critic_gradients = tape.gradient(critic_loss, critic_variables)
@@ -213,16 +187,15 @@ class ActorCritic(Model):
 
         # -------------------- Update 'Actor' & 'Alpha' -------------------- #
         with tf.GradientTape(persistent=True) as tape:
-            quantiles_int, quantiles_ext, log_pi, _ = self(sample.data["observation"])
+            quantiles, log_pi, e_value = self(sample.data["observation"])
 
             # Compute actor loss
             actor_loss = tf.nn.compute_average_loss(
                 alpha * log_pi
                 - tf.reduce_mean(
-                    tf.reduce_mean(((0.25 * quantiles_int) + quantiles_ext), axis=2),
-                    axis=1,
-                    keepdims=True,
+                    tf.reduce_mean(quantiles, axis=2), axis=1, keepdims=True
                 )
+                - e_value
             )
 
             # Compute alpha loss
@@ -249,12 +222,7 @@ class ActorCritic(Model):
             "actor_loss": actor_loss,
             "critic_loss": critic_loss,
             "alpha_loss": alpha_loss,
-            "quantiles_int": quantiles_int[
-                0
-            ],  # logging only one randomly sampled transition
-            "quantiles_ext": quantiles_ext[
-                0
-            ],  # logging only one randomly sampled transition
+            "quantiles": quantiles[0],  # logging only one randomly sampled transition
             "log_alpha": self.log_alpha,
             "counter_loss": counter_loss,
             "e_value": e_value[0],  # logging only one randomly sampled transition
@@ -264,10 +232,9 @@ class ActorCritic(Model):
         action, log_pi = self.actor(
             inputs, with_log_prob=with_log_prob, deterministic=deterministic
         )
-        quantiles_int, quantiles_ext = self.critic([inputs, action])
+        quantiles = self.critic([inputs, action])
         e_value = self.counter([inputs, action])
-
-        return [quantiles_int, quantiles_ext, log_pi, e_value]
+        return [quantiles, log_pi, e_value]
 
     def compile(
         self, actor_optimizer, critic_optimizer, alpha_optimizer, counter_optimizer
@@ -287,3 +254,4 @@ class ActorCritic(Model):
     def summary(self):
         self.actor.summary()
         self.critic.summary()
+        self.counter.summary()
