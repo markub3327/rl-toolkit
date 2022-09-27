@@ -3,8 +3,6 @@ from tensorflow.keras import Model
 from tensorflow.keras.initializers import VarianceScaling
 from tensorflow.keras.layers import Activation, Add, Dense
 
-uniform_initializer = VarianceScaling(distribution="uniform", mode="fan_in", scale=1.0)
-
 
 class Critic(Model):
     """
@@ -24,17 +22,23 @@ class Critic(Model):
         self.fc_0 = Dense(
             units=units[0],
             activation="relu",
-            kernel_initializer=uniform_initializer,
+            kernel_initializer=VarianceScaling(
+                distribution="uniform", mode="fan_in", scale=1.0
+            ),
         )
 
         # 2. layer     TODO(markub3327): Transformer
         self.fc_1 = Dense(
             units=units[1],
-            kernel_initializer=uniform_initializer,
+            kernel_initializer=VarianceScaling(
+                distribution="uniform", mode="fan_in", scale=1.0
+            ),
         )
         self.fc_2 = Dense(
             units=units[1],
-            kernel_initializer=uniform_initializer,
+            kernel_initializer=VarianceScaling(
+                distribution="uniform", mode="fan_in", scale=1.0
+            ),
         )
         self.add_0 = Add()
         self.activ_0 = Activation("relu")
@@ -43,7 +47,9 @@ class Critic(Model):
         self.quantiles = Dense(
             n_quantiles,
             activation="linear",
-            kernel_initializer=uniform_initializer,
+            kernel_initializer=VarianceScaling(
+                distribution="uniform", mode="fan_in", scale=1.0
+            ),
             name="quantiles",
         )
 
@@ -66,6 +72,7 @@ class MultiCritic(Model):
     """
     MultiCritic
     ===============
+
     Attributes:
         units (list): list of the numbers of units in each layer
         n_quantiles (int): number of predicted quantiles
