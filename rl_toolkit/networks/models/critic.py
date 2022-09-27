@@ -8,9 +8,11 @@ class Critic(Model):
     """
     Critic
     ===============
+
     Attributes:
         units (list): list of the numbers of units in each layer
         n_quantiles (int): number of predicted quantiles
+
     References:
         - [Controlling Overestimation Bias with Truncated Mixture of Continuous Distributional Quantile Critics](https://arxiv.org/abs/2005.04269)
     """
