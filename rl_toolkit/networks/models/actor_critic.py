@@ -6,6 +6,14 @@ from .critic import MultiCritic
 from .counter import Counter
 
 
+def safe_log(values):
+    eps = 1e-10  # avoid zero in log
+    if tf.reduce_sum(tf.math.less(values, 1e-8)) > 0:
+        values += eps
+
+    return tf.math.log(values)
+
+
 class ActorCritic(Model):
     """
     Actor-Critic
@@ -195,7 +203,7 @@ class ActorCritic(Model):
                 - tf.reduce_mean(
                     tf.reduce_mean(quantiles, axis=2), axis=1, keepdims=True
                 )
-                - e_value
+                + safe_log(-safe_log(e_value))
             )
 
             # Compute alpha loss
