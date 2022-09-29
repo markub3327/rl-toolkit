@@ -6,13 +6,6 @@ from .critic import MultiCritic
 from .counter import Counter
 
 
-def safe_log(values):
-    eps = 1e-10  # avoid zero in log
-    #if tf.math.greater(tf.reduce_sum(tf.cast(tf.math.less(values, 1e-8), tf.int32)), 0):
-    #    values += eps
-    return tf.math.log(values + eps)
-
-
 class ActorCritic(Model):
     """
     Actor-Critic
@@ -156,9 +149,13 @@ class ActorCritic(Model):
             - self.critic_target.top_quantiles_to_drop,
         ]
 
+        # Intrinsic Reward
+        e_value = self.counter([sample.data["observation"], sample.data["action"]])
+        int_reward = 0.05 / tf.math.sqrt(-tf.math.log(e_value + 1e-10))
+
         # Bellman Equation
         target_quantiles = tf.stop_gradient(
-            tf.tanh(sample.data["reward"])
+            tf.tanh(sample.data["reward"] + int_reward)
             + (1.0 - tf.cast(sample.data["terminal"], dtype=tf.float32))
             * self.gamma
             * (next_quantiles - alpha * next_log_pi)
@@ -194,8 +191,7 @@ class ActorCritic(Model):
 
         # -------------------- Update 'Actor' & 'Alpha' -------------------- #
         with tf.GradientTape(persistent=True) as tape:
-            quantiles, log_pi, e_value = self(sample.data["observation"])
-            loglogE = safe_log(-safe_log(e_value))
+            quantiles, log_pi, _ = self(sample.data["observation"])
 
             # Compute actor loss
             actor_loss = tf.nn.compute_average_loss(
@@ -203,7 +199,6 @@ class ActorCritic(Model):
                 - tf.reduce_mean(
                     tf.reduce_mean(quantiles, axis=2), axis=1, keepdims=True
                 )
-                + loglogE
             )
 
             # Compute alpha loss
@@ -234,7 +229,7 @@ class ActorCritic(Model):
             "log_alpha": self.log_alpha,
             "counter_loss": counter_loss,
             "e_value": e_value[0],  # logging only one randomly sampled transition
-            "loglogE": loglogE[0],  # logging only one randomly sampled transition
+            "int_reward": int_reward[0],  # logging only one randomly sampled transition
         }
 
     def call(self, inputs, with_log_prob=True, deterministic=None):
