@@ -151,7 +151,7 @@ class ActorCritic(Model):
 
         # Intrinsic Reward
         e_value = self.counter([sample.data["observation"], sample.data["action"]])
-        int_reward = 0.05 / tf.math.sqrt(-tf.math.log(e_value + 1e-10))
+        int_reward = 0.1 / tf.math.sqrt(-tf.math.log(e_value + 1e-10))  # 0.5, 0.9, 1.0
 
         # Bellman Equation
         target_quantiles = tf.stop_gradient(
