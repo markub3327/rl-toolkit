@@ -86,6 +86,7 @@ class ActorCritic(Model):
 
         # GAN
         self.latent_dim = 64
+        self.loss_fn = tf.keras.losses.Hinge()
         self.gan = GAN(
             units=critic_units,
             latent_dim=self.latent_dim,
