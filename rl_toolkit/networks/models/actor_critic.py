@@ -3,6 +3,7 @@ from tensorflow.keras import Model
 
 from .actor import Actor
 from .critic import MultiCritic
+from .gan import GAN
 
 
 class ActorCritic(Model):
@@ -36,6 +37,7 @@ class ActorCritic(Model):
         n_quantiles: int,
         top_quantiles_to_drop: int,
         n_critics: int,
+        n_inputs: int,
         n_outputs: int,
         clip_mean_min: float,
         clip_mean_max: float,
@@ -82,6 +84,13 @@ class ActorCritic(Model):
             n_critics=n_critics,
         )
 
+        # GAN
+        self.gan = GAN(
+            units=critic_units,
+            latent_dim=64,
+            n_inputs=n_inputs,
+        )
+
     def _update_target(self, net, net_targ, tau):
         for source_weight, target_weight in zip(net.variables, net_targ.variables):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
@@ -97,6 +106,9 @@ class ActorCritic(Model):
         actor_variables = self.actor.trainable_variables
         critic_variables = self.critic.trainable_variables
         alpha_variables = [self.log_alpha]
+
+        # -------------------- Update 'GAN' -------------------- #
+        gan_losses = self.gan.train_step(sample.data["observation"])
 
         # -------------------- Update 'Critic' -------------------- #
         next_action, next_log_pi = self.actor(
@@ -117,11 +129,12 @@ class ActorCritic(Model):
         ]
 
         # Intrinsic Reward
-        # int_reward =
+        int_reward = self.gan.discriminator(sample.data["next_observation"])
 
         # Bellman Equation
         target_quantiles = tf.stop_gradient(
             tf.tanh(sample.data["reward"])
+            + int_reward
             + (1.0 - tf.cast(sample.data["terminal"], dtype=tf.float32))
             * self.gamma
             * (next_quantiles - alpha * next_log_pi)
@@ -192,7 +205,8 @@ class ActorCritic(Model):
             "alpha_loss": alpha_loss,
             "quantiles": quantiles[0],  # logging only one randomly sampled transition
             "log_alpha": self.log_alpha,
-        }
+            "int_reward": int_reward[0],
+        } + gan_losses
 
     def call(self, inputs, with_log_prob=True, deterministic=None):
         action, log_pi = self.actor(
@@ -201,11 +215,19 @@ class ActorCritic(Model):
         quantiles = self.critic([inputs, action])
         return [quantiles, log_pi]
 
-    def compile(self, actor_optimizer, critic_optimizer, alpha_optimizer):
+    def compile(
+        self,
+        actor_optimizer,
+        critic_optimizer,
+        alpha_optimizer,
+        d_optimizer,
+        g_optimizer,
+    ):
         super(ActorCritic, self).compile()
         self.actor_optimizer = actor_optimizer
         self.critic_optimizer = critic_optimizer
         self.alpha_optimizer = alpha_optimizer
+        self.gan.compile(d_optimizer, g_optimizer)
 
     def build(self, input_shape):
         super(ActorCritic, self).build(input_shape)
@@ -215,3 +237,4 @@ class ActorCritic(Model):
     def summary(self):
         self.actor.summary()
         self.critic.summary()
+        self.gan.summary()

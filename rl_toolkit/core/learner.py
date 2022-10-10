@@ -92,6 +92,7 @@ class Learner(Process):
             n_quantiles=n_quantiles,
             top_quantiles_to_drop=top_quantiles_to_drop,
             n_critics=n_critics,
+            n_inputs=np.prod(self._env.observation_space.shape),
             n_outputs=np.prod(self._env.action_space.shape),
             clip_mean_min=clip_mean_min,
             clip_mean_max=clip_mean_max,
@@ -111,6 +112,16 @@ class Learner(Process):
             ),
             alpha_optimizer=Adam(
                 learning_rate=alpha_learning_rate, global_clipnorm=alpha_global_clipnorm
+            ),
+            d_optimizer=Adam(
+                learning_rate=0.0001,
+                beta_1=0.5,
+                beta_2=0.999,
+            ),
+            g_optimizer=Adam(
+                learning_rate=0.0001,
+                beta_1=0.5,
+                beta_2=0.999,
             ),
         )
 
