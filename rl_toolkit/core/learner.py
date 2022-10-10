@@ -112,10 +112,6 @@ class Learner(Process):
             alpha_optimizer=Adam(
                 learning_rate=alpha_learning_rate, global_clipnorm=alpha_global_clipnorm
             ),
-            counter_optimizer=Adam(
-                learning_rate=critic_learning_rate,
-                global_clipnorm=1.0,
-            ),
         )
 
         if model_path is not None:

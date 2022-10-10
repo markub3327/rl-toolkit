@@ -149,7 +149,6 @@ class Agent(Process):
                         "action": writer.history["action"][-2],
                         "reward": writer.history["reward"][-2],
                         "next_observation": writer.history["observation"][-1],
-                        "next_action": writer.history["action"][-1],
                         "terminal": writer.history["terminal"][-2],
                     },
                 )
@@ -160,7 +159,6 @@ class Agent(Process):
                 writer.append(
                     {
                         "observation": new_obs.astype("float32", copy=False),
-                        "action": policy(new_obs),
                     }
                 )
                 writer.create_item(
@@ -171,7 +169,6 @@ class Agent(Process):
                         "action": writer.history["action"][-2],
                         "reward": writer.history["reward"][-2],
                         "next_observation": writer.history["observation"][-1],
-                        "next_action": writer.history["action"][-1],
                         "terminal": writer.history["terminal"][-2],
                     },
                 )

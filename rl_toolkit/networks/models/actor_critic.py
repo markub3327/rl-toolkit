@@ -4,6 +4,7 @@ from tensorflow.keras import Model
 from .actor import Actor
 from .critic import MultiCritic
 
+
 class ActorCritic(Model):
     """
     Actor-Critic
@@ -156,7 +157,7 @@ class ActorCritic(Model):
 
         # -------------------- Update 'Actor' & 'Alpha' -------------------- #
         with tf.GradientTape(persistent=True) as tape:
-            quantiles, log_pi, _ = self(sample.data["observation"])
+            quantiles, log_pi = self(sample.data["observation"])
 
             # Compute actor loss
             actor_loss = tf.nn.compute_average_loss(
@@ -200,9 +201,7 @@ class ActorCritic(Model):
         quantiles = self.critic([inputs, action])
         return [quantiles, log_pi]
 
-    def compile(
-        self, actor_optimizer, critic_optimizer, alpha_optimizer
-    ):
+    def compile(self, actor_optimizer, critic_optimizer, alpha_optimizer):
         super(ActorCritic, self).compile()
         self.actor_optimizer = actor_optimizer
         self.critic_optimizer = critic_optimizer

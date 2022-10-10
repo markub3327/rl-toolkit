@@ -128,10 +128,6 @@ class Server(Process):
                             [*self._env.observation_space.shape],
                             self._env.observation_space.dtype,
                         ),
-                        "next_action": tf.TensorSpec(
-                            [*self._env.action_space.shape],
-                            self._env.action_space.dtype,
-                        ),
                         "terminal": tf.TensorSpec([1], tf.bool),
                     },
                 ),
