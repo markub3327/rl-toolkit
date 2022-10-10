@@ -115,13 +115,13 @@ class Learner(Process):
             ),
             d_optimizer=Adam(
                 learning_rate=0.0001,
-                # beta_1=0.5,
-                # beta_2=0.999,
+                beta_1=0.5,
+                beta_2=0.999,
             ),
             g_optimizer=Adam(
                 learning_rate=0.0001,
-                # beta_1=0.5,
-                # beta_2=0.999,
+                beta_1=0.5,
+                beta_2=0.999,
             ),
         )
 
