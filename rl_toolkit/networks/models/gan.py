@@ -31,11 +31,11 @@ class Generator(Model):
     def __init__(self, units: list, n_inputs: int, **kwargs):
         super(Generator, self).__init__(**kwargs)
 
-        self.l1 = (Dense(units[1]),)
-        self.a1 = (ReLU(),)
+        self.l1 = Dense(units[1])
+        self.a1 = ReLU()
 
-        self.l2 = (Dense(units[0]),)
-        self.a2 = (ReLU(),)
+        self.l2 = Dense(units[0])
+        self.a2 = ReLU()
 
         self.out = Dense(n_inputs)
 
