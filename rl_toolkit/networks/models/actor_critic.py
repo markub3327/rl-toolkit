@@ -3,8 +3,6 @@ from tensorflow.keras import Model
 
 from .actor import Actor
 from .critic import MultiCritic
-from .counter import Counter
-
 
 class ActorCritic(Model):
     """
@@ -58,10 +56,6 @@ class ActorCritic(Model):
         self.log_alpha = tf.Variable(init_alpha, trainable=True, name="log_alpha")
         self.target_entropy = tf.cast(-n_outputs, dtype=tf.float32)
 
-        # Counter
-        self.counter = Counter(critic_units)
-        self.counter_target = Counter(critic_units)
-
         # Actor
         self.actor = Actor(
             units=actor_units,
@@ -102,34 +96,6 @@ class ActorCritic(Model):
         actor_variables = self.actor.trainable_variables
         critic_variables = self.critic.trainable_variables
         alpha_variables = [self.log_alpha]
-        counter_variables = self.counter.trainable_variables
-
-        # -------------------- Update 'Counter' -------------------- #
-        next_e_value = self.counter_target(
-            [
-                sample.data["next_observation"],
-                sample.data["next_action"],
-            ]
-        )
-        target_e_value = tf.stop_gradient(
-            (1.0 - tf.cast(sample.data["terminal"], dtype=tf.float32))
-            * self.gamma
-            * next_e_value
-        )
-
-        with tf.GradientTape() as tape:
-            e_value = self.counter([sample.data["observation"], sample.data["action"]])
-            counter_loss = tf.nn.compute_average_loss(
-                tf.keras.losses.log_cosh(target_e_value, e_value)
-            )
-
-        # Compute gradients
-        counter_gradients = tape.gradient(counter_loss, counter_variables)
-
-        # Apply gradients
-        self.counter_optimizer.apply_gradients(
-            zip(counter_gradients, counter_variables)
-        )
 
         # -------------------- Update 'Critic' -------------------- #
         next_action, next_log_pi = self.actor(
@@ -150,12 +116,11 @@ class ActorCritic(Model):
         ]
 
         # Intrinsic Reward
-        e_value = self.counter([sample.data["observation"], sample.data["action"]])
-        int_reward = 0.5 / tf.math.sqrt(-tf.math.log(e_value + 1e-10))  # 0.1, 0.5, 0.9
+        # int_reward =
 
         # Bellman Equation
         target_quantiles = tf.stop_gradient(
-            tf.tanh(sample.data["reward"] + int_reward)
+            tf.tanh(sample.data["reward"])
             + (1.0 - tf.cast(sample.data["terminal"], dtype=tf.float32))
             * self.gamma
             * (next_quantiles - alpha * next_log_pi)
@@ -218,7 +183,6 @@ class ActorCritic(Model):
         self.alpha_optimizer.apply_gradients(zip(alpha_gradients, alpha_variables))
 
         # -------------------- Soft update target networks -------------------- #
-        self._update_target(self.counter, self.counter_target, tau=self.tau)
         self._update_target(self.critic, self.critic_target, tau=self.tau)
 
         return {
@@ -227,9 +191,6 @@ class ActorCritic(Model):
             "alpha_loss": alpha_loss,
             "quantiles": quantiles[0],  # logging only one randomly sampled transition
             "log_alpha": self.log_alpha,
-            "counter_loss": counter_loss,
-            "e_value": e_value[0],  # logging only one randomly sampled transition
-            "int_reward": int_reward[0],  # logging only one randomly sampled transition
         }
 
     def call(self, inputs, with_log_prob=True, deterministic=None):
@@ -237,25 +198,21 @@ class ActorCritic(Model):
             inputs, with_log_prob=with_log_prob, deterministic=deterministic
         )
         quantiles = self.critic([inputs, action])
-        e_value = self.counter([inputs, action])
-        return [quantiles, log_pi, e_value]
+        return [quantiles, log_pi]
 
     def compile(
-        self, actor_optimizer, critic_optimizer, alpha_optimizer, counter_optimizer
+        self, actor_optimizer, critic_optimizer, alpha_optimizer
     ):
         super(ActorCritic, self).compile()
         self.actor_optimizer = actor_optimizer
         self.critic_optimizer = critic_optimizer
         self.alpha_optimizer = alpha_optimizer
-        self.counter_optimizer = counter_optimizer
 
     def build(self, input_shape):
         super(ActorCritic, self).build(input_shape)
 
-        self._update_target(self.counter, self.counter_target, tau=1.0)
         self._update_target(self.critic, self.critic_target, tau=1.0)
 
     def summary(self):
         self.actor.summary()
         self.critic.summary()
-        self.counter.summary()
