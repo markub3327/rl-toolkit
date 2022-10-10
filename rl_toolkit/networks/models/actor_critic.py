@@ -108,7 +108,40 @@ class ActorCritic(Model):
         alpha_variables = [self.log_alpha]
 
         # -------------------- Update 'GAN' -------------------- #
-        gan_losses = self.gan.train_step(sample.data["observation"])
+        batch_size = tf.shape(sample.data["observation"])[0]
+
+        # -------------------- Update 'Discriminator' -------------------- #
+        with tf.GradientTape() as tape:
+            random_latent_vectors = tf.random.normal(
+                shape=(batch_size, self.latent_dim)
+            )
+
+            fake_output, _ = self.gan(random_latent_vectors, training=True)
+            real_output = self.gan.discriminator(
+                sample.data["observation"], training=True
+            )
+
+            d_loss_real = self.loss_fn(tf.ones_like(real_output), real_output)
+            d_loss_fake = self.loss_fn(tf.ones_like(fake_output) * (-1), fake_output)
+            d_loss = d_loss_real + d_loss_fake
+
+        grads = tape.gradient(d_loss, self.gan.discriminator.trainable_weights)
+        self.d_optimizer.apply_gradients(
+            zip(grads, self.gan.discriminator.trainable_weights)
+        )
+
+        # -------------------- Update 'Generator' -------------------- #
+        with tf.GradientTape() as tape:
+            random_latent_vectors = tf.random.normal(
+                shape=(batch_size, self.latent_dim)
+            )
+            fake_output, _ = self.gan(random_latent_vectors, training=True)
+            g_loss = -tf.reduce_mean(fake_output)
+
+        grads = tape.gradient(g_loss, self.gan.generator.trainable_weights)
+        self.g_optimizer.apply_gradients(
+            zip(grads, self.gan.generator.trainable_weights)
+        )
 
         # -------------------- Update 'Critic' -------------------- #
         next_action, next_log_pi = self.actor(
@@ -206,7 +239,11 @@ class ActorCritic(Model):
             "quantiles": quantiles[0],  # logging only one randomly sampled transition
             "log_alpha": self.log_alpha,
             "int_reward": int_reward[0],
-        } + gan_losses
+            "d_loss": d_loss,
+            "g_loss": g_loss,
+            "real_output": tf.reduce_mean(real_output),
+            "fake_output": tf.reduce_mean(fake_output),
+        }
 
     def call(self, inputs, with_log_prob=True, deterministic=None):
         action, log_pi = self.actor(
@@ -227,7 +264,8 @@ class ActorCritic(Model):
         self.actor_optimizer = actor_optimizer
         self.critic_optimizer = critic_optimizer
         self.alpha_optimizer = alpha_optimizer
-        self.gan.compile(d_optimizer, g_optimizer)
+        self.d_optimizer = d_optimizer
+        self.g_optimizer = g_optimizer
 
     def build(self, input_shape):
         super(ActorCritic, self).build(input_shape)
