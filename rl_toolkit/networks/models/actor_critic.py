@@ -85,7 +85,7 @@ class ActorCritic(Model):
         )
 
         # GAN
-        self.latent_dim = 64
+        self.latent_dim = 32
         self.loss_fn = tf.keras.losses.Hinge()
         self.gan = GAN(
             units=critic_units,
@@ -164,7 +164,9 @@ class ActorCritic(Model):
         ]
 
         # Intrinsic Reward
-        int_reward = - self.gan.discriminator(sample.data["next_observation"])
+        int_reward = -self.gan.discriminator(
+            sample.data["next_observation"], training=False
+        )
 
         # Bellman Equation
         target_quantiles = tf.stop_gradient(
