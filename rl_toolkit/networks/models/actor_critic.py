@@ -85,9 +85,10 @@ class ActorCritic(Model):
         )
 
         # GAN
+        self.latent_dim = 64
         self.gan = GAN(
             units=critic_units,
-            latent_dim=64,
+            latent_dim=self.latent_dim,
             n_inputs=n_inputs,
         )
 
