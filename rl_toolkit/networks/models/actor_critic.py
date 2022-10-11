@@ -253,7 +253,7 @@ class ActorCritic(Model):
             "fake_output": tf.reduce_mean(fake_output),
         }
 
-    def call(self, inputs, training, with_log_prob=True, deterministic=None):
+    def call(self, inputs, training=None, with_log_prob=True, deterministic=None):
         action, log_pi = self.actor(
             inputs, with_log_prob=with_log_prob, deterministic=deterministic
         )
