@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.initializers import VarianceScaling
 from tensorflow.keras.layers import Activation, Add, Dense
-from utils import SpectralNormalization
+from rl_toolkit.utils import SpectralNormalization
 
 
 class Critic(Model):

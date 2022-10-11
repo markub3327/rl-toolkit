@@ -1,6 +1,6 @@
 from tensorflow.keras import Model, Sequential, Input
 from tensorflow.keras.layers import Dense, ReLU
-from utils import SpectralNormalization
+from rl_toolkit.utils import SpectralNormalization
 
 
 class GAN(Model):
