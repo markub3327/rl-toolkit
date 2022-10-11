@@ -62,9 +62,9 @@ class GAN(Model):
         self.generator.summary()
         self.discriminator.summary()
 
-    def train_step(self, real_states):
+    def train_step(self, sample):
         # Sample random points in the latent space
-        batch_size = tf.shape(real_states)[0]
+        batch_size = tf.shape(sample.data["observation"])[0]
 
         # -------------------- Update 'Discriminator' -------------------- #
         with tf.GradientTape() as tape:
@@ -73,7 +73,7 @@ class GAN(Model):
             )
 
             fake_output, _ = self(random_latent_vectors, training=True)
-            real_output = self.discriminator(real_states, training=True)
+            real_output = self.discriminator(sample.data["observation"], training=True)
 
             d_loss_real = self.loss_fn(tf.ones_like(real_output), real_output)
             d_loss_fake = self.loss_fn(tf.ones_like(fake_output) * (-1), fake_output)
