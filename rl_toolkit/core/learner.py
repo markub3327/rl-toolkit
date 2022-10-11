@@ -103,16 +103,9 @@ class Learner(Process):
         )
         self.model.build((None,) + self._env.observation_space.shape)
         self.model.compile(
-            actor_optimizer=Adam(
-                learning_rate=actor_learning_rate, global_clipnorm=actor_global_clipnorm
-            ),
-            critic_optimizer=Adam(
-                learning_rate=critic_learning_rate,
-                global_clipnorm=critic_global_clipnorm,
-            ),
-            alpha_optimizer=Adam(
-                learning_rate=alpha_learning_rate, global_clipnorm=alpha_global_clipnorm
-            ),
+            actor_optimizer=Adam(learning_rate=actor_learning_rate),
+            critic_optimizer=Adam(learning_rate=critic_learning_rate),
+            alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
             d_optimizer=Adam(
                 learning_rate=0.0001,
                 beta_1=0.5,

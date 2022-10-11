@@ -1,6 +1,6 @@
 from tensorflow.keras import Model, Sequential, Input
 from tensorflow.keras.layers import Dense, ReLU
-
+from utils import SpectralNormalization
 
 class GAN(Model):
     """
@@ -24,9 +24,9 @@ class GAN(Model):
         self.discriminator = Sequential(
             [
                 Input(shape=(n_inputs,)),
-                Dense(units[0]),
+                SpectralNormalization(Dense(units[0])),
                 ReLU(),
-                Dense(units[1]),
+                SpectralNormalization(Dense(units[1])),
                 ReLU(),
                 Dense(1),
             ],

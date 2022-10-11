@@ -181,7 +181,7 @@ class ActorCritic(Model):
         )
 
         with tf.GradientTape() as tape:
-            quantiles = self.critic([sample.data["observation"], sample.data["action"]])
+            quantiles = self.critic([sample.data["observation"], sample.data["action"]], training=True)
 
             # Compute critic loss
             pairwise_delta = (
@@ -210,7 +210,7 @@ class ActorCritic(Model):
 
         # -------------------- Update 'Actor' & 'Alpha' -------------------- #
         with tf.GradientTape(persistent=True) as tape:
-            quantiles, log_pi = self(sample.data["observation"])
+            quantiles, log_pi = self(sample.data["observation"], training=True)
 
             # Compute actor loss
             actor_loss = tf.nn.compute_average_loss(
@@ -243,7 +243,7 @@ class ActorCritic(Model):
             "actor_loss": actor_loss,
             "critic_loss": critic_loss,
             "alpha_loss": alpha_loss,
-            "quantiles": quantiles[0],  # logging only one randomly sampled transition
+            "quantiles": tf.reduce_mean(quantiles, axis=0),
             "log_alpha": self.log_alpha,
             "int_reward": tf.reduce_mean(int_reward),
             "ext_reward": tf.reduce_mean(ext_reward),
@@ -253,11 +253,11 @@ class ActorCritic(Model):
             "fake_output": tf.reduce_mean(fake_output),
         }
 
-    def call(self, inputs, with_log_prob=True, deterministic=None):
+    def call(self, inputs, training, with_log_prob=True, deterministic=None):
         action, log_pi = self.actor(
             inputs, with_log_prob=with_log_prob, deterministic=deterministic
         )
-        quantiles = self.critic([inputs, action])
+        quantiles = self.critic([inputs, action], training=training)
         return [quantiles, log_pi]
 
     def compile(

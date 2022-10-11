@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.initializers import VarianceScaling
 from tensorflow.keras.layers import Activation, Add, Dense
+from utils import SpectralNormalization
 
 
 class Critic(Model):
@@ -21,27 +22,27 @@ class Critic(Model):
         super(Critic, self).__init__(**kwargs)
 
         # 1. layer
-        self.fc_0 = Dense(
+        self.fc_0 = SpectralNormalization(Dense(
             units=units[0],
             activation="relu",
             kernel_initializer=VarianceScaling(
                 distribution="uniform", mode="fan_in", scale=1.0
             ),
-        )
+        ))
 
         # 2. layer     TODO(markub3327): Transformer
-        self.fc_1 = Dense(
+        self.fc_1 = SpectralNormalization(Dense(
             units=units[1],
             kernel_initializer=VarianceScaling(
                 distribution="uniform", mode="fan_in", scale=1.0
             ),
-        )
-        self.fc_2 = Dense(
+        ))
+        self.fc_2 = SpectralNormalization(Dense(
             units=units[1],
             kernel_initializer=VarianceScaling(
                 distribution="uniform", mode="fan_in", scale=1.0
             ),
-        )
+        ))
         self.add_0 = Add()
         self.activ_0 = Activation("relu")
 
@@ -55,18 +56,18 @@ class Critic(Model):
             name="quantiles",
         )
 
-    def call(self, inputs):
+    def call(self, inputs, training=None):
         # 1. layer
-        state = self.fc_0(inputs[0])
+        state = self.fc_0(inputs[0], training=training)
 
         # 2. layer
-        state = self.fc_1(state)
-        action = self.fc_2(inputs[1])
+        state = self.fc_1(state, training=training)
+        action = self.fc_2(inputs[1], training=training)
         x = self.add_0([state, action])
         x = self.activ_0(x)
 
         # Output layer
-        quantiles = self.quantiles(x)
+        quantiles = self.quantiles(x, training=training)
         return quantiles
 
 
