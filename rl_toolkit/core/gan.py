@@ -4,6 +4,7 @@ import numpy as np
 import reverb
 import wandb
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.losses import Hinge
 from wandb.keras import WandbCallback
 
 from rl_toolkit.networks.callbacks import AgentCallback
@@ -86,7 +87,7 @@ class GAN(Process):
                 beta_1=0.5,
                 beta_2=0.999,
             ),
-            loss_fn="hinge",
+            loss_fn=Hinge(),
         )
 
         if model_path is not None:
