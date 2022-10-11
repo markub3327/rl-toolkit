@@ -168,10 +168,13 @@ class ActorCritic(Model):
             sample.data["next_observation"], training=False
         )
 
+        # Extrinsic Reward
+        ext_reward = tf.tanh(sample.data["reward"])
+
         # Bellman Equation
         target_quantiles = tf.stop_gradient(
-            tf.tanh(sample.data["reward"])
-            + (0.5 * int_reward)
+            ext_reward
+            # + (0.5 * int_reward)
             + (1.0 - tf.cast(sample.data["terminal"], dtype=tf.float32))
             * self.gamma
             * (next_quantiles - alpha * next_log_pi)
@@ -243,6 +246,7 @@ class ActorCritic(Model):
             "quantiles": quantiles[0],  # logging only one randomly sampled transition
             "log_alpha": self.log_alpha,
             "int_reward": int_reward[0],
+            "ext_reward": ext_reward[0],
             "d_loss": d_loss,
             "g_loss": g_loss,
             "real_output": tf.reduce_mean(real_output),
