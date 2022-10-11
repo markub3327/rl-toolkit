@@ -245,8 +245,8 @@ class ActorCritic(Model):
             "alpha_loss": alpha_loss,
             "quantiles": quantiles[0],  # logging only one randomly sampled transition
             "log_alpha": self.log_alpha,
-            "int_reward": int_reward[0],
-            "ext_reward": ext_reward[0],
+            "int_reward": tf.reduce_mean(int_reward),
+            "ext_reward": tf.reduce_mean(ext_reward),
             "d_loss": d_loss,
             "g_loss": g_loss,
             "real_output": tf.reduce_mean(real_output),
