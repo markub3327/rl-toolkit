@@ -86,6 +86,7 @@ class GAN(Process):
                 beta_1=0.5,
                 beta_2=0.999,
             ),
+            loss_fn="hinge",
         )
 
         if model_path is not None:
