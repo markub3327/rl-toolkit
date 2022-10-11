@@ -209,6 +209,14 @@ if __name__ == "__main__":
             log_interval=config["log_interval"],
         )
 
+        try:
+            agent.run()
+        except KeyboardInterrupt:
+            print("Terminated by user 👋👋👋")
+        finally:
+            agent.save()
+            agent.close()
+
     # Tester mode
     elif args.mode == "tester":
         agent = Tester(
