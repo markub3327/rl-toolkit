@@ -2,6 +2,7 @@ from tensorflow.keras import Model, Sequential, Input
 from tensorflow.keras.layers import Dense, ReLU
 from utils import SpectralNormalization
 
+
 class GAN(Model):
     """
     Generative Adversarial Network (GAN)

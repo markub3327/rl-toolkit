@@ -22,27 +22,33 @@ class Critic(Model):
         super(Critic, self).__init__(**kwargs)
 
         # 1. layer
-        self.fc_0 = SpectralNormalization(Dense(
-            units=units[0],
-            activation="relu",
-            kernel_initializer=VarianceScaling(
-                distribution="uniform", mode="fan_in", scale=1.0
-            ),
-        ))
+        self.fc_0 = SpectralNormalization(
+            Dense(
+                units=units[0],
+                activation="relu",
+                kernel_initializer=VarianceScaling(
+                    distribution="uniform", mode="fan_in", scale=1.0
+                ),
+            )
+        )
 
         # 2. layer     TODO(markub3327): Transformer
-        self.fc_1 = SpectralNormalization(Dense(
-            units=units[1],
-            kernel_initializer=VarianceScaling(
-                distribution="uniform", mode="fan_in", scale=1.0
-            ),
-        ))
-        self.fc_2 = SpectralNormalization(Dense(
-            units=units[1],
-            kernel_initializer=VarianceScaling(
-                distribution="uniform", mode="fan_in", scale=1.0
-            ),
-        ))
+        self.fc_1 = SpectralNormalization(
+            Dense(
+                units=units[1],
+                kernel_initializer=VarianceScaling(
+                    distribution="uniform", mode="fan_in", scale=1.0
+                ),
+            )
+        )
+        self.fc_2 = SpectralNormalization(
+            Dense(
+                units=units[1],
+                kernel_initializer=VarianceScaling(
+                    distribution="uniform", mode="fan_in", scale=1.0
+                ),
+            )
+        )
         self.add_0 = Add()
         self.activ_0 = Activation("relu")
 

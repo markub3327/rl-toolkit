@@ -97,7 +97,7 @@ class ActorCritic(Model):
         for source_weight, target_weight in zip(net.variables, net_targ.variables):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
 
-    def train_step(self, sample):
+    def train_step(self, sample, sample_counter):
         # Re-new noise matrix every update
         self.actor.reset_noise()
 
@@ -110,7 +110,7 @@ class ActorCritic(Model):
         alpha_variables = [self.log_alpha]
 
         # -------------------- Update 'GAN' -------------------- #
-        batch_size = tf.shape(sample.data["observation"])[0]
+        batch_size = tf.shape(sample_counter.data["observation"])[0]
 
         # -------------------- Update 'Discriminator' -------------------- #
         with tf.GradientTape() as tape:
@@ -120,7 +120,7 @@ class ActorCritic(Model):
 
             fake_output, _ = self.gan(random_latent_vectors, training=True)
             real_output = self.gan.discriminator(
-                sample.data["observation"], training=True
+                sample_counter.data["observation"], training=True
             )
 
             d_loss_real = self.loss_fn(tf.ones_like(real_output), real_output)
@@ -181,7 +181,9 @@ class ActorCritic(Model):
         )
 
         with tf.GradientTape() as tape:
-            quantiles = self.critic([sample.data["observation"], sample.data["action"]], training=True)
+            quantiles = self.critic(
+                [sample.data["observation"], sample.data["action"]], training=True
+            )
 
             # Compute critic loss
             pairwise_delta = (

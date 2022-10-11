@@ -131,6 +131,16 @@ class Server(Process):
                         "terminal": tf.TensorSpec([1], tf.bool),
                     },
                 ),
+                reverb.Table.queue(
+                    name="counter",
+                    max_size=max_replay_size,
+                    signature={
+                        "observation": tf.TensorSpec(
+                            [*self._env.observation_space.shape],
+                            self._env.observation_space.dtype,
+                        ),
+                    },
+                ),
                 reverb.Table(  # Variables container
                     name="variable",
                     sampler=reverb.selectors.Uniform(),

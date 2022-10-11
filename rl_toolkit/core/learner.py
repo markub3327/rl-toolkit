@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+import tensorflow as tf
 import reverb
 import wandb
 from tensorflow.keras.optimizers import Adam
@@ -130,6 +131,11 @@ class Learner(Process):
             table="experience",
             batch_size=batch_size,
         )
+        self.dataset_counter = make_reverb_dataset(
+            server_address=self._db_server,
+            table="counter",
+            batch_size=batch_size,
+        )
 
         # init Weights & Biases
         wandb.init(project="rl-toolkit", group=f"{env_name}")
@@ -152,7 +158,7 @@ class Learner(Process):
 
     def run(self):
         self.model.fit(
-            self.dataset,
+            tf.data.Dataset.zip((self.dataset, self.dataset_counter)),
             epochs=self._train_steps,
             steps_per_epoch=1,
             verbose=0,
