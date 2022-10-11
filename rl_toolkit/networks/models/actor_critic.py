@@ -3,7 +3,6 @@ from tensorflow.keras import Model
 
 from .actor import Actor
 from .critic import MultiCritic
-from .gan import GAN
 
 
 class ActorCritic(Model):
@@ -37,7 +36,6 @@ class ActorCritic(Model):
         n_quantiles: int,
         top_quantiles_to_drop: int,
         n_critics: int,
-        n_inputs: int,
         n_outputs: int,
         clip_mean_min: float,
         clip_mean_max: float,
@@ -84,15 +82,6 @@ class ActorCritic(Model):
             n_critics=n_critics,
         )
 
-        # GAN
-        self.latent_dim = 32
-        self.loss_fn = tf.keras.losses.Hinge()
-        self.gan = GAN(
-            units=critic_units,
-            latent_dim=self.latent_dim,
-            n_inputs=n_inputs,
-        )
-
     def _update_target(self, net, net_targ, tau):
         for source_weight, target_weight in zip(net.variables, net_targ.variables):
             target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
@@ -110,42 +99,6 @@ class ActorCritic(Model):
         actor_variables = self.actor.trainable_variables
         critic_variables = self.critic.trainable_variables
         alpha_variables = [self.log_alpha]
-
-        # -------------------- Update 'GAN' -------------------- #
-        batch_size = tf.shape(sample_counter.data["observation"])[0]
-
-        # -------------------- Update 'Discriminator' -------------------- #
-        with tf.GradientTape() as tape:
-            random_latent_vectors = tf.random.normal(
-                shape=(batch_size, self.latent_dim)
-            )
-
-            fake_output, _ = self.gan(random_latent_vectors, training=True)
-            real_output = self.gan.discriminator(
-                sample_counter.data["observation"], training=True
-            )
-
-            d_loss_real = self.loss_fn(tf.ones_like(real_output), real_output)
-            d_loss_fake = self.loss_fn(tf.ones_like(fake_output) * (-1), fake_output)
-            d_loss = d_loss_real + d_loss_fake
-
-        grads = tape.gradient(d_loss, self.gan.discriminator.trainable_weights)
-        self.d_optimizer.apply_gradients(
-            zip(grads, self.gan.discriminator.trainable_weights)
-        )
-
-        # -------------------- Update 'Generator' -------------------- #
-        with tf.GradientTape() as tape:
-            random_latent_vectors = tf.random.normal(
-                shape=(batch_size, self.latent_dim)
-            )
-            fake_output, _ = self.gan(random_latent_vectors, training=True)
-            g_loss = -tf.reduce_mean(fake_output)
-
-        grads = tape.gradient(g_loss, self.gan.generator.trainable_weights)
-        self.g_optimizer.apply_gradients(
-            zip(grads, self.gan.generator.trainable_weights)
-        )
 
         # -------------------- Update 'Critic' -------------------- #
         next_action, next_log_pi = self.actor(
@@ -166,7 +119,7 @@ class ActorCritic(Model):
         ]
 
         # Intrinsic Reward
-        int_reward = -self.gan.discriminator(
+        int_reward = -self.discriminator(
             sample.data["next_observation"], training=False
         )
 
@@ -251,10 +204,6 @@ class ActorCritic(Model):
             "log_alpha": self.log_alpha,
             "int_reward": tf.reduce_mean(int_reward),
             "ext_reward": tf.reduce_mean(ext_reward),
-            "d_loss": d_loss,
-            "g_loss": g_loss,
-            "real_output": tf.reduce_mean(real_output),
-            "fake_output": tf.reduce_mean(fake_output),
         }
 
     def call(self, inputs, training=None, with_log_prob=True, deterministic=None):
@@ -269,15 +218,11 @@ class ActorCritic(Model):
         actor_optimizer,
         critic_optimizer,
         alpha_optimizer,
-        d_optimizer,
-        g_optimizer,
     ):
         super(ActorCritic, self).compile()
         self.actor_optimizer = actor_optimizer
         self.critic_optimizer = critic_optimizer
         self.alpha_optimizer = alpha_optimizer
-        self.d_optimizer = d_optimizer
-        self.g_optimizer = g_optimizer
 
     def build(self, input_shape):
         super(ActorCritic, self).build(input_shape)
@@ -287,4 +232,3 @@ class ActorCritic(Model):
     def summary(self):
         self.actor.summary()
         self.critic.summary()
-        self.gan.summary()

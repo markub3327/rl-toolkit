@@ -2,7 +2,7 @@ import argparse
 
 import yaml
 
-from rl_toolkit.core import Agent, Learner, Server, Tester
+from rl_toolkit.core import Agent, Learner, Server, Tester, GAN
 
 if __name__ == "__main__":
     my_parser = argparse.ArgumentParser(
@@ -60,6 +60,22 @@ if __name__ == "__main__":
         "learner",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         help="Learner process",
+    )
+    parser_learner.add_argument(
+        "--db_server",
+        type=str,
+        help="Database server name or IP address (e.g. localhost or 192.168.1.1)",
+        default="localhost",
+    )
+    parser_learner.add_argument(
+        "-f", "--model_path", type=str, help="Path to saved model"
+    )
+
+    # create the parser for the "learner" sub-command
+    parser_learner = sub_parsers.add_parser(
+        "gan",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        help="GAN process",
     )
     parser_learner.add_argument(
         "--db_server",
@@ -177,6 +193,21 @@ if __name__ == "__main__":
         finally:
             agent.save()
             agent.close()
+
+    elif args.mode == "gan":
+        agent = GAN(
+            env_name=args.environment,
+            db_server=f"{args.db_server}:{config['port']}",
+            train_steps=config["train_steps"],
+            batch_size=config["batch_size"],
+            gan_units=config["GAN"]["units"],
+            latent_dim=config["GAN"]["latent_dim"],
+            generator_learning_rate=config["GAN"]["generator_learning_rate"],
+            discriminator_learning_rate=config["GAN"]["discriminator_learning_rate"],
+            save_path=config["save_path"],
+            model_path=args.model_path,
+            log_interval=config["log_interval"],
+        )
 
     # Tester mode
     elif args.mode == "tester":

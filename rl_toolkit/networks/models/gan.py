@@ -2,6 +2,8 @@ from tensorflow.keras import Model, Sequential, Input
 from tensorflow.keras.layers import Dense, ReLU
 from rl_toolkit.utils import SpectralNormalization
 
+import tensorflow as tf
+
 
 class GAN(Model):
     """
@@ -45,6 +47,12 @@ class GAN(Model):
             name="generator",
         )
 
+    def compile(self, d_optimizer, g_optimizer, loss_fn):
+        super(GAN, self).compile()
+        self.d_optimizer = d_optimizer
+        self.g_optimizer = g_optimizer
+        self.loss_fn = loss_fn
+
     def call(self, inputs, training=None):
         generated_states = self.generator(inputs, training=training)
         score = self.discriminator(generated_states, training=training)
@@ -53,3 +61,43 @@ class GAN(Model):
     def summary(self):
         self.generator.summary()
         self.discriminator.summary()
+
+    def train_step(self, real_states):
+        # Sample random points in the latent space
+        batch_size = tf.shape(real_states)[0]
+
+        # -------------------- Update 'Discriminator' -------------------- #
+        with tf.GradientTape() as tape:
+            random_latent_vectors = tf.random.normal(
+                shape=(batch_size, self.latent_dim)
+            )
+
+            fake_output, _ = self(random_latent_vectors, training=True)
+            real_output = self.discriminator(real_states, training=True)
+
+            d_loss_real = self.loss_fn(tf.ones_like(real_output), real_output)
+            d_loss_fake = self.loss_fn(tf.ones_like(fake_output) * (-1), fake_output)
+            d_loss = d_loss_real + d_loss_fake
+
+        grads = tape.gradient(d_loss, self.discriminator.trainable_weights)
+        self.d_optimizer.apply_gradients(
+            zip(grads, self.discriminator.trainable_weights)
+        )
+
+        # -------------------- Update 'Generator' -------------------- #
+        with tf.GradientTape() as tape:
+            random_latent_vectors = tf.random.normal(
+                shape=(batch_size, self.latent_dim)
+            )
+            fake_output, _ = self(random_latent_vectors, training=True)
+            g_loss = -tf.reduce_mean(fake_output)
+
+        grads = tape.gradient(g_loss, self.generator.trainable_weights)
+        self.g_optimizer.apply_gradients(zip(grads, self.generator.trainable_weights))
+
+        return {
+            "d_loss": d_loss,
+            "g_loss": g_loss,
+            "real_output": tf.reduce_mean(real_output),
+            "fake_output": tf.reduce_mean(fake_output),
+        }

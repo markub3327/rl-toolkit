@@ -42,3 +42,11 @@ Alpha:
   init: 1.0
   learning_rate: !!float 7.3e-4
   global_clipnorm: 40.0
+
+# GAN model
+GAN:
+  units: [400, 300]
+  latent_dim: 24
+  generator_learning_rate: !!float 1e-4
+  discriminator_learning_rate: !!float 1e-4
+  global_clipnorm: 40.0

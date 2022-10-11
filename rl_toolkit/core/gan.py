@@ -7,15 +7,15 @@ from tensorflow.keras.optimizers import Adam
 from wandb.keras import WandbCallback
 
 from rl_toolkit.networks.callbacks import AgentCallback
-from rl_toolkit.networks.models import ActorCritic
+from rl_toolkit.networks.models import GAN as GANModel
 from rl_toolkit.utils import make_reverb_dataset
 
 from .process import Process
 
 
-class Learner(Process):
+class GAN(Process):
     """
-    Learner
+    GAN
     =================
 
     Attributes:
@@ -51,60 +51,41 @@ class Learner(Process):
         train_steps: int,
         batch_size: int,
         # ---
-        actor_units: list,
-        critic_units: list,
-        actor_learning_rate: float,
-        critic_learning_rate: float,
-        alpha_learning_rate: float,
+        gan_units: list,
+        latent_dim: int,
+        generator_learning_rate: float,
+        discriminator_learning_rate: float,
         # ---
-        n_quantiles: int,
-        top_quantiles_to_drop: int,
-        n_critics: int,
-        # ---
-        clip_mean_min: float,
-        clip_mean_max: float,
-        # ---
-        actor_global_clipnorm: float,
-        critic_global_clipnorm: float,
-        alpha_global_clipnorm: float,
-        # ---
-        gamma: float,
-        tau: float,
-        init_alpha: float,
-        init_noise: float,
         # ---
         model_path: str,
         save_path: str,
         # ---
         log_interval: int,
     ):
-        super(Learner, self).__init__(env_name, False)
+        super(GAN, self).__init__(env_name, False)
 
         self._train_steps = train_steps
         self._save_path = save_path
         self._log_interval = log_interval
         self._db_server = db_server
 
-        # Init actor-critic's network
-        self.model = ActorCritic(
-            actor_units=actor_units,
-            critic_units=critic_units,
-            n_quantiles=n_quantiles,
-            top_quantiles_to_drop=top_quantiles_to_drop,
-            n_critics=n_critics,
-            n_outputs=np.prod(self._env.action_space.shape),
-            clip_mean_min=clip_mean_min,
-            clip_mean_max=clip_mean_max,
-            gamma=gamma,
-            tau=tau,
-            init_alpha=init_alpha,
-            init_noise=init_noise,
+        # Init GAN network
+        self.model = GANModel(
+            units=gan_units,
+            latent_dim=latent_dim,
+            n_inputs=np.prod(self._env.observation_space.shape),
         )
-        self.model.build((None,) + self._env.observation_space.shape)
         self.model.compile(
-            actor_optimizer=Adam(learning_rate=actor_learning_rate),
-            critic_optimizer=Adam(learning_rate=critic_learning_rate),
-            alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
+            d_optimizer=Adam(
+                learning_rate=discriminator_learning_rate,
+                beta_1=0.5,
+                beta_2=0.999,
+            ),
+            g_optimizer=Adam(
+                learning_rate=generator_learning_rate,
+                beta_1=0.5,
+                beta_2=0.999,
+            ),
         )
 
         if model_path is not None:
@@ -116,7 +97,7 @@ class Learner(Process):
         # Initializes the reverb's dataset
         self.dataset = make_reverb_dataset(
             server_address=self._db_server,
-            table="experience",
+            table="counter",
             batch_size=batch_size,
         )
 
@@ -124,20 +105,10 @@ class Learner(Process):
         wandb.init(project="rl-toolkit", group=f"{env_name}")
         wandb.config.train_steps = train_steps
         wandb.config.batch_size = batch_size
-        wandb.config.actor_units = actor_units
-        wandb.config.critic_units = critic_units
-        wandb.config.actor_learning_rate = actor_learning_rate
-        wandb.config.critic_learning_rate = critic_learning_rate
-        wandb.config.alpha_learning_rate = alpha_learning_rate
-        wandb.config.n_quantiles = n_quantiles
-        wandb.config.top_quantiles_to_drop = top_quantiles_to_drop
-        wandb.config.n_critics = n_critics
-        wandb.config.clip_mean_min = clip_mean_min
-        wandb.config.clip_mean_max = clip_mean_max
-        wandb.config.gamma = gamma
-        wandb.config.tau = tau
-        wandb.config.init_alpha = init_alpha
-        wandb.config.init_noise = init_noise
+        wandb.config.gan_units = gan_units
+        wandb.config.latent_dim = latent_dim
+        wandb.config.generator_learning_rate = generator_learning_rate
+        wandb.config.discriminator_learning_rate = discriminator_learning_rate
 
     def run(self):
         self.model.fit(
@@ -155,11 +126,10 @@ class Learner(Process):
                 os.makedirs(self._save_path)
 
             # Save model
-            self.model.save_weights(os.path.join(self._save_path, "actor_critic.h5"))
-            self.model.actor.save_weights(os.path.join(self._save_path, "actor.h5"))
+            self.model.save_weights(os.path.join(self._save_path, "gan.h5"))
 
     def close(self):
-        super(Learner, self).close()
+        super(GAN, self).close()
 
         # create the checkpoint of the database
         client = reverb.Client(self._db_server)
