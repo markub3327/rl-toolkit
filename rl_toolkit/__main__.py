@@ -120,6 +120,7 @@ if __name__ == "__main__":
             env_name=args.environment,
             port=config["port"],
             actor_units=config["Actor"]["units"],
+            gan_units=config["GAN"]["units"],
             clip_mean_min=config["Actor"]["clip_mean_min"],
             clip_mean_max=config["Actor"]["clip_mean_max"],
             init_noise=config["Actor"]["init_noise"],
