@@ -94,6 +94,7 @@ class Learner(Process):
             n_quantiles=n_quantiles,
             top_quantiles_to_drop=top_quantiles_to_drop,
             n_critics=n_critics,
+            n_inputs=np.prod(self._env.observation_space.shape),
             n_outputs=np.prod(self._env.action_space.shape),
             clip_mean_min=clip_mean_min,
             clip_mean_max=clip_mean_max,

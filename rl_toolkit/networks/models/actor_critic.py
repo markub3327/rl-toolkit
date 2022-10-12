@@ -39,6 +39,7 @@ class ActorCritic(Model):
         n_quantiles: int,
         top_quantiles_to_drop: int,
         n_critics: int,
+        n_inputs: int,
         n_outputs: int,
         clip_mean_min: float,
         clip_mean_max: float,
@@ -88,7 +89,7 @@ class ActorCritic(Model):
         # GAN
         self.discriminator = create_discriminator(
             gan_units,
-            np.prod(self._env.observation_space.shape),
+            n_inputs,
         )
 
     def _update_target(self, net, net_targ, tau):
