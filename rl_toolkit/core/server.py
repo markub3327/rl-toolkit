@@ -4,7 +4,7 @@ import tensorflow as tf
 
 from rl_toolkit.networks.models import Actor
 from rl_toolkit.utils import VariableContainer
-
+from rl_toolkit.networks.models.gan import create_discriminator
 from .process import Process
 
 
@@ -33,6 +33,7 @@ class Server(Process):
         port: int,
         # ---
         actor_units: list,
+        gan_units: list,
         clip_mean_min: float,
         clip_mean_max: float,
         init_noise: float,
@@ -55,6 +56,11 @@ class Server(Process):
             init_noise=init_noise,
         )
         self.actor.build((None,) + self._env.observation_space.shape)
+
+        self.discriminator = create_discriminator(
+            gan_units,
+            np.prod(self._env.observation_space.shape),
+        )
 
         # Show models details
         self.actor.summary()
@@ -83,6 +89,13 @@ class Server(Process):
                 "train_step": self._train_step,
                 "stop_agents": self._stop_agents,
                 "policy_variables": self.actor.variables,
+            },
+        )
+        self._variable_container2 = VariableContainer(
+            db_server=f"localhost:{self._port}",
+            table="variable2",
+            variables={
+                "discriminator_variables": self.discriminator.variables,
             },
         )
 
@@ -150,6 +163,15 @@ class Server(Process):
                     max_times_sampled=0,
                     signature=self._variable_container.signature,
                 ),
+                reverb.Table(  # Variables container
+                    name="variable2",
+                    sampler=reverb.selectors.Uniform(),
+                    remover=reverb.selectors.Fifo(),
+                    rate_limiter=reverb.rate_limiters.MinSize(1),
+                    max_size=1,
+                    max_times_sampled=0,
+                    signature=self._variable_container2.signature,
+                ),
             ],
             port=self._port,
             checkpointer=checkpointer,
@@ -157,6 +179,7 @@ class Server(Process):
 
         # Init variable container in DB
         self._variable_container.push_variables()
+        self._variable_container2.push_variables()
 
     def run(self):
         self.server.wait()

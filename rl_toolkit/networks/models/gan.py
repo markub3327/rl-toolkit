@@ -5,6 +5,34 @@ from rl_toolkit.utils import SpectralNormalization
 import tensorflow as tf
 
 
+def create_discriminator(units, n_inputs):
+    return Sequential(
+        [
+            Input(shape=(n_inputs,)),
+            SpectralNormalization(Dense(units[0])),
+            ReLU(),
+            SpectralNormalization(Dense(units[1])),
+            ReLU(),
+            Dense(1),
+        ],
+        name="discriminator",
+    )
+
+
+def creaat_generator(units, latent_dim, n_inputs):
+    return Sequential(
+        [
+            Input(shape=(latent_dim,)),
+            Dense(units[1]),
+            ReLU(),
+            Dense(units[0]),
+            ReLU(),
+            Dense(n_inputs),
+        ],
+        name="generator",
+    )
+
+
 class GAN(Model):
     """
     Generative Adversarial Network (GAN)
@@ -24,28 +52,8 @@ class GAN(Model):
         super(GAN, self).__init__(**kwargs)
         self.latent_dim = latent_dim
 
-        self.discriminator = Sequential(
-            [
-                Input(shape=(n_inputs,)),
-                SpectralNormalization(Dense(units[0])),
-                ReLU(),
-                SpectralNormalization(Dense(units[1])),
-                ReLU(),
-                Dense(1),
-            ],
-            name="discriminator",
-        )
-        self.generator = Sequential(
-            [
-                Input(shape=(latent_dim,)),
-                Dense(units[1]),
-                ReLU(),
-                Dense(units[0]),
-                ReLU(),
-                Dense(n_inputs),
-            ],
-            name="generator",
-        )
+        self.discriminator = create_discriminator(units, n_inputs)
+        self.generator = creaat_generator(units, latent_dim, n_inputs)
 
     def compile(self, d_optimizer, g_optimizer, loss_fn):
         super(GAN, self).compile()

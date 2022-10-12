@@ -7,7 +7,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.losses import Hinge
 from wandb.keras import WandbCallback
 
-from rl_toolkit.networks.callbacks import AgentCallback
+from rl_toolkit.networks.callbacks import GANCallback
 from rl_toolkit.networks.models import GAN as GANModel
 from rl_toolkit.utils import make_reverb_dataset
 
@@ -118,7 +118,7 @@ class GAN(Process):
             epochs=self._train_steps,
             steps_per_epoch=1,
             verbose=0,
-            callbacks=[WandbCallback(save_model=False)],
+            callbacks=[GANCallback(self._db_server), WandbCallback(save_model=False)],
         )
 
     def save(self):

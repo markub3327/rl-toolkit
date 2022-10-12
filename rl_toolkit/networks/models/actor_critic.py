@@ -1,8 +1,10 @@
 import tensorflow as tf
+import numpy as np
 from tensorflow.keras import Model
 
 from .actor import Actor
 from .critic import MultiCritic
+from .gan import create_discriminator
 
 
 class ActorCritic(Model):
@@ -33,6 +35,7 @@ class ActorCritic(Model):
         self,
         actor_units: list,
         critic_units: list,
+        gan_units: list,
         n_quantiles: int,
         top_quantiles_to_drop: int,
         n_critics: int,
@@ -80,6 +83,12 @@ class ActorCritic(Model):
             n_quantiles=n_quantiles,
             top_quantiles_to_drop=top_quantiles_to_drop,
             n_critics=n_critics,
+        )
+
+        # GAN
+        self.discriminator = create_discriminator(
+            gan_units,
+            np.prod(self._env.observation_space.shape),
         )
 
     def _update_target(self, net, net_targ, tau):
