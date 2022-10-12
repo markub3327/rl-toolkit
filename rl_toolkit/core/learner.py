@@ -53,6 +53,7 @@ class Learner(Process):
         # ---
         actor_units: list,
         critic_units: list,
+        gan_units: list,
         actor_learning_rate: float,
         critic_learning_rate: float,
         alpha_learning_rate: float,
@@ -89,6 +90,7 @@ class Learner(Process):
         self.model = ActorCritic(
             actor_units=actor_units,
             critic_units=critic_units,
+            gan_units=gan_units,
             n_quantiles=n_quantiles,
             top_quantiles_to_drop=top_quantiles_to_drop,
             n_critics=n_critics,

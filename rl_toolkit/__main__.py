@@ -167,6 +167,7 @@ if __name__ == "__main__":
             batch_size=config["batch_size"],
             actor_units=config["Actor"]["units"],
             critic_units=config["Critic"]["units"],
+            gan_units=config["GAN"]["units"],
             actor_learning_rate=config["Actor"]["learning_rate"],
             critic_learning_rate=config["Critic"]["learning_rate"],
             alpha_learning_rate=config["Alpha"]["learning_rate"],
