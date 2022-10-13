@@ -144,7 +144,7 @@ class Server(Process):
                         "terminal": tf.TensorSpec([1], tf.bool),
                     },
                 ),
-                reverb.Table.queue(
+                reverb.Table.queue(  # On-policy Replay buffer
                     name="counter",
                     max_size=max_replay_size,
                     signature={
