@@ -28,15 +28,22 @@ class Critic(Model):
                 distribution="uniform", mode="fan_in", scale=1.0
             ),
         )
+        self.fc_1 = Dense(
+            units=units[0],
+            activation="relu",
+            kernel_initializer=VarianceScaling(
+                distribution="uniform", mode="fan_in", scale=1.0
+            ),
+        )
 
         # 2. layer     TODO(markub3327): Transformer
-        self.fc_1 = Dense(
+        self.fc_2 = Dense(
             units=units[1],
             kernel_initializer=VarianceScaling(
                 distribution="uniform", mode="fan_in", scale=1.0
             ),
         )
-        self.fc_2 = Dense(
+        self.fc_3 = Dense(
             units=units[1],
             kernel_initializer=VarianceScaling(
                 distribution="uniform", mode="fan_in", scale=1.0
@@ -58,10 +65,11 @@ class Critic(Model):
     def call(self, inputs, training=None):
         # 1. layer
         state = self.fc_0(inputs[0], training=training)
+        action = self.fc_1(inputs[1], training=training)
 
         # 2. layer
-        state = self.fc_1(state, training=training)
-        action = self.fc_2(inputs[1], training=training)
+        state = self.fc_2(state, training=training)
+        action = self.fc_3(action, training=training)
         x = self.add_0([state, action])
         x = self.activ_0(x)
 
