@@ -2,6 +2,7 @@ import gym
 import pybullet_envs  # noqa
 
 import tensorflow as tf
+from .wrappers import dmControlGymWrapper, dmControlGetTasks
 
 
 class Process:
@@ -21,7 +22,11 @@ class Process:
         render: bool,
     ):
         # Herne prostredie
-        self._env = gym.make(env_name, render_mode="human" if render else None)
+        if any(x in env_name for x in dmControlGetTasks()):
+            s = env_name.split("-")
+            self._env = dmControlGymWrapper(domain_name=s[0], task_name=s[1])
+        else:
+            self._env = gym.make(env_name, render_mode="human" if render else None)
 
         gpus = tf.config.list_physical_devices("GPU")
         if gpus:

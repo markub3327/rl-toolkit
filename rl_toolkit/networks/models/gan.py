@@ -1,6 +1,7 @@
 from tensorflow.keras import Model, Sequential, Input
 from tensorflow.keras.layers import Dense, ReLU
-from rl_toolkit.utils import SpectralNormalization
+
+# from rl_toolkit.utils import SpectralNormalization
 
 import tensorflow as tf
 
@@ -9,9 +10,9 @@ def create_discriminator(units, n_inputs):
     return Sequential(
         [
             Input(shape=(n_inputs,)),
-            SpectralNormalization(Dense(units[0])),
+            Dense(units[0]),  # SpectralNormalization(Dense(units[0])),
             ReLU(),
-            SpectralNormalization(Dense(units[1])),
+            Dense(units[1]),  # SpectralNormalization(Dense(units[1])),
             ReLU(),
             Dense(1),
         ],
