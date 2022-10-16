@@ -54,6 +54,7 @@ setup(
         "pygame",
         "swig",
         "pybullet",
+        "dm_control",
         "tensorflow_probability",
         "wandb",
     ],

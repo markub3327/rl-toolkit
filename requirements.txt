@@ -1,8 +1,9 @@
-###### OpenAI Gym + PyBullet ######
+###### OpenAI Gym + PyBullet + DeepMind Control Suite ######
 #
 gym
 box2d
 pybullet
+dm_control
 #
 #
 ###### Tensorflow ######
