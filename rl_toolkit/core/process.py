@@ -22,7 +22,7 @@ class Process:
         render: bool,
     ):
         # Herne prostredie
-        if any(x in env_name for x in dmControlGetTasks()):
+        if any(x[0] in env_name and x[1] in env_name for x in dmControlGetTasks()):
             s = env_name.split("-")
             self._env = dmControlGymWrapper(domain_name=s[0], task_name=s[1])
         else:
