@@ -64,7 +64,7 @@
       ```sh
       git clone https://github.com/deepmind/reverb
       cd reverb/
-      git checkout r0.8.0
+      git checkout r0.9.0
       ```
       Make changes in Reverb before building !
       <br>In .bazelrc
