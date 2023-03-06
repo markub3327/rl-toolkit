@@ -152,13 +152,11 @@
 
   | Environment              | SAC<br> + gSDE | SAC<br> + gSDE<br>+ Huber loss | SAC<br> + TQC<br> + gSDE | RL-Toolkit |
   | ------------------------ | :--------: | :------------------------: | :--------: | :---------------------------: |
-  | BipedalWalkerHardcore-v3 | 13 ± 18[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | - | 228 ± 18[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | - |
+  | BipedalWalkerHardcore-v3 | 13 ± 18[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | 239 ± 118 | 228 ± 18[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | 205 ± 134 |
   | Walker2DBulletEnv-v0     | 2270 ± 28[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | 2732 ± 96 | 2535 ± 94[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | **3123 ± 594** |
   | AntBulletEnv-v0          | 3106 ± 61[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | 3460 ± 119 | 3700 ± 37[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | **3993 ± 214** |
   | HalfCheetahBulletEnv-v0  | 2945 ± 95[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | 3003 ± 226 | 3041 ± 157[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | - |
   | HopperBulletEnv-v0       | 2515 ± 50[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | 2555 ± 405 | 2401 ± 62[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | - |
-  | HumanoidBulletEnv-v0 | - | - | - | - |
-  | MinitaurBulletEnv-v0 | - | - | - | - |
 
 ![results](https://raw.githubusercontent.com/markub3327/rl-toolkit/master/img/results.png)
 ![rl-toolkit](https://raw.githubusercontent.com/markub3327/rl-toolkit/master/img/preview.gif)
