@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import reverb
 import tensorflow as tf
@@ -16,7 +18,6 @@ class Agent(Process):
 
     Attributes:
         env_name (str): the name of environment
-        render (bool): enable the rendering
         db_server (str): database server name (IP or domain name)
         actor_units (list): list of the numbers of units in each Actor's layer
         clip_mean_min (float): the minimum value of mean
@@ -24,13 +25,13 @@ class Agent(Process):
         init_noise (float): initialization of the Actor's noise
         warmup_steps (int): number of interactions before using policy network
         env_steps (int): number of steps per rollout
+        save_path (str): path to the models for saving
     """
 
     def __init__(
         self,
         # ---
         env_name: str,
-        render: bool,
         db_server: str,
         # ---
         actor_units: list,
@@ -40,24 +41,30 @@ class Agent(Process):
         # ---
         warmup_steps: int,
         env_steps: int,
+        # ---
+        save_path: str,
     ):
-        super(Agent, self).__init__(env_name, render)
+        super(Agent, self).__init__(env_name, False)
 
         self._env_steps = env_steps
         self._warmup_steps = warmup_steps
+        self._save_path = save_path
+
+        if self._env.unwrapped.spec.id == "HumanoidRobot-v0":
+            self._env.connect()
 
         # Init actor's network
-        self.actor = Actor(
+        self.model = Actor(
             units=actor_units,
             n_outputs=np.prod(self._env.action_space.shape),
             clip_mean_min=clip_mean_min,
             clip_mean_max=clip_mean_max,
             init_noise=init_noise,
         )
-        self.actor.build((None,) + self._env.observation_space.shape)
+        self.model.build((None,) + self._env.observation_space.shape)
 
         # Show models details
-        self.actor.summary()
+        self.model.summary()
 
         # Variables
         self._train_step = tf.Variable(
@@ -78,22 +85,18 @@ class Agent(Process):
         # Table for storing variables
         self._variable_container = VariableContainer(
             db_server=db_server,
-            table="variable",
+            table="variables",
             variables={
+                "policy_variables": self.model.variables,
                 "train_step": self._train_step,
                 "stop_agents": self._stop_agents,
-                "policy_variables": self.actor.variables,
             },
         )
-
-        # load content of variables & re-new noise matrix
-        self._variable_container.update_variables()
-        self.actor.reset_noise()
 
         # Initializes the reverb client
         self.client = reverb.Client(db_server)
 
-        # init Weights & Biases
+        # Init Weights & Biases
         wandb.init(
             project="rl-toolkit",
             group=f"{env_name}",
@@ -101,45 +104,46 @@ class Agent(Process):
         wandb.config.warmup_steps = warmup_steps
         wandb.config.env_steps = env_steps
 
-    def random_policy(self, input):
+    def random_policy(self, inputs):
         action = self._env.action_space.sample()
         return action
 
     @tf.function(jit_compile=True)
-    def collect_policy(self, input):
-        action, _ = self.actor(
-            tf.expand_dims(input, axis=0),
+    def collect_policy(self, inputs):
+        action = self.model(
+            tf.expand_dims(inputs, axis=0),
             with_log_prob=False,
             deterministic=False,
+            training=False,
         )
         return tf.squeeze(action, axis=0)
 
     def collect(self, writer, max_steps, policy):
-        # collect the rollout
+        # Collect the rollout
         for _ in range(max_steps):
             # Get the action
             action = policy(self._last_obs)
-            action = np.array(action, copy=False)
+            action = np.array(action, copy=False, dtype=self._env.action_space.dtype)
 
-            # perform action
-            new_obs, reward, terminal, _, _ = self._env.step(action)
+            # Perform action
+            new_obs, ext_reward, terminated, truncated, _ = self._env.step(action)
 
             # Update variables
-            self._episode_reward += reward
+            self._episode_reward += ext_reward
             self._episode_steps += 1
             self._total_steps += 1
 
             # Update the replay buffer
             writer.append(
                 {
-                    "observation": self._last_obs.astype("float32", copy=False),
+                    "observation": self._last_obs,
                     "action": action,
-                    "reward": np.array([reward], copy=False, dtype="float32"),
-                    "terminal": np.array([terminal], copy=False),
+                    "ext_reward": np.array([ext_reward]),
+                    "terminal": np.array([terminated]),
                 }
             )
 
-            # Ak je v cyklickom bufferi dostatok prikladov
+            # Enough samples to store in the database
             if self._episode_steps > 1:
                 writer.create_item(
                     table="experience",
@@ -147,23 +151,27 @@ class Agent(Process):
                     trajectory={
                         "observation": writer.history["observation"][-2],
                         "action": writer.history["action"][-2],
-                        "reward": writer.history["reward"][-2],
+                        "ext_reward": writer.history["ext_reward"][-2],
                         "next_observation": writer.history["observation"][-1],
                         "terminal": writer.history["terminal"][-2],
                     },
                 )
 
             # Check the end of episode
-            if terminal or self._episode_steps >= self._env.spec.max_episode_steps:
+            if terminated or truncated:
                 # Write the final interaction !!!
-                writer.append({"observation": new_obs.astype("float32", copy=False)})
+                writer.append(
+                    {
+                        "observation": new_obs,
+                    }
+                )
                 writer.create_item(
                     table="experience",
                     priority=1.0,
                     trajectory={
                         "observation": writer.history["observation"][-2],
                         "action": writer.history["action"][-2],
-                        "reward": writer.history["reward"][-2],
+                        "ext_reward": writer.history["ext_reward"][-2],
                         "next_observation": writer.history["observation"][-1],
                         "terminal": writer.history["terminal"][-2],
                     },
@@ -172,7 +180,7 @@ class Agent(Process):
                 # Block until all the items have been sent to the server
                 writer.end_episode()
 
-                # logovanie
+                # Logging
                 print("=============================================")
                 print(f"Epoch: {self._total_episodes}")
                 print(f"Score: {self._episode_reward}")
@@ -196,29 +204,48 @@ class Agent(Process):
 
                 # Init environment
                 self._last_obs, _ = self._env.reset()
+
+                # Load content of variables
+                self._variable_container.update_variables()
             else:
                 # Super critical !!!
                 self._last_obs = new_obs
 
+        # send all experiences to DB server
         writer.flush()
 
     def run(self):
-        # init environment
+        # Init environment
         self._episode_reward = 0.0
         self._episode_steps = 0
         self._total_episodes = 0
         self._total_steps = 0
         self._last_obs, _ = self._env.reset()
 
-        # spojenie s db
+        # Connect to database
         with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
-            # zahrievacie kola
-            self.collect(writer, self._warmup_steps, self.random_policy)
+            for _ in range(0, self._warmup_steps, self._env_steps):
+                # Warmup steps
+                self.collect(writer, self._env_steps, self.random_policy)
 
-            # hlavny cyklus hry
+            # Main loop
             while not self._stop_agents:
+                # Re-new noise matrix
+                self.model.reset_noise()
+
                 self.collect(writer, self._env_steps, self.collect_policy)
 
-                # load content of variables & re-new noise matrix
-                self._variable_container.update_variables()
-                self.actor.reset_noise()
+    def save(self, path=""):
+        if self._save_path:
+            try:
+                os.makedirs(os.path.join(os.path.join(self._save_path, path)))
+            except OSError:
+                print("The path already exist ❗❗❗")
+            finally:
+                # Save model
+                self.model.save_weights(
+                    os.path.join(os.path.join(self._save_path, path), "actor.h5")
+                )
+                wandb.save(
+                    os.path.join(os.path.join(self._save_path, path), "actor.h5")
+                )

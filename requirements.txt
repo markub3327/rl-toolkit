@@ -1,7 +1,10 @@
-###### OpenAI Gym + PyBullet ######
+###### Gymnasium + PyBullet + DeepMind Control Suite ######
 #
+gymnasium
+box2d-py
+pygame
+dm_control
 gym
-box2d
 pybullet
 #
 #
@@ -19,5 +22,10 @@ wandb
 ####### Database (Experience replay system) ######
 #
 dm-reverb
+#
+#
+####### Utils ######
+#
+swig
 #
 #

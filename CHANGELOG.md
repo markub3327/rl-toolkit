@@ -1,7 +1,19 @@
 # Changes
 
-## v4.1.1 (September 2, 2022)
+## v5.0.0 (XX 04, 2023)
+### Features 🔊
+- Gymnasium
+- DeepMind Control Suite wrapper
+- ELU activation
+- Orthogonal initializer
+- Optional state-action merging layer index (Critic model)
+### Bug fixes 🛠️
+ - Optimized critic
+ - Optimized server
+ - `backend.epsilon()` from Keras backend
 
+## v4.1.1 (September 2, 2022)
+### Bug fixes 🛠️
 - update default `config.yaml`
 
 ## v4.1.0 (February 9, 2022)

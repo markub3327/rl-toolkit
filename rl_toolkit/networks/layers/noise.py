@@ -1,6 +1,6 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
-from tensorflow.keras import constraints, initializers, regularizers
+from tensorflow.keras import backend, constraints, initializers, regularizers
 from tensorflow.keras.layers import Layer
 
 
@@ -76,6 +76,6 @@ class MultivariateGaussianNoise(Layer):
 
     def sample_weights(self):
         w_dist = tfp.distributions.MultivariateNormalDiag(
-            loc=tf.zeros_like(self.kernel), scale_diag=(self.scale + 1e-6)
+            loc=tf.zeros_like(self.kernel), scale_diag=(self.scale + backend.epsilon())
         )
         self.epsilon.assign(w_dist.sample())

@@ -1,10 +1,12 @@
 import numpy as np
 import tensorflow as tf
 import wandb
+from dm_control import viewer
 
 from rl_toolkit.networks.models import Actor
 
 from .process import Process
+from .wrappers import dmControlGymWrapper
 
 
 class Tester(Process):
@@ -40,61 +42,77 @@ class Tester(Process):
         super(Tester, self).__init__(env_name, render)
 
         self._max_steps = max_steps
+        self._render = render
 
-        self.actor = Actor(
+        # Init actor's network
+        self.model = Actor(
             units=actor_units,
             n_outputs=np.prod(self._env.action_space.shape),
             clip_mean_min=clip_mean_min,
             clip_mean_max=clip_mean_max,
             init_noise=init_noise,
         )
-        self.actor.build((None,) + self._env.observation_space.shape)
+        self.model.build((None,) + self._env.observation_space.shape)
 
         if model_path is not None:
-            self.actor.load_weights(model_path)
+            self.model.load_weights(model_path)
 
-        # init Weights & Biases
-        wandb.init(
-            project="rl-toolkit",
-            group=f"{env_name}",
-        )
-        wandb.config.max_steps = max_steps
+        # Show models details
+        self.model.summary()
+
+        # Init Weights & Biases
+        if not self._render:
+            wandb.init(
+                project="rl-toolkit",
+                group=f"{env_name}",
+            )
+            wandb.config.max_steps = max_steps
 
     @tf.function(jit_compile=True)
-    def policy(self, state):
-        action, _ = self.actor(
-            tf.expand_dims(state, axis=0),
+    def policy(self, inputs):
+        action = self.model(
+            tf.expand_dims(inputs, axis=0),
             with_log_prob=False,
             deterministic=True,
+            training=False,
         )
         return tf.squeeze(action, axis=0)
 
+    def dm_policy(self, timestep):
+        state = self._env.flatten_observation(timestep.observation)
+        return self._env.scale_action(self.policy(state))
+
     def run(self):
+        if isinstance(self._env, dmControlGymWrapper) and self._render:
+            # Launch the viewer application.
+            viewer.launch(self._env.env, policy=self.dm_policy)
+            return
+
         self._total_steps = 0
         self._total_episodes = 0
         self._episode_reward = 0.0
         self._episode_steps = 0
 
-        # init environment
+        # Init environment
         self._last_obs, _ = self._env.reset()
 
-        # hlavny cyklus hry
+        # Main loop
         while self._total_steps < self._max_steps:
             # Get the action
             action = self.policy(self._last_obs)
-            action = np.array(action, copy=False)
+            action = np.array(action, copy=False, dtype=self._env.action_space.dtype)
 
-            # perform action
-            new_obs, reward, terminal, _, _ = self._env.step(action)
+            # Perform action
+            new_obs, reward, terminated, truncated, _ = self._env.step(action)
 
-            # update variables
+            # Update variables
             self._episode_reward += reward
             self._episode_steps += 1
             self._total_steps += 1
 
             # Check the end of episode
-            if terminal or self._episode_steps >= self._env.spec.max_episode_steps:
-                # logovanie
+            if terminated or truncated:
+                # Logging
                 print("=============================================")
                 print(f"Epoch: {self._total_episodes}")
                 print(f"Score: {self._episode_reward}")
@@ -121,5 +139,5 @@ class Tester(Process):
                 # Init environment
                 self._last_obs, _ = self._env.reset()
             else:
-                # super critical !!!
+                # Super critical !!!
                 self._last_obs = new_obs

@@ -7,13 +7,13 @@ from rl_toolkit.core import Agent, Learner, Server, Tester
 if __name__ == "__main__":
     my_parser = argparse.ArgumentParser(
         prog="python3 -m rl_toolkit",
-        description="The RL-Toolkit: A toolkit for developing and comparing your reinforcement learning agents in various games (OpenAI Gym or Pybullet).",  # noqa
+        description="The RL-Toolkit: A toolkit for developing and comparing your reinforcement learning agents in various environments.",  # noqa
     )
     my_parser.add_argument(
         "-e",
         "--environment",
         type=str,
-        help="Only OpenAI Gym/PyBullet environments are available!",
+        help="Name of the environment",
         required=True,
     )
     my_parser.add_argument(
@@ -38,6 +38,9 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         help="Server process",
     )
+    parser_server.add_argument(
+        "--actor_critic_path", type=str, help="Path to saved actor-critic model"
+    )
 
     # create the parser for the "agent" sub-command
     parser_agent = sub_parsers.add_parser(
@@ -50,9 +53,6 @@ if __name__ == "__main__":
         type=str,
         help="Database server name or IP address (e.g. localhost or 192.168.1.1)",
         default="localhost",
-    )
-    parser_agent.add_argument(
-        "--render", action="store_true", help="Render the environment"
     )
 
     # create the parser for the "learner" sub-command
@@ -67,9 +67,6 @@ if __name__ == "__main__":
         help="Database server name or IP address (e.g. localhost or 192.168.1.1)",
         default="localhost",
     )
-    parser_learner.add_argument(
-        "-f", "--model_path", type=str, help="Path to saved model"
-    )
 
     # create the parser for the "tester" sub-command
     parser_tester = sub_parsers.add_parser(
@@ -81,7 +78,7 @@ if __name__ == "__main__":
         "-t",
         "--max_steps",
         type=int,
-        help="Number of agent's steps",
+        help="Maximum number of agent's steps",
         default=int(1e6),
     )
     parser_tester.add_argument(
@@ -102,14 +99,23 @@ if __name__ == "__main__":
     if args.mode == "server":
         agent = Server(
             env_name=args.environment,
-            port=config["port"],
-            actor_units=config["Actor"]["units"],
-            clip_mean_min=config["Actor"]["clip_mean_min"],
-            clip_mean_max=config["Actor"]["clip_mean_max"],
-            init_noise=config["Actor"]["init_noise"],
-            min_replay_size=config["min_replay_size"],
-            max_replay_size=config["max_replay_size"],
-            samples_per_insert=config["samples_per_insert"],
+            port=config["Server"]["port"],
+            actor_units=config["Learner"]["Actor"]["units"],
+            critic_units=config["Learner"]["Critic"]["units"],
+            clip_mean_min=config["Learner"]["Actor"]["clip_mean_min"],
+            clip_mean_max=config["Learner"]["Actor"]["clip_mean_max"],
+            n_quantiles=config["Learner"]["Critic"]["n_quantiles"],
+            merge_index=config["Learner"]["Critic"]["merge_index"],
+            top_quantiles_to_drop=config["Learner"]["Critic"]["top_quantiles_to_drop"],
+            n_critics=config["Learner"]["Critic"]["count"],
+            gamma=config["Learner"]["Critic"]["gamma"],
+            tau=config["Learner"]["Critic"]["tau"],
+            init_alpha=config["Learner"]["Alpha"]["init"],
+            init_noise=config["Learner"]["Actor"]["init_noise"],
+            min_replay_size=config["Agent"]["warmup_steps"],
+            max_replay_size=config["Learner"]["max_replay_size"],
+            samples_per_insert=config["Learner"]["samples_per_insert"],
+            actor_critic_path=args.actor_critic_path,
             db_path=config["db_path"],
         )
 
@@ -124,14 +130,14 @@ if __name__ == "__main__":
     elif args.mode == "agent":
         agent = Agent(
             env_name=args.environment,
-            render=args.render,
-            db_server=f"{args.db_server}:{config['port']}",
-            actor_units=config["Actor"]["units"],
-            clip_mean_min=config["Actor"]["clip_mean_min"],
-            clip_mean_max=config["Actor"]["clip_mean_max"],
-            init_noise=config["Actor"]["init_noise"],
-            warmup_steps=config["warmup_steps"],
-            env_steps=config["env_steps"],
+            db_server=f"{args.db_server}:{config['Server']['port']}",
+            actor_units=config["Learner"]["Actor"]["units"],
+            clip_mean_min=config["Learner"]["Actor"]["clip_mean_min"],
+            clip_mean_max=config["Learner"]["Actor"]["clip_mean_max"],
+            init_noise=config["Learner"]["Actor"]["init_noise"],
+            warmup_steps=config["Agent"]["warmup_steps"],
+            env_steps=config["Agent"]["env_steps"],
+            save_path=config["save_path"],
         )
 
         try:
@@ -139,35 +145,35 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             print("Terminated by user 👋👋👋")
         finally:
+            # Save model
+            agent.save()
             agent.close()
 
     # Learner mode
     elif args.mode == "learner":
         agent = Learner(
             env_name=args.environment,
-            db_server=f"{args.db_server}:{config['port']}",
-            train_steps=config["train_steps"],
-            batch_size=config["batch_size"],
-            actor_units=config["Actor"]["units"],
-            critic_units=config["Critic"]["units"],
-            actor_learning_rate=config["Actor"]["learning_rate"],
-            critic_learning_rate=config["Critic"]["learning_rate"],
-            alpha_learning_rate=config["Alpha"]["learning_rate"],
-            n_quantiles=config["Critic"]["n_quantiles"],
-            top_quantiles_to_drop=config["Critic"]["top_quantiles_to_drop"],
-            n_critics=config["Critic"]["count"],
-            clip_mean_min=config["Actor"]["clip_mean_min"],
-            clip_mean_max=config["Actor"]["clip_mean_max"],
-            actor_global_clipnorm=config["Actor"]["global_clipnorm"],
-            critic_global_clipnorm=config["Critic"]["global_clipnorm"],
-            alpha_global_clipnorm=config["Alpha"]["global_clipnorm"],
-            gamma=config["gamma"],
-            tau=config["tau"],
-            init_alpha=config["Alpha"]["init"],
-            init_noise=config["Actor"]["init_noise"],
+            db_server=f"{args.db_server}:{config['Server']['port']}",
+            train_steps=config["Learner"]["train_steps"],
+            batch_size=config["Learner"]["batch_size"],
+            actor_units=config["Learner"]["Actor"]["units"],
+            critic_units=config["Learner"]["Critic"]["units"],
+            actor_learning_rate=config["Learner"]["Actor"]["learning_rate"],
+            critic_learning_rate=config["Learner"]["Critic"]["learning_rate"],
+            alpha_learning_rate=config["Learner"]["Alpha"]["learning_rate"],
+            n_quantiles=config["Learner"]["Critic"]["n_quantiles"],
+            top_quantiles_to_drop=config["Learner"]["Critic"]["top_quantiles_to_drop"],
+            n_critics=config["Learner"]["Critic"]["count"],
+            clip_mean_min=config["Learner"]["Actor"]["clip_mean_min"],
+            clip_mean_max=config["Learner"]["Actor"]["clip_mean_max"],
+            actor_global_clipnorm=config["Learner"]["Actor"]["global_clipnorm"],
+            critic_global_clipnorm=config["Learner"]["Critic"]["global_clipnorm"],
+            gamma=config["Learner"]["Critic"]["gamma"],
+            tau=config["Learner"]["Critic"]["tau"],
+            init_alpha=config["Learner"]["Alpha"]["init"],
+            init_noise=config["Learner"]["Actor"]["init_noise"],
+            merge_index=config["Learner"]["Critic"]["merge_index"],
             save_path=config["save_path"],
-            model_path=args.model_path,
-            log_interval=config["log_interval"],
         )
 
         try:
@@ -184,10 +190,10 @@ if __name__ == "__main__":
             env_name=args.environment,
             render=args.render,
             max_steps=args.max_steps,
-            actor_units=config["Actor"]["units"],
-            clip_mean_min=config["Actor"]["clip_mean_min"],
-            clip_mean_max=config["Actor"]["clip_mean_max"],
-            init_noise=config["Actor"]["init_noise"],
+            actor_units=config["Learner"]["Actor"]["units"],
+            clip_mean_min=config["Learner"]["Actor"]["clip_mean_min"],
+            clip_mean_max=config["Learner"]["Actor"]["clip_mean_max"],
+            init_noise=config["Learner"]["Actor"]["init_noise"],
             model_path=args.model_path,
         )
 

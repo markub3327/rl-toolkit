@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
-from tensorflow.keras import Model
-from tensorflow.keras.initializers import Constant, VarianceScaling
+from tensorflow.keras import Model, backend
+from tensorflow.keras.initializers import Constant, Orthogonal
 from tensorflow.keras.layers import Dense, Lambda
 
 from rl_toolkit.networks.layers import MultivariateGaussianNoise
@@ -34,31 +34,29 @@ class Actor(Model):
     ):
         super(Actor, self).__init__(**kwargs)
 
-        # 1. layer
-        self.fc_0 = Dense(
-            units=units[0],
-            activation="relu",
-            kernel_initializer=VarianceScaling(
-                distribution="uniform", mode="fan_in", scale=1.0
-            ),
-        )
+        self.units = units
+        self.n_outputs = n_outputs
+        self.clip_mean_min = clip_mean_min
+        self.clip_mean_max = clip_mean_max
+        self.init_noise = init_noise
 
-        # 2. layer     TODO(markub3327): Transformer
-        self.fc_1 = Dense(
-            units=units[1],
-            activation="relu",
-            kernel_initializer=VarianceScaling(
-                distribution="uniform", mode="fan_in", scale=1.0
-            ),
-        )
+        # list of hidden layers
+        self.fc_layers = []
+
+        for m in units:
+            self.fc_layers.append(
+                Dense(
+                    units=m,
+                    activation="elu",
+                    kernel_initializer=Orthogonal(tf.sqrt(2.0)),
+                )
+            )
 
         # Deterministicke akcie
         self.mean = Dense(
             n_outputs,
-            activation="linear",
-            kernel_initializer=VarianceScaling(
-                distribution="uniform", mode="fan_in", scale=1.0
-            ),
+            activation=None,
+            kernel_initializer=Orthogonal(0.01),
             name="mean",
         )
         self.clip_mean = Lambda(
@@ -79,36 +77,47 @@ class Actor(Model):
     def reset_noise(self):
         self.noise.sample_weights()
 
-    def call(self, inputs, with_log_prob=True, deterministic=None):
-        # 1. layer
-        x = self.fc_0(inputs)
+    def call(self, inputs, training=None, with_log_prob=True, deterministic=None):
+        x = inputs
 
-        # 2. layer
-        latent_sde = self.fc_1(x)
+        # hidden layers
+        for layer in self.fc_layers:
+            x = layer(x, training=training)
 
-        # Output layer
-        mean = self.mean(latent_sde)
-        mean = self.clip_mean(mean)
+        # output layer
+        mean = self.mean(x, training=training)
+        mean = self.clip_mean(mean, training=training)
 
         if deterministic:
             action = self.bijector.forward(mean)
-            log_prob = None
         else:
-            noise = self.noise(latent_sde)
+            noise = self.noise(x, training=training)
             action = self.bijector.forward(mean + noise)
 
             if with_log_prob:
-                variance = tf.matmul(tf.square(latent_sde), tf.square(self.noise.scale))
+                variance = tf.matmul(tf.square(x), tf.square(self.noise.scale))
                 pi_distribution = tfp.distributions.TransformedDistribution(
                     distribution=tfp.distributions.MultivariateNormalDiag(
-                        loc=mean, scale_diag=tf.sqrt(variance + 1e-6)
+                        loc=mean, scale_diag=tf.sqrt(variance + backend.epsilon())
                     ),
                     bijector=self.bijector,
                 )
                 log_prob = pi_distribution.log_prob(action)[..., tf.newaxis]
-            else:
-                log_prob = None
 
-        return [action, log_prob]
+                return [action, log_prob]
 
-    # TODO(markub3327):    def train_step(self, data):
+        return action
+
+    def get_config(self):
+        config = super(Actor, self).get_config()
+        config.update(
+            {
+                "units": self.units,
+                "n_outputs": self.n_outputs,
+                "clip_mean_min": self.clip_mean_min,
+                "clip_mean_max": self.clip_mean_max,
+                "init_noise": self.init_noise,
+            }
+        )
+
+        return config

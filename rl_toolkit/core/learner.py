@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import reverb
+import tensorflow as tf
 import wandb
 from tensorflow.keras.optimizers import Adam
 from wandb.keras import WandbCallback
@@ -37,9 +38,7 @@ class Learner(Process):
         tau (float): the soft update coefficient for target networks
         init_alpha (float): initialization of alpha param
         init_noise (float): initialization of the Actor's noise
-        model_path (str): path to the model
         save_path (str): path to the models for saving
-        log_interval (int): the logging interval to the console
     """
 
     def __init__(
@@ -66,23 +65,21 @@ class Learner(Process):
         # ---
         actor_global_clipnorm: float,
         critic_global_clipnorm: float,
-        alpha_global_clipnorm: float,
         # ---
         gamma: float,
         tau: float,
         init_alpha: float,
         init_noise: float,
+        merge_index: int,
         # ---
-        model_path: str,
         save_path: str,
-        # ---
-        log_interval: int,
     ):
         super(Learner, self).__init__(env_name, False)
 
+        tf.config.optimizer.set_jit(True)  # Enable XLA.
+
         self._train_steps = train_steps
         self._save_path = save_path
-        self._log_interval = log_interval
         self._db_server = db_server
 
         # Init actor-critic's network
@@ -99,23 +96,20 @@ class Learner(Process):
             tau=tau,
             init_alpha=init_alpha,
             init_noise=init_noise,
+            merge_index=merge_index,
         )
         self.model.build((None,) + self._env.observation_space.shape)
         self.model.compile(
             actor_optimizer=Adam(
-                learning_rate=actor_learning_rate, global_clipnorm=actor_global_clipnorm
+                learning_rate=actor_learning_rate,
+                global_clipnorm=actor_global_clipnorm,
             ),
             critic_optimizer=Adam(
                 learning_rate=critic_learning_rate,
                 global_clipnorm=critic_global_clipnorm,
             ),
-            alpha_optimizer=Adam(
-                learning_rate=alpha_learning_rate, global_clipnorm=alpha_global_clipnorm
-            ),
+            alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
         )
-
-        if model_path is not None:
-            self.model.load_weights(model_path)
 
         # Show models details
         self.model.summary()
@@ -136,6 +130,8 @@ class Learner(Process):
         wandb.config.actor_learning_rate = actor_learning_rate
         wandb.config.critic_learning_rate = critic_learning_rate
         wandb.config.alpha_learning_rate = alpha_learning_rate
+        wandb.config.actor_global_clipnorm = actor_global_clipnorm
+        wandb.config.critic_global_clipnorm = critic_global_clipnorm
         wandb.config.n_quantiles = n_quantiles
         wandb.config.top_quantiles_to_drop = top_quantiles_to_drop
         wandb.config.n_critics = n_critics
@@ -152,18 +148,24 @@ class Learner(Process):
             epochs=self._train_steps,
             steps_per_epoch=1,
             verbose=0,
-            callbacks=[AgentCallback(self._db_server), WandbCallback(save_model=False)],
+            callbacks=[
+                AgentCallback(self._db_server),
+                WandbCallback(save_model=False),
+            ],
         )
 
     def save(self):
         if self._save_path:
-            # create path if not exists
-            if not os.path.exists(self._save_path):
+            try:
                 os.makedirs(self._save_path)
-
-            # Save model
-            self.model.save_weights(os.path.join(self._save_path, "actor_critic.h5"))
-            self.model.actor.save_weights(os.path.join(self._save_path, "actor.h5"))
+            except OSError:
+                print("The path already exist ❗❗❗")
+            finally:
+                # Save model
+                self.model.save_weights(
+                    os.path.join(self._save_path, "actor_critic.h5")
+                )
+                wandb.save(os.path.join(self._save_path, "actor_critic.h5"))
 
     def close(self):
         super(Learner, self).close()

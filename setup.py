@@ -16,7 +16,7 @@ extras = {
 
 setup(
     name="rl-toolkit",
-    version="4.1.1",
+    version="5.0.0",
     description="RL-Toolkit: A Research Framework for Robotics",  # noqa
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -33,8 +33,8 @@ setup(
     keywords=[
         "reinforcement-learning",
         "ml",
-        "openai-gym",
         "pybullet",
+        "gymnasium",
         "reverb",
         "docker",
         "rl-agents",
@@ -50,15 +50,17 @@ setup(
     ],
     install_requires=[
         "gym",
+        "gymnasium",
         "box2d-py",
         "pygame",
         "swig",
         "pybullet",
+        "dm_control",
         "tensorflow_probability",
         "wandb",
     ],
     extras_require=extras,
-    python_requires=">=3.6",
+    python_requires=">=3.9",
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Environment :: Console",
@@ -66,9 +68,9 @@ setup(
         "Intended Audience :: Science/Research",
         "Intended Audience :: Education",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
+        "Topic :: Scientific/Engineering :: Robotics",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
 )
