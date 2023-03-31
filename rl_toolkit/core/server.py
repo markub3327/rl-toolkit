@@ -55,7 +55,6 @@ class Server(Process):
         init_alpha: float,
         init_noise: float,
         merge_index: int,
-        latent_index: int,
         # ---
         min_replay_size: int,
         max_replay_size: int,
@@ -81,7 +80,6 @@ class Server(Process):
             init_alpha=init_alpha,
             init_noise=init_noise,
             merge_index=merge_index,
-            latent_index=latent_index,
         )
         actor_critic.build((None,) + self._env.observation_space.shape)
 
