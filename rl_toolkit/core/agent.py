@@ -138,7 +138,7 @@ class Agent(Process):
                 {
                     "observation": self._last_obs,
                     "action": action,
-                    "ext_reward": np.array([ext_reward]),
+                    "ext_reward": np.array([ext_reward], dtype=np.float32),
                     "terminal": np.array([terminated]),
                 }
             )
