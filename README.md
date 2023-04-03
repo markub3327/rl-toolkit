@@ -159,7 +159,8 @@
   | HopperBulletEnv-v0       | 2515 ± 50[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | **2555 ± 405** | 2401 ± 62[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | 2151 ± 664 |
 
 ![results](https://raw.githubusercontent.com/markub3327/rl-toolkit/master/img/results.png)
-![rl-toolkit](https://raw.githubusercontent.com/markub3327/rl-toolkit/master/img/preview.gif)
+![anim1](https://raw.githubusercontent.com/markub3327/rl-toolkit/master/img/anim1.gif)
+![anim2](https://raw.githubusercontent.com/markub3327/rl-toolkit/master/img/anim2.gif)
 
 ## Releases
 
