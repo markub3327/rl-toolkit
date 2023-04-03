@@ -1,5 +1,3 @@
-import gymnasium
-import pybullet_envs  # noqa
 import tensorflow as tf
 
 from .wrappers import dmControlGetTasks, dmControlGymWrapper
@@ -25,7 +23,14 @@ class Process:
         if any(x[0] in env_name and x[1] in env_name for x in dmControlGetTasks()):
             s = env_name.split("-")
             self._env = dmControlGymWrapper(domain_name=s[0], task_name=s[1])
+        if "BulletEnv" in env_name:
+            import pybullet_envs  # noqa
+            import gym
+
+            self._env = gym.make(env_name, render_mode="human" if render else None)
         else:
+            import gymnasium
+
             self._env = gymnasium.make(
                 env_name, render_mode="human" if render else None
             )

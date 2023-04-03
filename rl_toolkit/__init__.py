@@ -4,6 +4,7 @@ import yaml
 
 from rl_toolkit.core import Agent, Learner, Server, Tester
 
+
 def main():
     my_parser = argparse.ArgumentParser(
         prog="python3 -m rl_toolkit",
