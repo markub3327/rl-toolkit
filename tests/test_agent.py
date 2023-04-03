@@ -1,8 +1,8 @@
-from rl_toolkit.core import Tester
+from rl_toolkit.core import Tester as Agent
 
 
 def test_pre_trained():
-    agent = Tester(
+    agent = Agent(
         env_name="BipedalWalkerHardcore-v3",
         render=False,
         max_steps=2000,
@@ -21,7 +21,7 @@ def test_pre_trained():
 
 
 def test_random():
-    agent = Tester(
+    agent = Agent(
         env_name="BipedalWalkerHardcore-v3",
         render=False,
         max_steps=2000,
