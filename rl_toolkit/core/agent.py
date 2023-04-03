@@ -50,7 +50,7 @@ class Agent(Process):
         self._warmup_steps = warmup_steps
         self._save_path = save_path
 
-        if self._env.unwrapped.spec.id == "HumanoidRobot-v0":
+        if self._env.unwrapped.spec is not None and self._env.unwrapped.spec.id == "HumanoidRobot-v0":
             self._env.connect()
 
         # Init actor's network
