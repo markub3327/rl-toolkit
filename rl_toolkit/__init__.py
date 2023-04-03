@@ -196,6 +196,7 @@ def main():
             clip_mean_max=config["Learner"]["Actor"]["clip_mean_max"],
             init_noise=config["Learner"]["Actor"]["init_noise"],
             model_path=args.model_path,
+            enable_wandb=True,
         )
 
         try:
