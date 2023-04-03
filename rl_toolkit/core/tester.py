@@ -23,6 +23,7 @@ class Tester(Process):
         clip_mean_max (float): the maximum value of mean
         init_noise (float): initialization of the Actor's noise
         model_path (str): path to the model
+        enable_wandb (bool): enable Weights & Biases logging module
     """
 
     def __init__(
@@ -38,11 +39,13 @@ class Tester(Process):
         init_noise: float,
         # ---
         model_path: str,
+        enable_wandb: bool,
     ):
         super(Tester, self).__init__(env_name, render)
 
         self._max_steps = max_steps
         self._render = render
+        self._enable_wandb = enable_wandb
 
         # Init actor's network
         self.model = Actor(
@@ -61,7 +64,7 @@ class Tester(Process):
         self.model.summary()
 
         # Init Weights & Biases
-        if not self._render:
+        if not self._render and self._enable_wandb:
             wandb.init(
                 project="rl-toolkit",
                 group=f"{env_name}",
@@ -122,14 +125,15 @@ class Tester(Process):
                 print(
                     f"Testing ... {(self._total_steps * 100) / self._max_steps} %"  # noqa
                 )
-                wandb.log(
-                    {
-                        "Epoch": self._total_episodes,
-                        "Score": self._episode_reward,
-                        "Steps": self._episode_steps,
-                    },
-                    step=self._total_steps,
-                )
+                if not self._render and self._enable_wandb:
+                    wandb.log(
+                        {
+                            "Epoch": self._total_episodes,
+                            "Score": self._episode_reward,
+                            "Steps": self._episode_steps,
+                        },
+                        step=self._total_steps,
+                    )
 
                 # Init variables
                 self._episode_reward = 0.0

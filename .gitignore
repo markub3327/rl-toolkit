@@ -148,7 +148,3 @@ wandb/
 
 # ignore save folder
 save/
-
-# ignore TF models
-*.tflite
-*.h5

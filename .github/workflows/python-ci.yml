@@ -24,7 +24,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install black flake8 isort
+          python3 -m pip install black isort flake8 pytest Pillow tensorflow
+          python3 -m pip install -e .
 
       - name: Check codestyle
         run: |
@@ -34,5 +35,6 @@ jobs:
         run: |
           flake8 ./ --count --show-source --statistics
       
-      - name: PyTest
+      - name: Run pytest
         run: |
+          pytest tests/
