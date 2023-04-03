@@ -24,8 +24,8 @@ class Process:
             s = env_name.split("-")
             self._env = dmControlGymWrapper(domain_name=s[0], task_name=s[1])
         if "BulletEnv" in env_name:
-            import pybullet_envs  # noqa
             import gym
+            import pybullet_envs  # noqa
 
             self._env = gym.make(env_name, render_mode="human" if render else None)
         else:
