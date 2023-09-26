@@ -1,0 +1,37 @@
+# Server process
+Server:
+  # Database
+  port: 8000
+  max_replay_size: 1000000
+  samples_per_insert: 32
+
+# Agent process
+Agent:
+  temp_init: 0.5
+  temp_min: 0.001
+  temp_decay: 0.99999
+  warmup_steps: 10000
+
+# Learner process
+Learner:
+  train_steps: 1000000
+  batch_size: 256
+  warmup_steps: 100
+  gamma: 0.99
+  tau: 0.01
+
+# Model definition
+Model:
+  num_layers: 2
+  embed_dim: 128
+  ff_mult: 4
+  num_heads: 6
+  dropout_rate: 0.0
+  attention_dropout_rate: 0.0
+  learning_rate: !!float 3e-4
+  global_clipnorm: 1.0
+  weight_decay: !!float 1e-4
+
+# Paths
+save_path: "./save/model"
+db_path: "./save/db"

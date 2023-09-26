@@ -140,7 +140,7 @@ class ActorCritic(Model):
             training=True,
         )
 
-        # Reward
+        # Set dtype
         ext_reward = tf.cast(sample.data["ext_reward"], dtype=self.dtype)
         terminal = tf.cast(sample.data["terminal"], dtype=self.dtype)
 

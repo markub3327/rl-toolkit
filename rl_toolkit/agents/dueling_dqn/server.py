@@ -1,11 +1,10 @@
-import numpy as np
 import reverb
 import tensorflow as tf
 
-from rl_toolkit.networks.models import ActorCritic
+from rl_toolkit.networks.models import DuelingDQN
 from rl_toolkit.utils import VariableContainer
 
-from .process import Process
+from ...core.process import Process
 
 
 class Server(Process):
@@ -40,55 +39,44 @@ class Server(Process):
         env_name: str,
         port: int,
         # ---
-        actor_units: list,
-        critic_units: list,
-        # ---
-        clip_mean_min: float,
-        clip_mean_max: float,
-        # ---
-        n_quantiles: int,
-        top_quantiles_to_drop: int,
-        n_critics: int,
-        # ---
+        num_layers: int,
+        embed_dim: int,
+        ff_mult: int,
+        num_heads: int,
+        dropout_rate: float,
+        attention_dropout_rate: float,
         gamma: float,
         tau: float,
-        init_alpha: float,
-        init_noise: float,
-        merge_index: int,
         # ---
         min_replay_size: int,
         max_replay_size: int,
         samples_per_insert: int,
         # ---
-        actor_critic_path: str,
+        model_path: str,
         db_path: str,
     ):
         super(Server, self).__init__(env_name, False)
 
         # Init actor-critic network
-        actor_critic = ActorCritic(
-            actor_units=actor_units,
-            critic_units=critic_units,
-            n_quantiles=n_quantiles,
-            top_quantiles_to_drop=top_quantiles_to_drop,
-            n_critics=n_critics,
-            n_outputs=np.prod(self._env.action_space.shape),
-            clip_mean_min=clip_mean_min,
-            clip_mean_max=clip_mean_max,
+        model = DuelingDQN(
+            self._env.action_space.n,
+            num_layers=num_layers,
+            embed_dim=embed_dim,
+            ff_mult=ff_mult,
+            num_heads=num_heads,
+            dropout_rate=dropout_rate,
+            attention_dropout_rate=attention_dropout_rate,
             gamma=gamma,
             tau=tau,
-            init_alpha=init_alpha,
-            init_noise=init_noise,
-            merge_index=merge_index,
         )
-        actor_critic.build((None,) + self._env.observation_space.shape)
+        model.build((None,) + self._env.observation_space.shape)
 
         # Show models details
-        actor_critic.summary()
+        model.summary()
 
         # load models
-        if actor_critic_path is not None:
-            actor_critic.load_weights(actor_critic_path)
+        if model_path is not None:
+            model.load_weights(model_path)
 
         # Variables
         train_step = tf.Variable(
@@ -111,7 +99,7 @@ class Server(Process):
             db_server=f"localhost:{port}",
             table="variables",
             variables={
-                "policy_variables": actor_critic.actor.variables,
+                "policy_variables": model.variables,
                 "train_step": train_step,
                 "stop_agents": stop_agents,
             },

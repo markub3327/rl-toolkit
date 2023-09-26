@@ -1,17 +1,14 @@
-import os
-
-import numpy as np
 import reverb
 import tensorflow as tf
 import wandb
-from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import LearningRateScheduler
 from wandb.keras import WandbCallback
 
-from rl_toolkit.networks.callbacks import AgentCallback
-from rl_toolkit.networks.models import ActorCritic
+from rl_toolkit.networks.callbacks import AgentCallback, PrintLR, cosine_schedule
+from rl_toolkit.networks.models import DuelingDQN
 from rl_toolkit.utils import make_reverb_dataset
 
-from .process import Process
+from ...core.process import Process
 
 
 class Learner(Process):
@@ -50,27 +47,20 @@ class Learner(Process):
         train_steps: int,
         batch_size: int,
         # ---
-        actor_units: list,
-        critic_units: list,
-        actor_learning_rate: float,
-        critic_learning_rate: float,
-        alpha_learning_rate: float,
+        num_layers: int,
+        embed_dim: int,
+        ff_mult: int,
+        num_heads: int,
+        dropout_rate: float,
+        attention_dropout_rate: float,
+        learning_rate: float,
         # ---
-        n_quantiles: int,
-        top_quantiles_to_drop: int,
-        n_critics: int,
-        # ---
-        clip_mean_min: float,
-        clip_mean_max: float,
-        # ---
-        actor_global_clipnorm: float,
-        critic_global_clipnorm: float,
+        global_clipnorm: float,
+        weight_decay: float,
+        warmup_steps: int,
         # ---
         gamma: float,
         tau: float,
-        init_alpha: float,
-        init_noise: float,
-        merge_index: int,
         # ---
         save_path: str,
     ):
@@ -81,38 +71,53 @@ class Learner(Process):
         self._train_steps = train_steps
         self._save_path = save_path
         self._db_server = db_server
+        self._warmup_steps = warmup_steps
+        action_space = self._env.action_space.n
 
-        # Init actor-critic's network
-        self.model = ActorCritic(
-            actor_units=actor_units,
-            critic_units=critic_units,
-            n_quantiles=n_quantiles,
-            top_quantiles_to_drop=top_quantiles_to_drop,
-            n_critics=n_critics,
-            n_outputs=np.prod(self._env.action_space.shape),
-            clip_mean_min=clip_mean_min,
-            clip_mean_max=clip_mean_max,
+        # Init Dueling DQN network
+        target_dqn_model = DuelingDQN(
+            action_space,
+            num_layers=num_layers,
+            embed_dim=embed_dim,
+            ff_mult=ff_mult,
+            num_heads=num_heads,
+            dropout_rate=dropout_rate,
+            attention_dropout_rate=attention_dropout_rate,
+            target_dqn_model=None,
             gamma=gamma,
             tau=tau,
-            init_alpha=init_alpha,
-            init_noise=init_noise,
-            merge_index=merge_index,
+        )
+        target_dqn_model.build((None,) + self._env.observation_space.shape)
+
+        self.model = DuelingDQN(
+            action_space,
+            num_layers=num_layers,
+            embed_dim=embed_dim,
+            ff_mult=ff_mult,
+            num_heads=num_heads,
+            dropout_rate=dropout_rate,
+            attention_dropout_rate=attention_dropout_rate,
+            target_dqn_model=target_dqn_model,
+            gamma=gamma,
+            tau=tau,
         )
         self.model.build((None,) + self._env.observation_space.shape)
-        self.model.compile(
-            actor_optimizer=Adam(
-                learning_rate=actor_learning_rate,
-                global_clipnorm=actor_global_clipnorm,
-            ),
-            critic_optimizer=Adam(
-                learning_rate=critic_learning_rate,
-                global_clipnorm=critic_global_clipnorm,
-            ),
-            alpha_optimizer=Adam(learning_rate=alpha_learning_rate),
+        dqn_optimizer = tf.keras.optimizers.AdamW(
+            global_clipnorm=global_clipnorm,
+            weight_decay=weight_decay,
         )
+        dqn_optimizer.exclude_from_weight_decay(
+            var_names=["bias", "layer_normalization", "position"]
+        )
+        self.model.compile(optimizer=dqn_optimizer)
+
+        # copy original to target model's weights
+        target_dqn_model.set_weights(self.model.get_weights())
+        print(self.model.get_weights())
 
         # Show models details
         self.model.summary()
+        target_dqn_model.summary()
 
         # Initializes the reverb's dataset
         self.dataset = make_reverb_dataset(
@@ -125,22 +130,10 @@ class Learner(Process):
         wandb.init(project="rl-toolkit", group=f"{env_name}")
         wandb.config.train_steps = train_steps
         wandb.config.batch_size = batch_size
-        wandb.config.actor_units = actor_units
-        wandb.config.critic_units = critic_units
-        wandb.config.actor_learning_rate = actor_learning_rate
-        wandb.config.critic_learning_rate = critic_learning_rate
-        wandb.config.alpha_learning_rate = alpha_learning_rate
-        wandb.config.actor_global_clipnorm = actor_global_clipnorm
-        wandb.config.critic_global_clipnorm = critic_global_clipnorm
-        wandb.config.n_quantiles = n_quantiles
-        wandb.config.top_quantiles_to_drop = top_quantiles_to_drop
-        wandb.config.n_critics = n_critics
-        wandb.config.clip_mean_min = clip_mean_min
-        wandb.config.clip_mean_max = clip_mean_max
+        wandb.config.learning_rate = learning_rate
+        wandb.config.global_clipnorm = global_clipnorm
         wandb.config.gamma = gamma
         wandb.config.tau = tau
-        wandb.config.init_alpha = init_alpha
-        wandb.config.init_noise = init_noise
 
     def run(self):
         self.model.fit(
@@ -151,21 +144,16 @@ class Learner(Process):
             callbacks=[
                 AgentCallback(self._db_server),
                 WandbCallback(save_model=False),
+                LearningRateScheduler(
+                    cosine_schedule(
+                        base_lr=wandb.config.learning_rate,
+                        total_steps=self._train_steps,
+                        warmup_steps=self._warmup_steps,
+                    )
+                ),
+                PrintLR(),
             ],
         )
-
-    def save(self):
-        if self._save_path:
-            try:
-                os.makedirs(self._save_path)
-            except OSError:
-                print("The path already exist ❗❗❗")
-            finally:
-                # Save model
-                self.model.save_weights(
-                    os.path.join(self._save_path, "actor_critic.h5")
-                )
-                wandb.save(os.path.join(self._save_path, "actor_critic.h5"))
 
     def close(self):
         super(Learner, self).close()

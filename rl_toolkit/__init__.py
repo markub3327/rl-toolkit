@@ -2,8 +2,6 @@ import argparse
 
 import yaml
 
-from rl_toolkit.core import Agent, Learner, Server, Tester
-
 
 def main():
     my_parser = argparse.ArgumentParser(
@@ -24,6 +22,13 @@ def main():
         help="Path Configuration File",
         required=True,
     )
+    my_parser.add_argument(
+        "-a",
+        "--agent",
+        type=str,
+        help="Method (SAC, DQN, etc.)",
+        required=True,
+    )
 
     # create sub-parser for selecting mode
     sub_parsers = my_parser.add_subparsers(
@@ -39,9 +44,7 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         help="Server process",
     )
-    parser_server.add_argument(
-        "--actor_critic_path", type=str, help="Path to saved actor-critic model"
-    )
+    parser_server.add_argument("--model_path", type=str, help="Path to saved model")
 
     # create the parser for the "agent" sub-command
     parser_agent = sub_parsers.add_parser(
@@ -96,29 +99,54 @@ def main():
     with open(args.config, "r") as f:
         config = yaml.load(f, Loader=yaml.Loader)
 
+    # select method
+    if args.agent == "sac":
+        from rl_toolkit.agents.sac import Agent, Learner, Server, Tester
+    elif args.agent == "dqn":
+        from rl_toolkit.agents.dueling_dqn import Agent, Learner, Server, Tester
+    else:
+        raise ValueError(f"Unknown agent: {args.agent}")
+
     # Server mode
     if args.mode == "server":
-        agent = Server(
-            env_name=args.environment,
-            port=config["Server"]["port"],
-            actor_units=config["Learner"]["Actor"]["units"],
-            critic_units=config["Learner"]["Critic"]["units"],
-            clip_mean_min=config["Learner"]["Actor"]["clip_mean_min"],
-            clip_mean_max=config["Learner"]["Actor"]["clip_mean_max"],
-            n_quantiles=config["Learner"]["Critic"]["n_quantiles"],
-            merge_index=config["Learner"]["Critic"]["merge_index"],
-            top_quantiles_to_drop=config["Learner"]["Critic"]["top_quantiles_to_drop"],
-            n_critics=config["Learner"]["Critic"]["count"],
-            gamma=config["Learner"]["Critic"]["gamma"],
-            tau=config["Learner"]["Critic"]["tau"],
-            init_alpha=config["Learner"]["Alpha"]["init"],
-            init_noise=config["Learner"]["Actor"]["init_noise"],
-            min_replay_size=config["Agent"]["warmup_steps"],
-            max_replay_size=config["Learner"]["max_replay_size"],
-            samples_per_insert=config["Learner"]["samples_per_insert"],
-            actor_critic_path=args.actor_critic_path,
-            db_path=config["db_path"],
-        )
+        if args.agent == "sac":
+            agent = Server(
+                env_name=args.environment,
+                port=config["Server"]["port"],
+                actor_units=config["Actor"]["units"],
+                critic_units=config["Critic"]["units"],
+                clip_mean_min=config["Actor"]["clip_mean_min"],
+                clip_mean_max=config["Actor"]["clip_mean_max"],
+                n_quantiles=config["Critic"]["n_quantiles"],
+                merge_index=config["Critic"]["merge_index"],
+                top_quantiles_to_drop=config["Critic"]["top_quantiles_to_drop"],
+                n_critics=config["Critic"]["count"],
+                gamma=config["Critic"]["gamma"],
+                tau=config["Critic"]["tau"],
+                init_alpha=config["Alpha"]["init"],
+                init_noise=config["Actor"]["init_noise"],
+                min_replay_size=config["Agent"]["warmup_steps"],
+                max_replay_size=config["Server"]["max_replay_size"],
+                samples_per_insert=config["Server"]["samples_per_insert"],
+                actor_critic_path=args.model_path,
+                db_path=config["db_path"],
+            )
+        elif args.agent == "dqn":
+            agent = Server(
+                env_name=args.environment,
+                port=config["Server"]["port"],
+                num_layers=config["Model"]["num_layers"],
+                embed_dim=config["Model"]["embed_dim"],
+                ff_mult=config["Model"]["ff_mult"],
+                num_heads=config["Model"]["num_heads"],
+                dropout_rate=config["Model"]["dropout_rate"],
+                attention_dropout_rate=config["Model"]["attention_dropout_rate"],
+                min_replay_size=config["Agent"]["warmup_steps"],
+                max_replay_size=config["Server"]["max_replay_size"],
+                samples_per_insert=config["Server"]["samples_per_insert"],
+                model_path=args.model_path,
+                db_path=config["db_path"],
+            )
 
         try:
             agent.run()
@@ -129,17 +157,34 @@ def main():
 
     # Agent mode
     elif args.mode == "agent":
-        agent = Agent(
-            env_name=args.environment,
-            db_server=f"{args.db_server}:{config['Server']['port']}",
-            actor_units=config["Learner"]["Actor"]["units"],
-            clip_mean_min=config["Learner"]["Actor"]["clip_mean_min"],
-            clip_mean_max=config["Learner"]["Actor"]["clip_mean_max"],
-            init_noise=config["Learner"]["Actor"]["init_noise"],
-            warmup_steps=config["Agent"]["warmup_steps"],
-            env_steps=config["Agent"]["env_steps"],
-            save_path=config["save_path"],
-        )
+        if args.agent == "sac":
+            agent = Agent(
+                env_name=args.environment,
+                db_server=f"{args.db_server}:{config['Server']['port']}",
+                actor_units=config["Actor"]["units"],
+                clip_mean_min=config["Actor"]["clip_mean_min"],
+                clip_mean_max=config["Actor"]["clip_mean_max"],
+                init_noise=config["Actor"]["init_noise"],
+                warmup_steps=config["Agent"]["warmup_steps"],
+                env_steps=config["Agent"]["env_steps"],
+                save_path=config["save_path"],
+            )
+        elif args.agent == "dqn":
+            agent = Agent(
+                env_name=args.environment,
+                db_server=f"{args.db_server}:{config['Server']['port']}",
+                num_layers=config["Model"]["num_layers"],
+                embed_dim=config["Model"]["embed_dim"],
+                ff_mult=config["Model"]["ff_mult"],
+                num_heads=config["Model"]["num_heads"],
+                dropout_rate=config["Model"]["dropout_rate"],
+                attention_dropout_rate=config["Model"]["attention_dropout_rate"],
+                temp_init=config["Agent"]["temp_init"],
+                temp_min=config["Agent"]["temp_min"],
+                temp_decay=config["Agent"]["temp_decay"],
+                warmup_steps=config["Agent"]["warmup_steps"],
+                save_path=config["save_path"],
+            )
 
         try:
             agent.run()
@@ -152,30 +197,51 @@ def main():
 
     # Learner mode
     elif args.mode == "learner":
-        agent = Learner(
-            env_name=args.environment,
-            db_server=f"{args.db_server}:{config['Server']['port']}",
-            train_steps=config["Learner"]["train_steps"],
-            batch_size=config["Learner"]["batch_size"],
-            actor_units=config["Learner"]["Actor"]["units"],
-            critic_units=config["Learner"]["Critic"]["units"],
-            actor_learning_rate=config["Learner"]["Actor"]["learning_rate"],
-            critic_learning_rate=config["Learner"]["Critic"]["learning_rate"],
-            alpha_learning_rate=config["Learner"]["Alpha"]["learning_rate"],
-            n_quantiles=config["Learner"]["Critic"]["n_quantiles"],
-            top_quantiles_to_drop=config["Learner"]["Critic"]["top_quantiles_to_drop"],
-            n_critics=config["Learner"]["Critic"]["count"],
-            clip_mean_min=config["Learner"]["Actor"]["clip_mean_min"],
-            clip_mean_max=config["Learner"]["Actor"]["clip_mean_max"],
-            actor_global_clipnorm=config["Learner"]["Actor"]["global_clipnorm"],
-            critic_global_clipnorm=config["Learner"]["Critic"]["global_clipnorm"],
-            gamma=config["Learner"]["Critic"]["gamma"],
-            tau=config["Learner"]["Critic"]["tau"],
-            init_alpha=config["Learner"]["Alpha"]["init"],
-            init_noise=config["Learner"]["Actor"]["init_noise"],
-            merge_index=config["Learner"]["Critic"]["merge_index"],
-            save_path=config["save_path"],
-        )
+        if args.agent == "sac":
+            agent = Learner(
+                env_name=args.environment,
+                db_server=f"{args.db_server}:{config['Server']['port']}",
+                train_steps=config["Learner"]["train_steps"],
+                batch_size=config["Learner"]["batch_size"],
+                actor_units=config["Actor"]["units"],
+                critic_units=config["Critic"]["units"],
+                actor_learning_rate=config["Actor"]["learning_rate"],
+                critic_learning_rate=config["Critic"]["learning_rate"],
+                alpha_learning_rate=config["Alpha"]["learning_rate"],
+                n_quantiles=config["Critic"]["n_quantiles"],
+                top_quantiles_to_drop=config["Critic"]["top_quantiles_to_drop"],
+                n_critics=config["Critic"]["count"],
+                clip_mean_min=config["Actor"]["clip_mean_min"],
+                clip_mean_max=config["Actor"]["clip_mean_max"],
+                actor_global_clipnorm=config["Actor"]["global_clipnorm"],
+                critic_global_clipnorm=config["Critic"]["global_clipnorm"],
+                gamma=config["Learner"]["gamma"],
+                tau=config["Learner"]["tau"],
+                init_alpha=config["Alpha"]["init"],
+                init_noise=config["Actor"]["init_noise"],
+                merge_index=config["Critic"]["merge_index"],
+                save_path=config["save_path"],
+            )
+        elif args.agent == "dqn":
+            agent = Learner(
+                env_name=args.environment,
+                db_server=f"{args.db_server}:{config['Server']['port']}",
+                train_steps=config["Learner"]["train_steps"],
+                batch_size=config["Learner"]["batch_size"],
+                num_layers=config["Model"]["num_layers"],
+                embed_dim=config["Model"]["embed_dim"],
+                ff_mult=config["Model"]["ff_mult"],
+                num_heads=config["Model"]["num_heads"],
+                dropout_rate=config["Model"]["dropout_rate"],
+                attention_dropout_rate=config["Model"]["attention_dropout_rate"],
+                learning_rate=config["Model"]["learning_rate"],
+                global_clipnorm=config["Model"]["global_clipnorm"],
+                weight_decay=config["Model"]["weight_decay"],
+                warmup_steps=config["Learner"]["warmup_steps"],
+                gamma=config["Learner"]["gamma"],
+                tau=config["Learner"]["tau"],
+                save_path=config["save_path"],
+            )
 
         try:
             agent.run()
@@ -187,17 +253,32 @@ def main():
 
     # Tester mode
     elif args.mode == "tester":
-        agent = Tester(
-            env_name=args.environment,
-            render=args.render,
-            max_steps=args.max_steps,
-            actor_units=config["Learner"]["Actor"]["units"],
-            clip_mean_min=config["Learner"]["Actor"]["clip_mean_min"],
-            clip_mean_max=config["Learner"]["Actor"]["clip_mean_max"],
-            init_noise=config["Learner"]["Actor"]["init_noise"],
-            model_path=args.model_path,
-            enable_wandb=True,
-        )
+        if args.agent == "sac":
+            agent = Tester(
+                env_name=args.environment,
+                render=args.render,
+                max_steps=args.max_steps,
+                actor_units=config["Actor"]["units"],
+                clip_mean_min=config["Actor"]["clip_mean_min"],
+                clip_mean_max=config["Actor"]["clip_mean_max"],
+                init_noise=config["Actor"]["init_noise"],
+                model_path=args.model_path,
+                enable_wandb=True,
+            )
+        elif args.agent == "dqn":
+            agent = Tester(
+                env_name=args.environment,
+                render=args.render,
+                max_steps=args.max_steps,
+                num_layers=config["Model"]["num_layers"],
+                embed_dim=config["Model"]["embed_dim"],
+                ff_mult=config["Model"]["ff_mult"],
+                num_heads=config["Model"]["num_heads"],
+                dropout_rate=config["Model"]["dropout_rate"],
+                attention_dropout_rate=config["Model"]["attention_dropout_rate"],
+                model_path=args.model_path,
+                enable_wandb=True,
+            )
 
         try:
             agent.run()

@@ -52,6 +52,9 @@ class Process:
     def run(self):
         pass
 
+    def save(self):
+        pass
+
     def close(self):
         # Safely close the environment
         self._env.close()

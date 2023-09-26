@@ -5,8 +5,8 @@ from dm_control import viewer
 
 from rl_toolkit.networks.models import Actor
 
-from .process import Process
-from .wrappers import dmControlGymWrapper
+from ...core.process import Process
+from ..core.wrappers import dmControlGymWrapper
 
 
 class Tester(Process):

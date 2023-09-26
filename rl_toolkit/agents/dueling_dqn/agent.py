@@ -5,10 +5,10 @@ import reverb
 import tensorflow as tf
 import wandb
 
-from rl_toolkit.networks.models import Actor
+from rl_toolkit.networks.models import DuelingDQN
 from rl_toolkit.utils import VariableContainer
 
-from .process import Process
+from ...core.process import Process
 
 
 class Agent(Process):
@@ -24,7 +24,6 @@ class Agent(Process):
         clip_mean_max (float): the maximum value of mean
         init_noise (float): initialization of the Actor's noise
         warmup_steps (int): number of interactions before using policy network
-        env_steps (int): number of steps per rollout
         save_path (str): path to the models for saving
     """
 
@@ -34,32 +33,47 @@ class Agent(Process):
         env_name: str,
         db_server: str,
         # ---
-        actor_units: list,
-        clip_mean_min: float,
-        clip_mean_max: float,
-        init_noise: float,
+        num_layers: int,
+        embed_dim: int,
+        ff_mult: int,
+        num_heads: int,
+        dropout_rate: float,
+        attention_dropout_rate: float,
+        gamma: float,
+        tau: float,
         # ---
+        temp_init: float,
+        temp_min: float,
+        temp_decay: float,
         warmup_steps: int,
-        env_steps: int,
         # ---
         save_path: str,
     ):
         super(Agent, self).__init__(env_name, False)
 
-        self._env_steps = env_steps
         self._warmup_steps = warmup_steps
         self._save_path = save_path
+        self._temp_min = temp_min
+        self._temp_decay = temp_decay
+        self._temp_init = temp_init
 
-        if self._env.unwrapped.spec is not None and self._env.unwrapped.spec.id == "HumanoidRobot-v0":
+        if (
+            self._env.unwrapped.spec is not None
+            and self._env.unwrapped.spec.id == "HumanoidRobot-v0"
+        ):
             self._env.connect()
 
         # Init actor's network
-        self.model = Actor(
-            units=actor_units,
-            n_outputs=np.prod(self._env.action_space.shape),
-            clip_mean_min=clip_mean_min,
-            clip_mean_max=clip_mean_max,
-            init_noise=init_noise,
+        self.model = DuelingDQN(
+            self._env.action_space.n,
+            num_layers=num_layers,
+            embed_dim=embed_dim,
+            ff_mult=ff_mult,
+            num_heads=num_heads,
+            dropout_rate=dropout_rate,
+            attention_dropout_rate=attention_dropout_rate,
+            gamma=gamma,
+            tau=tau,
         )
         self.model.build((None,) + self._env.observation_space.shape)
 
@@ -102,20 +116,14 @@ class Agent(Process):
             group=f"{env_name}",
         )
         wandb.config.warmup_steps = warmup_steps
-        wandb.config.env_steps = env_steps
 
     def random_policy(self, inputs):
         action = self._env.action_space.sample()
         return action
 
     @tf.function(jit_compile=True)
-    def collect_policy(self, inputs):
-        action = self.model(
-            tf.expand_dims(inputs, axis=0),
-            with_log_prob=False,
-            deterministic=False,
-            training=False,
-        )
+    def collect_policy(self, inputs, temp):
+        action = self.model.get_action(tf.expand_dims(inputs, axis=0), temp)
         return tf.squeeze(action, axis=0)
 
     def collect(self, writer, max_steps, policy):
@@ -132,6 +140,10 @@ class Agent(Process):
             self._episode_reward += ext_reward
             self._episode_steps += 1
             self._total_steps += 1
+
+            # decrement temperature
+            self._temp *= self._temp_decay
+            self._temp = max(self._temp_min, self._temp)
 
             # Update the replay buffer
             writer.append(
@@ -180,6 +192,20 @@ class Agent(Process):
                 # Block until all the items have been sent to the server
                 writer.end_episode()
 
+                # save the checkpoint
+                if self._total_episodes > 0:
+                    if self._episode_reward > self._best_episode_reward:
+                        self._best_episode_reward = self._episode_reward
+                        self.save()
+                        print(
+                            f"Model is saved at {self._total_episodes} episode with score {self._best_episode_reward}"
+                        )
+                        wandb.log(
+                            {"best_score": self._best_episode_reward}, commit=False
+                        )
+                else:
+                    self._best_episode_reward = self._episode_reward
+
                 # Logging
                 print("=============================================")
                 print(f"Epoch: {self._total_episodes}")
@@ -193,6 +219,7 @@ class Agent(Process):
                         "Epoch": self._total_episodes,
                         "Score": self._episode_reward,
                         "Steps": self._episode_steps,
+                        "Temperature": self._temp,
                     },
                     step=self._train_step.numpy(),
                 )
@@ -220,6 +247,7 @@ class Agent(Process):
         self._episode_steps = 0
         self._total_episodes = 0
         self._total_steps = 0
+        self._temp = self._temp_init
         self._last_obs, _ = self._env.reset()
 
         # Connect to database
@@ -230,9 +258,6 @@ class Agent(Process):
 
             # Main loop
             while not self._stop_agents:
-                # Re-new noise matrix
-                self.model.reset_noise()
-
                 self.collect(writer, self._env_steps, self.collect_policy)
 
     def save(self, path=""):
@@ -244,8 +269,8 @@ class Agent(Process):
             finally:
                 # Save model
                 self.model.save_weights(
-                    os.path.join(os.path.join(self._save_path, path), "actor.h5")
-                )
-                wandb.save(
-                    os.path.join(os.path.join(self._save_path, path), "actor.h5")
+                    os.path.join(
+                        os.path.join(self._save_path, path),
+                        f"dqn_{self._total_episodes}.h5",
+                    )
                 )
