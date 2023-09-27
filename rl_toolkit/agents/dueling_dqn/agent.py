@@ -41,6 +41,7 @@ class Agent(Process):
         attention_dropout_rate: float,
         gamma: float,
         tau: float,
+        timesteps: int,
         # ---
         temp_init: float,
         temp_min: float,
@@ -56,6 +57,7 @@ class Agent(Process):
         self._temp_min = temp_min
         self._temp_decay = temp_decay
         self._temp_init = temp_init
+        self._timesteps = timesteps
 
         if (
             self._env.unwrapped.spec is not None
@@ -155,15 +157,15 @@ class Agent(Process):
         )
 
         # Enough samples to store in the database
-        if self._episode_steps > 1:
+        if self._episode_steps > self._timesteps:
             writer.create_item(
                 table="experience",
                 priority=1.0,
                 trajectory={
-                    "observation": writer.history["observation"][-2],
+                    "observation": writer.history["observation"][:-1],
                     "action": writer.history["action"][-2],
                     "ext_reward": writer.history["ext_reward"][-2],
-                    "next_observation": writer.history["observation"][-1],
+                    "next_observation": writer.history["observation"][1:],
                     "terminal": writer.history["terminal"][-2],
                 },
             )
@@ -180,10 +182,10 @@ class Agent(Process):
                 table="experience",
                 priority=1.0,
                 trajectory={
-                    "observation": writer.history["observation"][-2],
+                    "observation": writer.history["observation"][:-1],
                     "action": writer.history["action"][-2],
                     "ext_reward": writer.history["ext_reward"][-2],
-                    "next_observation": writer.history["observation"][-1],
+                    "next_observation": writer.history["observation"][1:],
                     "terminal": writer.history["terminal"][-2],
                 },
             )
@@ -248,7 +250,7 @@ class Agent(Process):
         self._last_obs, _ = self._env.reset()
 
         # Connect to database
-        with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
+        with self.client.trajectory_writer(num_keep_alive_refs=(self._timesteps + 1)) as writer:
             for _ in range(0, self._warmup_steps):
                 # Warmup steps
                 self.collect(writer, self.random_policy)

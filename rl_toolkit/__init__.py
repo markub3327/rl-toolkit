@@ -184,6 +184,7 @@ def main():
                 attention_dropout_rate=config["Model"]["attention_dropout_rate"],
                 gamma=config["Learner"]["gamma"],
                 tau=config["Learner"]["tau"],
+                timesteps=config["Model"]["timesteps"],
                 temp_init=config["Agent"]["temp_init"],
                 temp_min=config["Agent"]["temp_min"],
                 temp_decay=config["Agent"]["temp_decay"],
