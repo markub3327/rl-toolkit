@@ -4,7 +4,7 @@ import wandb
 from tensorflow.keras.callbacks import LearningRateScheduler
 from wandb.keras import WandbCallback
 
-from rl_toolkit.networks.callbacks import AgentCallback, PrintLR, cosine_schedule
+from rl_toolkit.networks.callbacks import DQNAgentCallback, PrintLR, cosine_schedule
 from rl_toolkit.networks.models import DuelingDQN
 from rl_toolkit.utils import make_reverb_dataset
 
@@ -142,7 +142,7 @@ class Learner(Process):
             steps_per_epoch=1,
             verbose=0,
             callbacks=[
-                AgentCallback(self._db_server),
+                DQNAgentCallback(self._db_server),
                 WandbCallback(save_model=False),
                 LearningRateScheduler(
                     cosine_schedule(

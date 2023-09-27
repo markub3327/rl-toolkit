@@ -143,6 +143,7 @@ def main():
                 attention_dropout_rate=config["Model"]["attention_dropout_rate"],
                 gamma=config["Learner"]["gamma"],
                 tau=config["Learner"]["tau"],
+                timesteps=config["Model"]["timesteps"],
                 min_replay_size=config["Agent"]["warmup_steps"],
                 max_replay_size=config["Server"]["max_replay_size"],
                 samples_per_insert=config["Server"]["samples_per_insert"],

@@ -4,7 +4,7 @@ from tensorflow.keras.callbacks import Callback
 from rl_toolkit.utils import VariableContainer
 
 
-class AgentCallback(Callback):
+class DQNAgentCallback(Callback):
     def __init__(self, db_server: str):
         super(AgentCallback, self).__init__()
         self._db_server = db_server
@@ -31,7 +31,7 @@ class AgentCallback(Callback):
             db_server=self._db_server,
             table="variables",
             variables={
-                "policy_variables": self.model.actor.variables,
+                "policy_variables": self.model.variables,
                 "train_step": self._train_step,
                 "stop_agents": self._stop_agents,
             },

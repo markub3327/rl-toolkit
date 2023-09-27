@@ -7,7 +7,7 @@ import wandb
 from tensorflow.keras.optimizers import Adam
 from wandb.keras import WandbCallback
 
-from rl_toolkit.networks.callbacks import AgentCallback
+from rl_toolkit.networks.callbacks import SACAgentCallback
 from rl_toolkit.networks.models import ActorCritic
 from rl_toolkit.utils import make_reverb_dataset
 
@@ -149,7 +149,7 @@ class Learner(Process):
             steps_per_epoch=1,
             verbose=0,
             callbacks=[
-                AgentCallback(self._db_server),
+                SACAgentCallback(self._db_server),
                 WandbCallback(save_model=False),
             ],
         )
