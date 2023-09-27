@@ -102,6 +102,7 @@ class Learner(Process):
             tau=tau,
         )
         self.model.build((None,) + self._env.observation_space.shape)
+        
         dqn_optimizer = tf.keras.optimizers.AdamW(
             global_clipnorm=global_clipnorm,
             weight_decay=weight_decay,
