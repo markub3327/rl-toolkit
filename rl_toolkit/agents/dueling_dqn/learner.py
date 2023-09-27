@@ -113,7 +113,7 @@ class Learner(Process):
         self.model.compile(optimizer=dqn_optimizer)
 
         # copy original to target model's weights
-        self.model._update_target(self, self._target_dqn_model, tau=self.tau)
+        self.model._update_target(self.model, target_dqn_model, tau=1.0)
 
         # Show models details
         self.model.summary()
