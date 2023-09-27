@@ -83,7 +83,7 @@ class Tester(Process):
         logits = self.model(
             tf.expand_dims(inputs, axis=0),
             training=False,
-        )   # Q values
+        )  # Q values
         return tf.argmax(logits, axis=-1)
 
     def run(self):

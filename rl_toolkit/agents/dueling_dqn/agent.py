@@ -127,117 +127,114 @@ class Agent(Process):
         action = self.model.get_action(tf.expand_dims(inputs, axis=0), temp)
         return tf.squeeze(action, axis=0)
 
-    def collect(self, writer, max_steps, policy):
-        # Collect the rollout
-        for _ in range(max_steps):
-            # Get the action
-            action = policy(self._last_obs, self._temp)
-            action = np.array(action, copy=False, dtype=self._env.action_space.dtype)
+    # Collect the rollout
+    def collect(self, writer, policy):
+        # Get the action
+        action = policy(self._last_obs, self._temp)
+        action = np.array(action, copy=False, dtype=self._env.action_space.dtype)
 
-            # Perform action
-            new_obs, ext_reward, terminated, truncated, _ = self._env.step(action)
+        # Perform action
+        new_obs, ext_reward, terminated, truncated, _ = self._env.step(action)
 
-            # Update variables
-            self._episode_reward += ext_reward
-            self._episode_steps += 1
-            self._total_steps += 1
+        # Update variables
+        self._episode_reward += ext_reward
+        self._episode_steps += 1
+        self._total_steps += 1
 
-            # decrement temperature
-            self._temp *= self._temp_decay
-            self._temp = max(self._temp_min, self._temp)
+        # decrement temperature
+        self._temp *= self._temp_decay
+        self._temp = max(self._temp_min, self._temp)
 
-            # Update the replay buffer
-            writer.append(
-                {
-                    "observation": self._last_obs,
-                    "action": action,
-                    "ext_reward": np.array([ext_reward], dtype=np.float64),
-                    "terminal": np.array([terminated]),
-                }
+        # Update the replay buffer
+        writer.append(
+            {
+                "observation": self._last_obs,
+                "action": action,
+                "ext_reward": np.array([ext_reward], dtype=np.float64),
+                "terminal": np.array([terminated]),
+            }
+        )
+
+        # Enough samples to store in the database
+        if self._episode_steps > 1:
+            writer.create_item(
+                table="experience",
+                priority=1.0,
+                trajectory={
+                    "observation": writer.history["observation"][-2],
+                    "action": writer.history["action"][-2],
+                    "ext_reward": writer.history["ext_reward"][-2],
+                    "next_observation": writer.history["observation"][-1],
+                    "terminal": writer.history["terminal"][-2],
+                },
             )
 
-            # Enough samples to store in the database
-            if self._episode_steps > 1:
-                writer.create_item(
-                    table="experience",
-                    priority=1.0,
-                    trajectory={
-                        "observation": writer.history["observation"][-2],
-                        "action": writer.history["action"][-2],
-                        "ext_reward": writer.history["ext_reward"][-2],
-                        "next_observation": writer.history["observation"][-1],
-                        "terminal": writer.history["terminal"][-2],
-                    },
-                )
+        # Check the end of episode
+        if terminated or truncated:
+            # Write the final interaction !!!
+            writer.append(
+                {
+                    "observation": new_obs,
+                }
+            )
+            writer.create_item(
+                table="experience",
+                priority=1.0,
+                trajectory={
+                    "observation": writer.history["observation"][-2],
+                    "action": writer.history["action"][-2],
+                    "ext_reward": writer.history["ext_reward"][-2],
+                    "next_observation": writer.history["observation"][-1],
+                    "terminal": writer.history["terminal"][-2],
+                },
+            )
 
-            # Check the end of episode
-            if terminated or truncated:
-                # Write the final interaction !!!
-                writer.append(
-                    {
-                        "observation": new_obs,
-                    }
-                )
-                writer.create_item(
-                    table="experience",
-                    priority=1.0,
-                    trajectory={
-                        "observation": writer.history["observation"][-2],
-                        "action": writer.history["action"][-2],
-                        "ext_reward": writer.history["ext_reward"][-2],
-                        "next_observation": writer.history["observation"][-1],
-                        "terminal": writer.history["terminal"][-2],
-                    },
-                )
+            # Block until all the items have been sent to the server
+            writer.end_episode()
 
-                # Block until all the items have been sent to the server
-                writer.end_episode()
-
-                # save the checkpoint
-                if self._total_episodes > 0:
-                    if self._episode_reward > self._best_episode_reward:
-                        self._best_episode_reward = self._episode_reward
-                        self.save()
-                        print(
-                            f"Model is saved at {self._total_episodes} episode with score {self._best_episode_reward}"
-                        )
-                        wandb.log(
-                            {"best_score": self._best_episode_reward}, commit=False
-                        )
-                else:
+            # save the checkpoint
+            if self._total_episodes > 0:
+                if self._episode_reward > self._best_episode_reward:
                     self._best_episode_reward = self._episode_reward
-
-                # Logging
-                print("=============================================")
-                print(f"Epoch: {self._total_episodes}")
-                print(f"Score: {self._episode_reward}")
-                print(f"Steps: {self._episode_steps}")
-                print(f"TotalInteractions: {self._total_steps}")
-                print(f"Train step: {self._train_step.numpy()}")
-                print("=============================================")
-                wandb.log(
-                    {
-                        "Epoch": self._total_episodes,
-                        "Score": self._episode_reward,
-                        "Steps": self._episode_steps,
-                        "Temperature": self._temp,
-                    },
-                    step=self._train_step.numpy(),
-                )
-
-                # Init variables
-                self._episode_reward = 0.0
-                self._episode_steps = 0
-                self._total_episodes += 1
-
-                # Init environment
-                self._last_obs, _ = self._env.reset()
-
-                # Load content of variables
-                self._variable_container.update_variables()
+                    self.save()
+                    print(
+                        f"Model is saved at {self._total_episodes} episode with score {self._best_episode_reward}"
+                    )
+                    wandb.log({"best_score": self._best_episode_reward}, commit=False)
             else:
-                # Super critical !!!
-                self._last_obs = new_obs
+                self._best_episode_reward = self._episode_reward
+
+            # Logging
+            print("=============================================")
+            print(f"Epoch: {self._total_episodes}")
+            print(f"Score: {self._episode_reward}")
+            print(f"Steps: {self._episode_steps}")
+            print(f"TotalInteractions: {self._total_steps}")
+            print(f"Train step: {self._train_step.numpy()}")
+            print("=============================================")
+            wandb.log(
+                {
+                    "Epoch": self._total_episodes,
+                    "Score": self._episode_reward,
+                    "Steps": self._episode_steps,
+                    "Temperature": self._temp,
+                },
+                step=self._train_step.numpy(),
+            )
+
+            # Init variables
+            self._episode_reward = 0.0
+            self._episode_steps = 0
+            self._total_episodes += 1
+
+            # Init environment
+            self._last_obs, _ = self._env.reset()
+
+            # Load content of variables
+            self._variable_container.update_variables()
+        else:
+            # Super critical !!!
+            self._last_obs = new_obs
 
         # send all experiences to DB server
         writer.flush()
@@ -253,13 +250,13 @@ class Agent(Process):
 
         # Connect to database
         with self.client.trajectory_writer(num_keep_alive_refs=2) as writer:
-            for _ in range(0, self._warmup_steps, self._env_steps):
+            for _ in range(0, self._warmup_steps):
                 # Warmup steps
-                self.collect(writer, self._env_steps, self.random_policy)
+                self.collect(writer, self.random_policy)
 
             # Main loop
             while not self._stop_agents:
-                self.collect(writer, self._env_steps, self.collect_policy)
+                self.collect(writer, self.collect_policy)
 
     def save(self, path=""):
         if self._save_path:
