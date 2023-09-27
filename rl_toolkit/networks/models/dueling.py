@@ -157,11 +157,7 @@ class DuelingDQN(Model):
         return V + A  # [B, A]
 
     def get_action(self, state, temperature):
-        # @tf.function(jit_compile=True)
-        def get_output(state):
-            return self(state, training=False)
-
-        return tf.random.categorical(get_output(state) / temperature, 1)[0, 0]
+        return tf.random.categorical(self(state, training=False) / temperature, 1)[0, 0]
 
     def train_step(self, sample):
         # Set dtype

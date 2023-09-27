@@ -118,7 +118,7 @@ class Agent(Process):
         )
         wandb.config.warmup_steps = warmup_steps
 
-    def random_policy(self, inputs):
+    def random_policy(self, inputs, temp):
         action = self._env.action_space.sample()
         return action
 
@@ -131,7 +131,7 @@ class Agent(Process):
         # Collect the rollout
         for _ in range(max_steps):
             # Get the action
-            action = policy(self._last_obs)
+            action = policy(self._last_obs, self._temp)
             action = np.array(action, copy=False, dtype=self._env.action_space.dtype)
 
             # Perform action

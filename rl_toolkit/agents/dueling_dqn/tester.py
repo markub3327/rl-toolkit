@@ -80,13 +80,11 @@ class Tester(Process):
 
     @tf.function(jit_compile=True)
     def policy(self, inputs):
-        action = self.model(
+        logits = self.model(
             tf.expand_dims(inputs, axis=0),
-            with_log_prob=False,
-            deterministic=True,
             training=False,
-        )
-        return tf.squeeze(action, axis=0)
+        )   # Q values
+        return tf.argmax(logits, axis=-1)
 
     def run(self):
         self._total_steps = 0
