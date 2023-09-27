@@ -124,8 +124,7 @@ class Agent(Process):
 
     @tf.function(jit_compile=True)
     def collect_policy(self, inputs, temp):
-        action = self.model.get_action(tf.expand_dims(inputs, axis=0), temp)
-        return tf.squeeze(action, axis=0)
+        return self.model.get_action(tf.expand_dims(inputs, axis=0), temp)
 
     # Collect the rollout
     def collect(self, writer, policy):
