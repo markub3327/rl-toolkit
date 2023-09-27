@@ -9,7 +9,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description += fh.read()
 
 extras = {
-    "all": ["tensorflow", "dm-reverb"],
+    "all": ["tensorflow", "dm-reverb", "flappy-bird-gymnasium"],
     "reverb": ["dm-reverb"],
     "tf": ["tensorflow"],
 }

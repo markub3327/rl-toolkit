@@ -29,6 +29,12 @@ class Process:
 
             self._env = gym.make(env_name, render_mode="human" if render else None)
         else:
+            # Import third-party environments
+            try:
+                import flappy_bird_gymnasium  # noqa
+            except ImportError as e:
+                print(f"The third-party environment {e} is not available!")
+
             import gymnasium
 
             self._env = gymnasium.make(
