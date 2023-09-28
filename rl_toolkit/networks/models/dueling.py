@@ -104,13 +104,12 @@ class DuelingDQN(Model):
         num_heads,
         dropout_rate,
         attention_dropout_rate,
-        target_dqn_model,
         gamma,
         tau,
         **kwargs
     ):
         super(DuelingDQN, self).__init__(**kwargs)
-        self._target_dqn_model = target_dqn_model
+        self._target_dqn_model = None
         self.gamma = gamma
         self.tau = tau
 

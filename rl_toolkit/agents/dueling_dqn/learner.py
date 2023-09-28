@@ -3,6 +3,7 @@ import tensorflow as tf
 import wandb
 from tensorflow.keras.callbacks import LearningRateScheduler
 from wandb.keras import WandbCallback
+from copy import deepcopy
 
 from rl_toolkit.networks.callbacks import DQNAgentCallback, PrintLR, cosine_schedule
 from rl_toolkit.networks.models import DuelingDQN
@@ -75,20 +76,6 @@ class Learner(Process):
         action_space = self._env.action_space.n
 
         # Init Dueling DQN network
-        target_dqn_model = DuelingDQN(
-            action_space,
-            num_layers=num_layers,
-            embed_dim=embed_dim,
-            ff_mult=ff_mult,
-            num_heads=num_heads,
-            dropout_rate=dropout_rate,
-            attention_dropout_rate=attention_dropout_rate,
-            target_dqn_model=None,
-            gamma=gamma,
-            tau=tau,
-        )
-        target_dqn_model.build((None,) + self._env.observation_space.shape)
-
         self.model = DuelingDQN(
             action_space,
             num_layers=num_layers,
@@ -97,7 +84,6 @@ class Learner(Process):
             num_heads=num_heads,
             dropout_rate=dropout_rate,
             attention_dropout_rate=attention_dropout_rate,
-            target_dqn_model=target_dqn_model,
             gamma=gamma,
             tau=tau,
         )
@@ -112,12 +98,8 @@ class Learner(Process):
         )
         self.model.compile(optimizer=dqn_optimizer)
 
-        # copy original to target model's weights
-        self.model._update_target(self.model, target_dqn_model, tau=1.0)
-
         # Show models details
         self.model.summary()
-        target_dqn_model.summary()
 
         # Initializes the reverb's dataset
         self.dataset = make_reverb_dataset(
