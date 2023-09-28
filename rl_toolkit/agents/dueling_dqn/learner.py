@@ -3,7 +3,6 @@ import tensorflow as tf
 import wandb
 from tensorflow.keras.callbacks import LearningRateScheduler
 from wandb.keras import WandbCallback
-from copy import deepcopy
 
 from rl_toolkit.networks.callbacks import DQNAgentCallback, PrintLR, cosine_schedule
 from rl_toolkit.networks.models import DuelingDQN
@@ -115,7 +114,7 @@ class Learner(Process):
 
         # copy original model to target model
         target_dqn_model.set_weights(self.model.get_weights())
-        
+
         # Show models details
         self.model.summary()
         target_dqn_model.summary()

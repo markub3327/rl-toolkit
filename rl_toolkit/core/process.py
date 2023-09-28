@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from .wrappers import dmControlGetTasks, dmControlGymWrapper, FrameStack
+from .wrappers import FrameStack, dmControlGetTasks, dmControlGymWrapper
 
 
 class Process:
@@ -43,7 +43,6 @@ class Process:
             )
             if frame_stack > 1:
                 self._env = FrameStack(self._env, frame_stack)
-
 
         gpus = tf.config.list_physical_devices("GPU")
         if gpus:

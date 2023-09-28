@@ -1,6 +1,7 @@
+from collections import deque
+
 import gymnasium
 import numpy as np
-from collections import deque
 
 
 class FrameStack(gymnasium.Wrapper):
@@ -31,8 +32,8 @@ class FrameStack(gymnasium.Wrapper):
         return self._get_ob(), reward, terminated, truncated, info
 
     def _set_ob(self, ob):
-        self.frames.append(np.expand_dims(ob, axis=0))    #  add time axis
+        self.frames.append(np.expand_dims(ob, axis=0))  # add time axis
 
     def _get_ob(self):
         assert len(self.frames) == self.k
-        return np.concatenate(list(self.frames), axis=0)    # concat along time axis
+        return np.concatenate(list(self.frames), axis=0)  # concat along time axis

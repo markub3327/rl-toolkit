@@ -93,16 +93,18 @@ class Encoder(Layer):
 
         return self.add_1([x, y])
 
+
 class TargetModelWrapper:
     def __init__(self, target_dqn_model):
         self._target_dqn_model = target_dqn_model
-    
+
     def __call__(self, inputs, training):
         return self._target_dqn_model(inputs, training=training)
 
     @property
     def variables(self):
         return self._target_dqn_model.variables
+
 
 class DuelingDQN(Model):
     def __init__(
@@ -116,11 +118,15 @@ class DuelingDQN(Model):
         attention_dropout_rate,
         gamma,
         tau,
-        target_dqn_model = None,
+        target_dqn_model=None,
         **kwargs
     ):
         super(DuelingDQN, self).__init__(**kwargs)
-        self._target_dqn_model_wrapper = TargetModelWrapper(target_dqn_model) if target_dqn_model is not None else None
+        self._target_dqn_model_wrapper = (
+            TargetModelWrapper(target_dqn_model)
+            if target_dqn_model is not None
+            else None
+        )
         self.gamma = gamma
         self.tau = tau
 
@@ -170,16 +176,22 @@ class DuelingDQN(Model):
         return tf.random.categorical(self(state, training=False) / temperature, 1)[0, 0]
 
     def _update_target(self):
-        for source_weight, target_weight in zip(self.variables, self._target_dqn_model_wrapper.variables):
-            target_weight.assign(self.tau * source_weight + (1.0 - self.tau) * target_weight)
-            
+        for source_weight, target_weight in zip(
+            self.variables, self._target_dqn_model_wrapper.variables
+        ):
+            target_weight.assign(
+                self.tau * source_weight + (1.0 - self.tau) * target_weight
+            )
+
     def train_step(self, sample):
         # Set dtype
         ext_reward = tf.cast(sample.data["ext_reward"], dtype=self.dtype)
         terminal = tf.cast(sample.data["terminal"], dtype=self.dtype)
 
         # predict next Q
-        next_Q = self._target_dqn_model_wrapper(sample.data["next_observation"], training=False)
+        next_Q = self._target_dqn_model_wrapper(
+            sample.data["next_observation"], training=False
+        )
         next_Q = tf.reduce_max(next_Q, axis=-1)
 
         # get targets
@@ -202,7 +214,7 @@ class DuelingDQN(Model):
         tf.debugging.Assert(
             tf.math.less(dqn_loss, 100.0), ["The loss is exploding!!! Value:", dqn_loss]
         )
-        
+
         # compute gradients
         trainable_vars = self.trainable_variables
         gradients = tape.gradient(dqn_loss, trainable_vars)

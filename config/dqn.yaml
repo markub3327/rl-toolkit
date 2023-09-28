@@ -14,7 +14,7 @@ Agent:
 
 # Learner process
 Learner:
-  train_steps: 1000000
+  train_steps: 30000
   batch_size: 256
   warmup_steps: 100
   gamma: 0.99

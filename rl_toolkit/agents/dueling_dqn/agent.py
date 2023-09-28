@@ -164,7 +164,9 @@ class Agent(Process):
                     "observation": writer.history["observation"][:-1],
                     "action": writer.history["action"][-2],
                     "ext_reward": writer.history["ext_reward"][-2],
-                    "next_observation": writer.history["observation"][-self._frame_stack:],
+                    "next_observation": writer.history["observation"][
+                        -self._frame_stack :
+                    ],
                     "terminal": writer.history["terminal"][-2],
                 },
             )
@@ -184,7 +186,9 @@ class Agent(Process):
                     "observation": writer.history["observation"][:-1],
                     "action": writer.history["action"][-2],
                     "ext_reward": writer.history["ext_reward"][-2],
-                    "next_observation": writer.history["observation"][-self._frame_stack:],
+                    "next_observation": writer.history["observation"][
+                        -self._frame_stack :
+                    ],
                     "terminal": writer.history["terminal"][-2],
                 },
             )
@@ -249,7 +253,9 @@ class Agent(Process):
         self._last_obs, _ = self._env.reset()
 
         # Connect to database
-        with self.client.trajectory_writer(num_keep_alive_refs=(self._frame_stack + 1)) as writer:
+        with self.client.trajectory_writer(
+            num_keep_alive_refs=(self._frame_stack + 1)
+        ) as writer:
             for _ in range(0, self._warmup_steps):
                 # Warmup steps
                 self.collect(writer, self.random_policy)
