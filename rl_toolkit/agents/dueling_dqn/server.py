@@ -136,7 +136,7 @@ class Server(Process):
                     max_times_sampled=0,
                     signature={
                         "observation": tf.TensorSpec(
-                            [frame_stack, *self._env.observation_space.shape],
+                            [*self._env.observation_space.shape],
                             self._env.observation_space.dtype,
                         ),
                         "action": tf.TensorSpec(
@@ -145,7 +145,7 @@ class Server(Process):
                         ),
                         "ext_reward": tf.TensorSpec([1], tf.float64),
                         "next_observation": tf.TensorSpec(
-                            [frame_stack, *self._env.observation_space.shape],
+                            [*self._env.observation_space.shape],
                             self._env.observation_space.dtype,
                         ),
                         "terminal": tf.TensorSpec([1], tf.bool),
