@@ -67,7 +67,6 @@ class Server(Process):
             num_heads=num_heads,
             dropout_rate=dropout_rate,
             attention_dropout_rate=attention_dropout_rate,
-            target_dqn_model=None,
             gamma=gamma,
             tau=tau,
         )
