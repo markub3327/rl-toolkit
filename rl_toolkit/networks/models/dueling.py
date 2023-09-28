@@ -175,7 +175,7 @@ class DuelingDQN(Model):
         terminal = tf.cast(sample.data["terminal"], dtype=self.dtype)
 
         # predict next Q
-        next_Q = self._target_dqn_model(sample.data["next_observation"], training=False)
+        next_Q = self._target_dqn_model_wrapper(sample.data["next_observation"], training=False)
         next_Q = tf.reduce_max(next_Q, axis=-1)
 
         # get targets
