@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from .wrappers import dmControlGetTasks, dmControlGymWrapper
+from .wrappers import dmControlGetTasks, dmControlGymWrapper, FrameStack
 
 
 class Process:
@@ -18,6 +18,7 @@ class Process:
         # ---
         env_name: str,
         render: bool,
+        frame_stack: int,
     ):
         # Init environment
         if any(x[0] in env_name and x[1] in env_name for x in dmControlGetTasks()):
@@ -40,6 +41,9 @@ class Process:
             self._env = gymnasium.make(
                 env_name, render_mode="human" if render else None
             )
+            if frame_stack > 1:
+                self._env = FrameStack(self._env, frame_stack)
+
 
         gpus = tf.config.list_physical_devices("GPU")
         if gpus:

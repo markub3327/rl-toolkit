@@ -39,11 +39,12 @@ class Tester(Process):
         attention_dropout_rate: float,
         gamma: float,
         tau: float,
+        frame_stack: int,
         # ---
         model_path: str,
         enable_wandb: bool,
     ):
-        super(Tester, self).__init__(env_name, render)
+        super(Tester, self).__init__(env_name, render, frame_stack)
 
         self._max_steps = max_steps
         self._render = render

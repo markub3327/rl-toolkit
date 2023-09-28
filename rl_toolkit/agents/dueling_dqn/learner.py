@@ -55,6 +55,7 @@ class Learner(Process):
         dropout_rate: float,
         attention_dropout_rate: float,
         learning_rate: float,
+        frame_stack: int,
         # ---
         global_clipnorm: float,
         weight_decay: float,
@@ -65,7 +66,7 @@ class Learner(Process):
         # ---
         save_path: str,
     ):
-        super(Learner, self).__init__(env_name, False)
+        super(Learner, self).__init__(env_name, False, frame_stack)
 
         tf.config.optimizer.set_jit(True)  # Enable XLA.
 

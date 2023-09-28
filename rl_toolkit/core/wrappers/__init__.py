@@ -1,6 +1,7 @@
 from gymnasium.envs.registration import register
 
 from .dm_control import dmControlGetTasks, dmControlGymWrapper  # noqa
+from .frame_stack import FrameStack  # noqa
 
 register(
     id="HumanoidRobot-v0",

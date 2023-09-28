@@ -41,7 +41,7 @@ class Agent(Process):
         attention_dropout_rate: float,
         gamma: float,
         tau: float,
-        timesteps: int,
+        frame_stack: int,
         # ---
         temp_init: float,
         temp_min: float,
@@ -50,14 +50,14 @@ class Agent(Process):
         # ---
         save_path: str,
     ):
-        super(Agent, self).__init__(env_name, False)
+        super(Agent, self).__init__(env_name, False, frame_stack)
 
         self._warmup_steps = warmup_steps
         self._save_path = save_path
         self._temp_min = temp_min
         self._temp_decay = temp_decay
         self._temp_init = temp_init
-        self._timesteps = timesteps
+        self._frame_stack = frame_stack
 
         if (
             self._env.unwrapped.spec is not None
@@ -156,7 +156,7 @@ class Agent(Process):
         )
 
         # Enough samples to store in the database
-        if self._episode_steps > self._timesteps:
+        if self._episode_steps > self._frame_stack:
             writer.create_item(
                 table="experience",
                 priority=1.0,
@@ -164,7 +164,7 @@ class Agent(Process):
                     "observation": writer.history["observation"][:-1],
                     "action": writer.history["action"][-2],
                     "ext_reward": writer.history["ext_reward"][-2],
-                    "next_observation": writer.history["observation"][-self._timesteps:],
+                    "next_observation": writer.history["observation"][-self._frame_stack:],
                     "terminal": writer.history["terminal"][-2],
                 },
             )
@@ -184,7 +184,7 @@ class Agent(Process):
                     "observation": writer.history["observation"][:-1],
                     "action": writer.history["action"][-2],
                     "ext_reward": writer.history["ext_reward"][-2],
-                    "next_observation": writer.history["observation"][-self._timesteps:],
+                    "next_observation": writer.history["observation"][-self._frame_stack:],
                     "terminal": writer.history["terminal"][-2],
                 },
             )
@@ -249,7 +249,7 @@ class Agent(Process):
         self._last_obs, _ = self._env.reset()
 
         # Connect to database
-        with self.client.trajectory_writer(num_keep_alive_refs=(self._timesteps + 1)) as writer:
+        with self.client.trajectory_writer(num_keep_alive_refs=(self._frame_stack + 1)) as writer:
             for _ in range(0, self._warmup_steps):
                 # Warmup steps
                 self.collect(writer, self.random_policy)

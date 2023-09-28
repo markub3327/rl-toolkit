@@ -143,7 +143,7 @@ def main():
                 attention_dropout_rate=config["Model"]["attention_dropout_rate"],
                 gamma=config["Learner"]["gamma"],
                 tau=config["Learner"]["tau"],
-                timesteps=config["Model"]["timesteps"],
+                frame_stack=config["Model"]["frame_stack"],
                 min_replay_size=config["Agent"]["warmup_steps"],
                 max_replay_size=config["Server"]["max_replay_size"],
                 samples_per_insert=config["Server"]["samples_per_insert"],
@@ -184,7 +184,7 @@ def main():
                 attention_dropout_rate=config["Model"]["attention_dropout_rate"],
                 gamma=config["Learner"]["gamma"],
                 tau=config["Learner"]["tau"],
-                timesteps=config["Model"]["timesteps"],
+                frame_stack=config["Model"]["frame_stack"],
                 temp_init=config["Agent"]["temp_init"],
                 temp_min=config["Agent"]["temp_min"],
                 temp_decay=config["Agent"]["temp_decay"],
@@ -246,6 +246,7 @@ def main():
                 warmup_steps=config["Learner"]["warmup_steps"],
                 gamma=config["Learner"]["gamma"],
                 tau=config["Learner"]["tau"],
+                frame_stack=config["Model"]["frame_stack"],
                 save_path=config["save_path"],
             )
 
@@ -284,6 +285,7 @@ def main():
                 attention_dropout_rate=config["Model"]["attention_dropout_rate"],
                 gamma=config["Learner"]["gamma"],
                 tau=config["Learner"]["tau"],
+                frame_stack=config["Model"]["frame_stack"],
                 model_path=args.model_path,
                 enable_wandb=True,
             )
