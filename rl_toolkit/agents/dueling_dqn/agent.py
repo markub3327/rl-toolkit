@@ -165,7 +165,7 @@ class Agent(Process):
                     "observation": writer.history["observation"][:-1],
                     "action": writer.history["action"][-2],
                     "ext_reward": writer.history["ext_reward"][-2],
-                    "next_observation": writer.history["observation"][1:],
+                    "next_observation": writer.history["observation"][-self._timesteps:],
                     "terminal": writer.history["terminal"][-2],
                 },
             )
@@ -185,7 +185,7 @@ class Agent(Process):
                     "observation": writer.history["observation"][:-1],
                     "action": writer.history["action"][-2],
                     "ext_reward": writer.history["ext_reward"][-2],
-                    "next_observation": writer.history["observation"][1:],
+                    "next_observation": writer.history["observation"][-self._timesteps:],
                     "terminal": writer.history["terminal"][-2],
                 },
             )
