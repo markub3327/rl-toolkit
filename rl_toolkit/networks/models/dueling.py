@@ -195,8 +195,10 @@ class DuelingDQN(Model):
             )
 
         # check exploiding loss
-        assert dqn_loss < 100, "The loss is exploding"
-
+        tf.debugging.Assert(
+            tf.math.less(dqn_loss, 100.0), ["The loss is exploding!!! Value:", dqn_loss]
+        )
+        
         # compute gradients
         trainable_vars = self.trainable_variables
         gradients = tape.gradient(dqn_loss, trainable_vars)
