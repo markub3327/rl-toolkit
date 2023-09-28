@@ -182,7 +182,7 @@ class DuelingDQN(Model):
         targets = self(sample.data["observation"])
         indices = tf.range(tf.shape(targets)[0], dtype=sample.data["action"].dtype)
         indices = tf.transpose([indices, sample.data["action"]])
-        updates = ext_reward + (1.0 - terminal) * self.gamma * next_Q
+        updates = ext_reward[:, -1] + (1.0 - terminal[:, -1]) * self.gamma * next_Q
         targets = tf.stop_gradient(
             tf.tensor_scatter_nd_update(targets, indices, updates)
         )
