@@ -145,8 +145,6 @@ class Agent(Process):
         self._temp *= self._temp_decay
         self._temp = max(self._temp_min, self._temp)
 
-        print(self._last_obs.shape)
-
         # Update the replay buffer
         writer.append(
             {
