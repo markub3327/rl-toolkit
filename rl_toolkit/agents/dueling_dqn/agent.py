@@ -145,10 +145,12 @@ class Agent(Process):
         self._temp *= self._temp_decay
         self._temp = max(self._temp_min, self._temp)
 
+        print(self._last_obs)
+
         # Update the replay buffer
         writer.append(
             {
-                "observation": self._last_obs,
+                "observation": self._last_obs[-1],
                 "action": action,
                 "ext_reward": np.array([ext_reward], dtype=np.float64),
                 "terminal": np.array([terminated]),
@@ -174,7 +176,7 @@ class Agent(Process):
             # Write the final interaction !!!
             writer.append(
                 {
-                    "observation": new_obs,
+                    "observation": new_obs[-1],
                 }
             )
             writer.create_item(
