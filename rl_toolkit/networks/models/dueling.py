@@ -100,6 +100,10 @@ class TargetModelWrapper:
     def __call__(self, inputs, training):
         return self._target_dqn_model(inputs, training=training)
 
+    @property
+    def variables(self):
+        return self._target_dqn_model.variables
+
 class DuelingDQN(Model):
     def __init__(
         self,
@@ -165,9 +169,9 @@ class DuelingDQN(Model):
     def get_action(self, state, temperature):
         return tf.random.categorical(self(state, training=False) / temperature, 1)[0, 0]
 
-    def _update_target(self, net, net_targ, tau):
-        for source_weight, target_weight in zip(net.variables, net_targ.variables):
-            target_weight.assign(tau * source_weight + (1.0 - tau) * target_weight)
+    def _update_target(self):
+        for source_weight, target_weight in zip(self.variables, self._target_dqn_model_wrapper.variables):
+            target_weight.assign(self.tau * source_weight + (1.0 - self.tau) * target_weight)
             
     def train_step(self, sample):
         # Set dtype
@@ -207,7 +211,7 @@ class DuelingDQN(Model):
         self.optimizer.apply_gradients(zip(gradients, trainable_vars))
 
         # -------------------- Soft update target networks -------------------- #
-        self._update_target(self, self._target_dqn_model, tau=self.tau)
+        self._update_target()
 
         return {
             "dqn_loss": dqn_loss,
