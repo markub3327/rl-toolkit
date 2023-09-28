@@ -76,6 +76,19 @@ class Learner(Process):
         action_space = self._env.action_space.n
 
         # Init Dueling DQN network
+        target_dqn_model = DuelingDQN(
+            action_space,
+            num_layers=num_layers,
+            embed_dim=embed_dim,
+            ff_mult=ff_mult,
+            num_heads=num_heads,
+            dropout_rate=dropout_rate,
+            attention_dropout_rate=attention_dropout_rate,
+            gamma=gamma,
+            tau=tau,
+        )
+        target_dqn_model.build((None,) + self._env.observation_space.shape)
+
         self.model = DuelingDQN(
             action_space,
             num_layers=num_layers,
@@ -84,6 +97,7 @@ class Learner(Process):
             num_heads=num_heads,
             dropout_rate=dropout_rate,
             attention_dropout_rate=attention_dropout_rate,
+            target_dqn_model=target_dqn_model,
             gamma=gamma,
             tau=tau,
         )
@@ -98,8 +112,12 @@ class Learner(Process):
         )
         self.model.compile(optimizer=dqn_optimizer)
 
+        # copy original model to target model
+        target_dqn_model.set_weights(self.model.get_weights())
+        
         # Show models details
         self.model.summary()
+        target_dqn_model.summary()
 
         # Initializes the reverb's dataset
         self.dataset = make_reverb_dataset(

@@ -93,6 +93,12 @@ class Encoder(Layer):
 
         return self.add_1([x, y])
 
+class TargetModelWrapper:
+    def __init__(self, target_dqn_model):
+        self._target_dqn_model = target_dqn_model
+    
+    def __call__(self, inputs):
+        return self._target_dqn_model(inputs)
 
 class DuelingDQN(Model):
     def __init__(
@@ -106,10 +112,11 @@ class DuelingDQN(Model):
         attention_dropout_rate,
         gamma,
         tau,
+        target_dqn_model = None,
         **kwargs
     ):
         super(DuelingDQN, self).__init__(**kwargs)
-        self._target_dqn_model = None
+        self._target_dqn_model_wrapper = TargetModelWrapper(target_dqn_model) if target_dqn_model is not None else None
         self.gamma = gamma
         self.tau = tau
 
