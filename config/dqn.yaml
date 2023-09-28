@@ -31,7 +31,7 @@ Model:
   learning_rate: !!float 3e-4
   global_clipnorm: 1.0
   weight_decay: !!float 1e-4
-  timesteps: 16
+  frame_stack: 16
 
 # Paths
 save_path: "./save/model"
