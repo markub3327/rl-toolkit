@@ -97,8 +97,8 @@ class TargetModelWrapper:
     def __init__(self, target_dqn_model):
         self._target_dqn_model = target_dqn_model
     
-    def __call__(self, inputs):
-        return self._target_dqn_model(inputs)
+    def __call__(self, inputs, training):
+        return self._target_dqn_model(inputs, training=training)
 
 class DuelingDQN(Model):
     def __init__(
