@@ -180,7 +180,7 @@ class DuelingDQN(Model):
 
         # get targets
         targets = self(sample.data["observation"])
-        indices = tf.range(tf.shape(targets)[0])
+        indices = tf.range(tf.shape(targets)[0], dtype=sample.data["action"].dtype)
         indices = tf.transpose([indices, sample.data["action"]])
         updates = ext_reward + (1.0 - terminal) * self.gamma * next_Q
         targets = tf.stop_gradient(
