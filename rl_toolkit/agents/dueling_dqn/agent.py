@@ -124,7 +124,7 @@ class Agent(Process):
         action = self._env.action_space.sample()
         return action
 
-    @tf.function(jit_compile=True)
+    # @tf.function(jit_compile=True)
     def collect_policy(self, inputs, temp):
         return self.model.get_action(tf.expand_dims(inputs, axis=0), temp)
 

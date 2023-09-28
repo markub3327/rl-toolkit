@@ -10,7 +10,7 @@ Agent:
   temp_init: 0.5
   temp_min: 0.001
   temp_decay: 0.99999
-  warmup_steps: 10000
+  warmup_steps: 1000
 
 # Learner process
 Learner:

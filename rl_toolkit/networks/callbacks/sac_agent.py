@@ -6,7 +6,7 @@ from rl_toolkit.utils import VariableContainer
 
 class SACAgentCallback(Callback):
     def __init__(self, db_server: str):
-        super(AgentCallback, self).__init__()
+        super(SACAgentCallback, self).__init__()
         self._db_server = db_server
 
     def on_train_begin(self, logs=None):
