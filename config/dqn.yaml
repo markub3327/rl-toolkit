@@ -8,15 +8,15 @@ Server:
 # Agent process
 Agent:
   temp_init: 0.5
-  temp_min: 0.001
+  temp_min: 0.01
   temp_decay: 0.99999
   warmup_steps: 1000
 
 # Learner process
 Learner:
-  train_steps: 30000
+  train_steps: 1000000
   batch_size: 256
-  warmup_steps: 100
+  warmup_steps: 500
   gamma: 0.99
   tau: 0.01
 
