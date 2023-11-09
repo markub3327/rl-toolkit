@@ -8,7 +8,7 @@ Server:
 # Agent process
 Agent:
   temp_init: 0.5
-  temp_min: 0.01
+  temp_min: 0.05
   temp_decay: 0.99999
   warmup_steps: 1000
 
