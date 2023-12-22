@@ -8,6 +8,9 @@ from tensorflow.keras.layers import (
     Layer,
     LayerNormalization,
     MultiHeadAttention,
+    GlobalAveragePooling1D,
+    GlobalMaxPooling1D,
+    Lambda,
 )
 
 
@@ -139,8 +142,12 @@ class DuelingDQN(Model):
             for _ in range(num_layers)
         ]
 
+	# Reduce
+        # self.flatten = Lambda(lambda x: x[:, -1])
+        # self.flatten = GlobalMaxPooling1D()
+        self.flatten = GlobalAveragePooling1D()
+        
         # Output
-        self.norm = LayerNormalization(epsilon=1e-6)
         self.V = Dense(
             1,
             activation=None,
@@ -158,10 +165,10 @@ class DuelingDQN(Model):
         for layer in self.e_layers:
             x = layer(x, training=training)
 
-        x = self.norm(x, training=training)
 
-        # select last timestep for prediction a_t
-        x = x[:, -1]
+        # Reduce block
+        x = self.flatten(x, training=training)
+        # x = self.drop_out(x, training=training)
 
         # compute value & advantage
         V = self.V(x, training=training)

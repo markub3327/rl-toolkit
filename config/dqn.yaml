@@ -8,17 +8,17 @@ Server:
 # Agent process
 Agent:
   temp_init: 0.5
-  temp_min: 0.05
-  temp_decay: 0.99999
+  temp_min: 0.01
+  temp_decay: 0.999999
   warmup_steps: 1000
 
 # Learner process
 Learner:
   train_steps: 1000000
   batch_size: 256
-  warmup_steps: 500
+  warmup_steps: 1000        # for learning rate scheduler
   gamma: 0.99
-  tau: 0.01
+  tau: 0.005
 
 # Model definition
 Model:
@@ -31,7 +31,7 @@ Model:
   learning_rate: !!float 3e-4
   global_clipnorm: 1.0
   weight_decay: !!float 1e-4
-  frame_stack: 16
+  frame_stack: 16  # 12 
 
 # Paths
 save_path: "./save/model"
