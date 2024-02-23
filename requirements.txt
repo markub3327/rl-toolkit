@@ -6,6 +6,8 @@ pygame
 dm_control
 gym
 pybullet
+gymnasium
+flappy_bird_gymnasium
 #
 #
 ###### Tensorflow ######
