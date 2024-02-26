@@ -1,5 +1,5 @@
 # nainstaluj Ubuntu 20.04 LTS
-FROM ubuntu:20.04
+FROM tensorflow/tensorflow:2.14.0-gpu
 
 # nastav jazyk
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8

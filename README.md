@@ -13,6 +13,9 @@
   * [**Reverb: A framework for experience replay**](https://arxiv.org/abs/2102.04736)
   * [**Controlling Overestimation Bias with Truncated Mixture of Continuous Distributional Quantile Critics**](https://arxiv.org/abs/2005.04269)
   * [**Acme: A Research Framework for Distributed Reinforcement Learning**](https://arxiv.org/abs/2006.00979)
+  * [**Dueling Network Architectures for Deep Reinforcement Learning**](https://arxiv.org/abs/1511.06581)
+  * [**Attention Is All You Need**](https://arxiv.org/abs/1706.03762)
+  * [**An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale**](https://arxiv.org/abs/2010.11929)
 
 ## Installation with PyPI
 
@@ -26,7 +29,7 @@
   2. Install RL-Toolkit
       ```sh
       pip3 install rl-toolkit[all]
-      ```   
+      ```
   3. Run (for **Server**)
       ```sh
       python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 server
@@ -59,7 +62,7 @@
       mv ~/Downloads/bazel-3.7.2-linux-arm64 ~/bin/bazel
       chmod +x ~/bin/bazel
       export PATH=$PATH:~/bin
-      ```  
+      ```
       Clone Reverb with version that corespond with TF verion installed on NVIDIA Jetson !
       ```sh
       git clone https://github.com/deepmind/reverb
@@ -102,7 +105,7 @@
      ```sh
      -  "${PYTHON_BIN_PATH}" setup.py bdist_wheel ${PKG_NAME_FLAG} ${RELEASE_FLAG} ${TF_VERSION_FLAG} --plat manylinux2010_x86_64 > /dev/null
      +  "${PYTHON_BIN_PATH}" setup.py bdist_wheel ${PKG_NAME_FLAG} ${RELEASE_FLAG} ${TF_VERSION_FLAG}  > /dev/null
-      ```  
+      ```
       Build and install
       ```sh
       bash oss_build.sh --clean true --tf_dep_override "tensorflow~=2.9.1" --release --python "3.8"
@@ -112,12 +115,12 @@
       Cleaning
       ```sh
       cd ../
-      rm -R reverb/      
-      ```  
+      rm -R reverb/
+      ```
   3. Install RL-Toolkit
       ```sh
       pip3 install rl-toolkit
-      ```   
+      ```
   4. Run (for **Server**)
       ```sh
       python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 server
