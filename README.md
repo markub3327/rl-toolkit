@@ -8,6 +8,7 @@
 ![Size](https://img.shields.io/github/repo-size/markub3327/rl-toolkit)
 
 ## Papers
+  * [**Playing Flappy Bird Based on Motion Recognition Using a Transformer Model and LIDAR Sensor**](https://www.mdpi.com/1424-8220/24/6/1905)
   * [**Soft Actor-Critic**](https://arxiv.org/abs/1812.05905)
   * [**Generalized State-Dependent Exploration**](https://arxiv.org/abs/2005.05719)
   * [**Reverb: A framework for experience replay**](https://arxiv.org/abs/2102.04736)
