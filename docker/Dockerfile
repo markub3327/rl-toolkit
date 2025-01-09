@@ -1,4 +1,3 @@
-# nainstaluj Ubuntu 20.04 LTS
 FROM tensorflow/tensorflow:2.14.0-gpu
 
 # nastav jazyk
@@ -14,8 +13,6 @@ RUN apt-get update && apt-get install -y \
     curl \
     git \
     build-essential \
-    python3 \
-    python3-dev \
     graphviz \
     libglu1-mesa-dev \
     libgl1-mesa-dev \
@@ -24,10 +21,25 @@ RUN apt-get update && apt-get install -y \
     patchelf \
     ffmpeg \
     swig \
-    && rm -rf /var/lib/apt/lists/*
+    screen
 
-RUN curl -O https://bootstrap.pypa.io/get-pip.py
-RUN python3 get-pip.py
+RUN apt-get clean && rm -rf /tmp/* /var/tmp/*
+
+RUN python -m pip install --no-cache-dir \
+                           matplotlib \
+                           wandb \
+                           pydot \
+                           scikit-learn \
+                           einops \
+                           black[jupyter] \
+                           seaborn \
+                           opencv-python \
+                           isort \
+                           flake8 \
+                           jupyterlab \
+                           jupyterlab-git \
+                           keras_cv \
+                           tf2onnx \
 
 ###########################################
 # RL Toolkit
@@ -36,13 +48,22 @@ WORKDIR /root/
 RUN git clone https://github.com/markub3327/rl-toolkit.git
 WORKDIR /root/rl-toolkit
 
-RUN python3 -mpip install --no-cache-dir -e .[all]
+RUN python -m pip install --no-cache-dir -e .[all]
 
 ###########################################
 # Entry point
 ###########################################
-COPY docker/entrypoint.sh /root/
-RUN chmod +x /root/entrypoint.sh
-ENTRYPOINT ["/root/entrypoint.sh"]
+# COPY docker/entrypoint.sh /root/
+# RUN chmod +x /root/entrypoint.sh
+# ENTRYPOINT ["/root/entrypoint.sh"]
 
-CMD [ "/bin/bash" ]
+# CMD [ "/bin/bash" ]
+
+###########################################
+# Jupyter Lab
+###########################################
+# Port
+EXPOSE 8888/tcp
+
+# Run JupyterLab
+CMD ["bash", "-c", "jupyter lab --notebook-dir=/tf --ip 0.0.0.0 --no-browser --allow-root"]

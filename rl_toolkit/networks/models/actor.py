@@ -1,7 +1,7 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
 from tensorflow.keras import Model, backend
-from tensorflow.keras.initializers import Constant, Orthogonal
+from tensorflow.keras.initializers import Constant
 from tensorflow.keras.layers import Dense, Lambda
 
 from rl_toolkit.networks.layers import MultivariateGaussianNoise
@@ -45,18 +45,13 @@ class Actor(Model):
 
         for m in units:
             self.fc_layers.append(
-                Dense(
-                    units=m,
-                    activation="elu",
-                    kernel_initializer=Orthogonal(tf.sqrt(2.0)),
-                )
+                Dense(units=m, activation="elu")
             )
 
         # Deterministicke akcie
         self.mean = Dense(
             n_outputs,
             activation=None,
-            kernel_initializer=Orthogonal(0.01),
             name="mean",
         )
         self.clip_mean = Lambda(

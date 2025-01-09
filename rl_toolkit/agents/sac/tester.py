@@ -6,7 +6,7 @@ from dm_control import viewer
 from rl_toolkit.networks.models import Actor
 
 from ...core.process import Process
-from ..core.wrappers import dmControlGymWrapper
+from ...core.wrappers import dmControlGymWrapper
 
 
 class Tester(Process):
@@ -32,6 +32,7 @@ class Tester(Process):
         env_name: str,
         render: bool,
         max_steps: int,
+        frame_stack: int,
         # ---
         actor_units: list,
         clip_mean_min: float,
@@ -41,7 +42,7 @@ class Tester(Process):
         model_path: str,
         enable_wandb: bool,
     ):
-        super(Tester, self).__init__(env_name, render)
+        super(Tester, self).__init__(env_name, render, frame_stack)
 
         self._max_steps = max_steps
         self._render = render

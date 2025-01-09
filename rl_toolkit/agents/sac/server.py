@@ -55,6 +55,7 @@ class Server(Process):
         init_alpha: float,
         init_noise: float,
         merge_index: int,
+        frame_stack: int,
         # ---
         min_replay_size: int,
         max_replay_size: int,
@@ -63,7 +64,7 @@ class Server(Process):
         actor_critic_path: str,
         db_path: str,
     ):
-        super(Server, self).__init__(env_name, False)
+        super(Server, self).__init__(env_name, False, frame_stack)
 
         # Init actor-critic network
         actor_critic = ActorCritic(

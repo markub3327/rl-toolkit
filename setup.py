@@ -9,9 +9,9 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description += fh.read()
 
 extras = {
-    "all": ["tensorflow", "dm-reverb", "flappy-bird-gymnasium"],
+    "all": ["dm-reverb", "flappy-bird-gymnasium"],
     "reverb": ["dm-reverb"],
-    "tf": ["tensorflow"],
+    "tf": ["tensorflow==2.14.0"],
 }
 
 setup(
@@ -31,7 +31,6 @@ setup(
     keywords=[
         "reinforcement-learning",
         "ml",
-        "pybullet",
         "gymnasium",
         "reverb",
         "docker",
@@ -47,15 +46,15 @@ setup(
         "wandb",
     ],
     install_requires=[
-        "gym",
         "gymnasium",
         "box2d-py",
         "pygame",
         "swig",
-        "pybullet",
         "dm_control",
-        "tensorflow_probability",
+        "tensorflow_probability==0.22.1",
         "wandb",
+        "pyyaml",
+        "lxml",
     ],
     extras_require=extras,
     license="MIT License",

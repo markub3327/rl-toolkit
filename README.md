@@ -33,19 +33,19 @@
       ```
   3. Run (for **Server**)
       ```sh
-      python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 server
+      rl_toolkit rl_toolkit -c ./config/sac.yaml -a sac -e BipedalWalkerHardcore-v3 server
       ```
      Run (for **Agent**)
       ```sh
-      python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 agent --db_server localhost
+      rl_toolkit -c ./config/sac.yaml -a sac -e BipedalWalkerHardcore-v3 agent
       ```
      Run (for **Learner**)
       ```sh
-      python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 learner --db_server 192.168.1.2
+      rl_toolkit -c ./config/sac.yaml -a sac -e BipedalWalkerHardcore-v3 learner --db_server 192.168.1.2
       ```
      Run (for **Tester**)
       ```sh
-      python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 tester -f save/model/actor.h5
+      rl_toolkit -c ./config/sac.yaml -a sac -e BipedalWalkerHardcore-v3 tester -f save/model/actor.h5
       ```
   
 ### On NVIDIA Jetson
@@ -122,49 +122,20 @@
       ```sh
       pip3 install rl-toolkit
       ```
-  4. Run (for **Server**)
-      ```sh
-      python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 server
-      ```
-     Run (for **Agent**)
-      ```sh
-      python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 agent --db_server localhost
-      ```
-     Run (for **Learner**)
-      ```sh
-      python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 learner --db_server 192.168.1.2
-      ```
-     Run (for **Tester**)
-      ```sh
-      python3 -m rl_toolkit -c ./rl_toolkit/config.yaml -e MinitaurBulletEnv-v0 tester -f save/model/actor.h5
-      ```
-
 
 ## Environments
 
   | Environment              | Observation space | Observation bounds | Action space | Action bounds | Reward bounds |
   | ------------------------ | :---------------: | :----------------: | :----------: | :-----------: | :-----------: |
   | BipedalWalkerHardcore-v3 | (24, ) | [-inf, inf] | (4, ) | [-1.0, 1.0] | [-1.0, 1.0] |
-  | Walker2DBulletEnv-v0     | (22, ) | [-inf, inf] | (6, ) | [-1.0, 1.0] | [-1.0, 1.0] |
-  | AntBulletEnv-v0          | (28, ) | [-inf, inf] | (8, ) | [-1.0, 1.0] | [-1.0, 1.0] |
-  | HalfCheetahBulletEnv-v0  | (26, ) | [-inf, inf] | (6, ) | [-1.0, 1.0] | [-1.0, 1.0] |
-  | HopperBulletEnv-v0       | (15, ) | [-inf, inf] | (3, ) | [-1.0, 1.0] | [-1.0, 1.0] |
-  | HumanoidBulletEnv-v0     | (44, ) | [-inf, inf] | (17, ) | [-1.0, 1.0] | [-1.0, 1.0] |
-  | MinitaurBulletEnv-v0     | (28, ) | [-167.72488, 167.72488] | (8, ) | [-1.0, 1.0] | [-1.0, 1.0] |
-
+  
 ## Results
 
   | Environment              | SAC<br> + gSDE | SAC<br> + gSDE<br>+ Huber loss | SAC<br> + TQC<br> + gSDE | RL-Toolkit |
   | ------------------------ | :--------: | :------------------------: | :--------: | :---------------------------: |
   | BipedalWalkerHardcore-v3 | 13 ± 18[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | **239 ± 118** | 228 ± 18[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | 205 ± 134 |
-  | Walker2DBulletEnv-v0     | 2270 ± 28[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | 2732 ± 96 | 2535 ± 94[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | **3123 ± 594** |
-  | AntBulletEnv-v0          | 3106 ± 61[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | 3460 ± 119 | 3700 ± 37[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | **3993 ± 214** |
-  | HalfCheetahBulletEnv-v0  | 2945 ± 95[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | 3003 ± 226 | **3041 ± 157**[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | 2762 ± 153 |
-  | HopperBulletEnv-v0       | 2515 ± 50[<sup>(1)</sup>](https://paperswithcode.com/paper/generalized-state-dependent-exploration-for) | **2555 ± 405** | 2401 ± 62[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | 2151 ± 664 |
-
-![results](https://raw.githubusercontent.com/markub3327/rl-toolkit/master/img/results.png)
-![anim1](https://raw.githubusercontent.com/markub3327/rl-toolkit/master/img/anim1.gif)
-![anim2](https://raw.githubusercontent.com/markub3327/rl-toolkit/master/img/anim2.gif)
+  
+![dm_ant_ball_sac](https://raw.githubusercontent.com/markub3327/rl-toolkit/master/img/dm_ant_ball_sac.gif)
 
 ## Releases
 
@@ -173,4 +144,4 @@
 
 ----------------------------------
 
-**Frameworks:** Tensorflow, Reverb, OpenAI Gym, PyBullet, WanDB, OpenCV
+**Frameworks:** Tensorflow, DeepMind Reverb, Gymnasium, DeepMind Control Suite, WanDB, OpenCV

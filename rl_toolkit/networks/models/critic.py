@@ -1,6 +1,5 @@
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.initializers import Orthogonal
 from tensorflow.keras.layers import Activation, Add, Dense
 
 
@@ -24,30 +23,26 @@ class Critic(Model):
         self.fc_layers = []
 
         # prepare 'merge_index'
-        self.merge_index = (len(units) - 1) if merge_index == -1 else merge_index
+        if merge_index is None:
+            raise ValueError("merge_index must be specified")
+        self.merge_index = merge_index
 
         for i, m in enumerate(units):
             if i != self.merge_index:
                 self.fc_layers.append(
-                    Dense(
-                        units=m,
-                        activation="elu",
-                        kernel_initializer=Orthogonal(tf.sqrt(2.0)),
-                    )
+                    Dense(units=m, activation="elu")
                 )
             else:
-                self.fc_layers.append(None)  # add empty layer insted of merge layer
+                self.fc_layers.append(None)  # add empty layer instead of merge layer
 
-        # 2. layer     TODO(markub3327): Transformer
+        # 2. layer
         self.fc_state = Dense(
             units=units[self.merge_index],
             activation=None,
-            kernel_initializer=Orthogonal(tf.sqrt(2.0)),
         )
         self.fc_action = Dense(
             units=units[self.merge_index],
             activation=None,
-            kernel_initializer=Orthogonal(tf.sqrt(2.0)),
         )
         self.add_0 = Add()
         self.activ_0 = Activation("elu")
@@ -56,7 +51,6 @@ class Critic(Model):
         self.quantiles = Dense(
             n_quantiles,
             activation=None,
-            kernel_initializer=Orthogonal(0.01),
             name="quantiles",
         )
 

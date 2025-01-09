@@ -5,7 +5,6 @@
 - Gymnasium
 - DeepMind Control Suite wrapper
 - ELU activation
-- Orthogonal initializer
 - Optional state-action merging layer index (Critic model)
 ### Bug fixes 🛠️
  - Optimized critic

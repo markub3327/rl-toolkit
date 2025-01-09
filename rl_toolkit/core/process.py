@@ -24,11 +24,6 @@ class Process:
         if any(x[0] in env_name and x[1] in env_name for x in dmControlGetTasks()):
             s = env_name.split("-")
             self._env = dmControlGymWrapper(domain_name=s[0], task_name=s[1])
-        elif "BulletEnv" in env_name:
-            import gym
-            import pybullet_envs  # noqa
-
-            self._env = gym.make(env_name, render_mode="human" if render else None)
         else:
             # Import third-party environments
             try:

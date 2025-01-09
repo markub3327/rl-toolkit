@@ -41,10 +41,11 @@ class Agent(Process):
         # ---
         warmup_steps: int,
         env_steps: int,
+        frame_stack: int,
         # ---
         save_path: str,
     ):
-        super(Agent, self).__init__(env_name, False)
+        super(Agent, self).__init__(env_name, False, frame_stack)
 
         self._env_steps = env_steps
         self._warmup_steps = warmup_steps
@@ -183,10 +184,22 @@ class Agent(Process):
                 # Block until all the items have been sent to the server
                 writer.end_episode()
 
+                # Store best weights
+                if self._episode_reward > self._best_episode_reward:
+                    self._best_episode_reward = self._episode_reward
+                    self._best_episode = self._total_episodes
+                    if self._save_path:
+                        os.makedirs(self._save_path, exist_ok=True)
+                        # Save model
+                        self.model.save_weights(
+                            os.path.join(self._save_path, "best_actor.h5")
+                        )
+
                 # Logging
                 print("=============================================")
                 print(f"Epoch: {self._total_episodes}")
                 print(f"Score: {self._episode_reward}")
+                print(f"Best score: {self._best_episode_reward} (at epoch {self._best_episode})")
                 print(f"Steps: {self._episode_steps}")
                 print(f"TotalInteractions: {self._total_steps}")
                 print(f"Train step: {self._train_step.numpy()}")
@@ -220,6 +233,8 @@ class Agent(Process):
     def run(self):
         # Init environment
         self._episode_reward = 0.0
+        self._best_episode_reward = float('-inf')
+        self._best_episode = None
         self._episode_steps = 0
         self._total_episodes = 0
         self._total_steps = 0

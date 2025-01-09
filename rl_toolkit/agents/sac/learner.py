@@ -5,7 +5,7 @@ import reverb
 import tensorflow as tf
 import wandb
 from tensorflow.keras.optimizers import Adam
-from wandb.keras import WandbCallback
+from wandb.integration.keras import WandbMetricsLogger
 
 from rl_toolkit.networks.callbacks import SACAgentCallback
 from rl_toolkit.networks.models import ActorCritic
@@ -71,10 +71,11 @@ class Learner(Process):
         init_alpha: float,
         init_noise: float,
         merge_index: int,
+        frame_stack: int,
         # ---
         save_path: str,
     ):
-        super(Learner, self).__init__(env_name, False)
+        super(Learner, self).__init__(env_name, False, frame_stack)
 
         tf.config.optimizer.set_jit(True)  # Enable XLA.
 
@@ -150,21 +151,17 @@ class Learner(Process):
             verbose=0,
             callbacks=[
                 SACAgentCallback(self._db_server),
-                WandbCallback(save_model=False),
+                WandbMetricsLogger(log_freq=10),
             ],
         )
 
     def save(self):
         if self._save_path:
-            try:
-                os.makedirs(self._save_path)
-            except OSError:
-                print("The path already exist ❗❗❗")
-            finally:
-                # Save model
-                self.model.save_weights(
-                    os.path.join(self._save_path, "actor_critic.h5")
-                )
+            os.makedirs(self._save_path, exist_ok=True)
+            # Save model
+            self.model.save_weights(
+                os.path.join(self._save_path, "actor_critic.h5")
+            )
 
     def close(self):
         super(Learner, self).close()
