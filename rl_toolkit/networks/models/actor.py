@@ -44,9 +44,7 @@ class Actor(Model):
         self.fc_layers = []
 
         for m in units:
-            self.fc_layers.append(
-                Dense(units=m, activation="elu")
-            )
+            self.fc_layers.append(Dense(units=m, activation="elu"))
 
         # Deterministicke akcie
         self.mean = Dense(

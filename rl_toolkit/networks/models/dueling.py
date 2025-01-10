@@ -1,16 +1,14 @@
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.initializers import Orthogonal, TruncatedNormal
-from tensorflow.keras.layers import (
+from tensorflow.keras.layers import (  # GlobalMaxPooling1D,; Lambda,
     Add,
     Dense,
     Dropout,
+    GlobalAveragePooling1D,
     Layer,
     LayerNormalization,
     MultiHeadAttention,
-    GlobalAveragePooling1D,
-    GlobalMaxPooling1D,
-    Lambda,
 )
 
 
@@ -142,11 +140,11 @@ class DuelingDQN(Model):
             for _ in range(num_layers)
         ]
 
-	# Reduce
+        # Reduce
         # self.flatten = Lambda(lambda x: x[:, -1])
         # self.flatten = GlobalMaxPooling1D()
         self.flatten = GlobalAveragePooling1D()
-        
+
         # Output
         self.V = Dense(
             1,
@@ -164,7 +162,6 @@ class DuelingDQN(Model):
 
         for layer in self.e_layers:
             x = layer(x, training=training)
-
 
         # Reduce block
         x = self.flatten(x, training=training)

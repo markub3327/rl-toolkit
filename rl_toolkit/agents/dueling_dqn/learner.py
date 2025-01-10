@@ -1,9 +1,9 @@
 import reverb
 import tensorflow as tf
-import wandb
 from tensorflow.keras.callbacks import LearningRateScheduler
 from wandb.integration.keras import WandbMetricsLogger
 
+import wandb
 from rl_toolkit.networks.callbacks import DQNAgentCallback, PrintLR, cosine_schedule
 from rl_toolkit.networks.models import DuelingDQN
 from rl_toolkit.utils import make_reverb_dataset

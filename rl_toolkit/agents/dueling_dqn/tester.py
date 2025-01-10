@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
-import wandb
 
+import wandb
 from rl_toolkit.networks.models import DuelingDQN
 
 from ...core.process import Process

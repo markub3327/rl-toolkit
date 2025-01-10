@@ -1,7 +1,8 @@
 import numpy as np
 import tensorflow as tf
-import wandb
 from tensorflow.keras.callbacks import Callback
+
+import wandb
 
 
 def cosine_schedule(base_lr, total_steps, warmup_steps):

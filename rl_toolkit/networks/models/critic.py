@@ -29,9 +29,7 @@ class Critic(Model):
 
         for i, m in enumerate(units):
             if i != self.merge_index:
-                self.fc_layers.append(
-                    Dense(units=m, activation="elu")
-                )
+                self.fc_layers.append(Dense(units=m, activation="elu"))
             else:
                 self.fc_layers.append(None)  # add empty layer instead of merge layer
 

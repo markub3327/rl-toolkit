@@ -1,8 +1,8 @@
 import numpy as np
 import tensorflow as tf
-import wandb
 from dm_control import viewer
 
+import wandb
 from rl_toolkit.networks.models import Actor
 
 from ...core.process import Process

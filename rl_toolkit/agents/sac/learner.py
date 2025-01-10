@@ -3,10 +3,10 @@ import os
 import numpy as np
 import reverb
 import tensorflow as tf
-import wandb
 from tensorflow.keras.optimizers import Adam
 from wandb.integration.keras import WandbMetricsLogger
 
+import wandb
 from rl_toolkit.networks.callbacks import SACAgentCallback
 from rl_toolkit.networks.models import ActorCritic
 from rl_toolkit.utils import make_reverb_dataset
@@ -159,9 +159,7 @@ class Learner(Process):
         if self._save_path:
             os.makedirs(self._save_path, exist_ok=True)
             # Save model
-            self.model.save_weights(
-                os.path.join(self._save_path, "actor_critic.h5")
-            )
+            self.model.save_weights(os.path.join(self._save_path, "actor_critic.h5"))
 
     def close(self):
         super(Learner, self).close()

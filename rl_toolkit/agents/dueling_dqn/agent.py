@@ -3,8 +3,8 @@ import os
 import numpy as np
 import reverb
 import tensorflow as tf
-import wandb
 
+import wandb
 from rl_toolkit.networks.models import DuelingDQN
 from rl_toolkit.utils import VariableContainer
 
@@ -200,22 +200,24 @@ class Agent(Process):
             # Block until all the items have been sent to the server
             writer.end_episode()
 
-            # save the checkpoint
-            if self._total_episodes > 0:
-                if self._episode_reward > self._best_episode_reward:
-                    self._best_episode_reward = self._episode_reward
-                    self.save()
-                    print(
-                        f"Model is saved at {self._total_episodes} episode with score {self._best_episode_reward}"
-                    )
-                    wandb.log({"best_score": self._best_episode_reward}, commit=False)
-            else:
+            # Store best weights
+            if self._episode_reward > self._best_episode_reward:
                 self._best_episode_reward = self._episode_reward
+                self._best_episode = self._total_episodes
+                if self._save_path:
+                    os.makedirs(self._save_path, exist_ok=True)
+                    # Save model
+                    self.model.save_weights(
+                        os.path.join(self._save_path, "best_actor.h5")
+                    )
 
             # Logging
             print("=============================================")
             print(f"Epoch: {self._total_episodes}")
             print(f"Score: {self._episode_reward}")
+            print(
+                f"Best score: {self._best_episode_reward} (at epoch {self._best_episode})"
+            )
             print(f"Steps: {self._episode_steps}")
             print(f"TotalInteractions: {self._total_steps}")
             print(f"Train step: {self._train_step.numpy()}")
@@ -250,6 +252,8 @@ class Agent(Process):
     def run(self):
         # Init environment
         self._episode_reward = 0.0
+        self._best_episode_reward = float("-inf")
+        self._best_episode = 0
         self._episode_steps = 0
         self._total_episodes = 0
         self._total_steps = 0
@@ -267,18 +271,3 @@ class Agent(Process):
             # Main loop
             while not self._stop_agents:
                 self.collect(writer, self.collect_policy)
-
-    def save(self, path=""):
-        if self._save_path:
-            try:
-                os.makedirs(os.path.join(os.path.join(self._save_path, path)))
-            except OSError:
-                print("The path already exist ❗❗❗")
-            finally:
-                # Save model
-                self.model.save_weights(
-                    os.path.join(
-                        os.path.join(self._save_path, path),
-                        f"dqn_{self._total_episodes}.h5",
-                    )
-                )

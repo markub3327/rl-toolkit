@@ -3,8 +3,8 @@ import os
 import numpy as np
 import reverb
 import tensorflow as tf
-import wandb
 
+import wandb
 from rl_toolkit.networks.models import Actor
 from rl_toolkit.utils import VariableContainer
 
@@ -199,7 +199,9 @@ class Agent(Process):
                 print("=============================================")
                 print(f"Epoch: {self._total_episodes}")
                 print(f"Score: {self._episode_reward}")
-                print(f"Best score: {self._best_episode_reward} (at epoch {self._best_episode})")
+                print(
+                    f"Best score: {self._best_episode_reward} (at epoch {self._best_episode})"
+                )
                 print(f"Steps: {self._episode_steps}")
                 print(f"TotalInteractions: {self._total_steps}")
                 print(f"Train step: {self._train_step.numpy()}")
@@ -233,7 +235,7 @@ class Agent(Process):
     def run(self):
         # Init environment
         self._episode_reward = 0.0
-        self._best_episode_reward = float('-inf')
+        self._best_episode_reward = float("-inf")
         self._best_episode = None
         self._episode_steps = 0
         self._total_episodes = 0

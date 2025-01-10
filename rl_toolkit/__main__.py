@@ -119,7 +119,9 @@ def main():
                 clip_mean_max=config["Model"]["Actor"]["clip_mean_max"],
                 n_quantiles=config["Model"]["Critic"]["n_quantiles"],
                 merge_index=config["Model"]["Critic"]["merge_index"],
-                top_quantiles_to_drop=config["Model"]["Critic"]["top_quantiles_to_drop"],
+                top_quantiles_to_drop=config["Model"]["Critic"][
+                    "top_quantiles_to_drop"
+                ],
                 n_critics=config["Model"]["Critic"]["count"],
                 gamma=config["Learner"]["gamma"],
                 tau=config["Learner"]["tau"],
@@ -217,7 +219,9 @@ def main():
                 critic_learning_rate=config["Model"]["Critic"]["learning_rate"],
                 alpha_learning_rate=config["Model"]["Alpha"]["learning_rate"],
                 n_quantiles=config["Model"]["Critic"]["n_quantiles"],
-                top_quantiles_to_drop=config["Model"]["Critic"]["top_quantiles_to_drop"],
+                top_quantiles_to_drop=config["Model"]["Critic"][
+                    "top_quantiles_to_drop"
+                ],
                 n_critics=config["Model"]["Critic"]["count"],
                 clip_mean_min=config["Model"]["Actor"]["clip_mean_min"],
                 clip_mean_max=config["Model"]["Actor"]["clip_mean_max"],
