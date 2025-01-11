@@ -1,6 +1,6 @@
 # Changes
 
-## v5.0.0 (XX 04, 2023)
+## v5.0.0 (January 11, 2025)
 ### Features 🔊
 - Gymnasium
 - DeepMind Control Suite wrapper
