@@ -24,8 +24,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python3 -m pip install black isort flake8 pytest Pillow
-          python3 -m pip install -e .[all,tf]
+          python3 -m pip install tensorflow==2.14.0 black isort flake8 pytest Pillow
+          python3 -m pip install -e .[all]
 
       - name: Check codestyle
         run: |
