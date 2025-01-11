@@ -125,22 +125,25 @@
 
 ## Environments
 
-  | Environment              | Observation space | Observation bounds | Action space | Action bounds | Reward bounds |
-  | ------------------------ | :---------------: | :----------------: | :----------: | :-----------: | :-----------: |
-  | BipedalWalkerHardcore-v3 | (24, ) | [-inf, inf] | (4, ) | [-1.0, 1.0] | [-1.0, 1.0] |
+  | Environment              | Observation space |  Observation bounds  | Action space |   Action bounds    | Reward bounds |
+  | ------------------------ |:-----------------:|:--------------------:|:------------:|:------------------:| :-----------: |
+  | BipedalWalkerHardcore-v3 |      (24, )       |     [-inf, inf]      |    (4, )     |    [-1.0, 1.0]     | [-1.0, 1.0] |
+  | FlappyBird-v0 |     (16, 180)     | [0, d<sub>max</sub>] |    (2, )     | {DO NOTHING, FLAP} | [-1.0, 1.0] |
   
 ## Results
 
-  | Environment              | SAC<br> + gSDE | SAC<br> + gSDE<br>+ Huber loss | SAC<br> + TQC<br> + gSDE | RL-Toolkit |
-  | ------------------------ | :--------: | :------------------------: | :--------: | :---------------------------: |
-  | BipedalWalkerHardcore-v3 | 13 ± 18[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | **239 ± 118** | 228 ± 18[<sup>(2)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) | 205 ± 134 |
+  | Environment              |                                         SAC<br> + gSDE                                         | SAC<br> + gSDE<br>+ Huber loss |                                    SAC<br> + TQC<br> + gSDE                                     | Q-Learning | RL-Toolkit |
+  | ------------------------ |:----------------------------------------------------------------------------------------------:|:------------------------------:|:-----------------------------------------------------------------------------------------------:|:----------:|:----------:|
+  | BipedalWalkerHardcore-v3 | 13 ± 18[<sup>(1)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) |         **239 ± 118**          | 228 ± 18[<sup>(1)</sup>](https://sb3-contrib.readthedocs.io/en/stable/modules/tqc.html#results) |     -      | 205 ± 134  |
+  | FlappyBird-v0 |                                               -                                                |-|                                                -                                                |  209.298[<sup>(2)</sup>](https://arxiv.org/pdf/2003.09579)   |   13 156   |
   
 ![dm_ant_ball_sac](https://raw.githubusercontent.com/markub3327/rl-toolkit/master/img/dm_ant_ball_sac.gif)
 
 ## Releases
 
    * SAC + gSDE + Huber loss<br> &emsp; is stored here, [branch r2.0](https://github.com/markub3327/rl-toolkit/tree/r2.0)
-   * SAC + TQC + gSDE + LogCosh + Reverb<br> &emsp; is stored here, [branch r4.0](https://github.com/markub3327/rl-toolkit/)
+   * SAC + TQC + gSDE + LogCosh + Reverb<br> &emsp; is stored here, [branch r4.0](https://github.com/markub3327/rl-toolkit/tree/r4.1)
+   * DQN + SAC agents [branch r4.0](https://github.com/markub3327/rl-toolkit/)
 
 ----------------------------------
 
