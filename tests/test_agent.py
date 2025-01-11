@@ -1,4 +1,4 @@
-from rl_toolkit.core import Tester as Agent
+from rl_toolkit.agents.sac import Tester as Agent
 
 
 def test_pre_trained():
@@ -6,6 +6,7 @@ def test_pre_trained():
         env_name="BipedalWalkerHardcore-v3",
         render=False,
         max_steps=2000,
+        frame_stack=1,
         actor_units=[512, 256],
         clip_mean_min=-2.0,
         clip_mean_max=2.0,
@@ -25,6 +26,7 @@ def test_random():
         env_name="BipedalWalkerHardcore-v3",
         render=False,
         max_steps=2000,
+        frame_stack=1,
         actor_units=[512, 256],
         clip_mean_min=-2.0,
         clip_mean_max=2.0,
