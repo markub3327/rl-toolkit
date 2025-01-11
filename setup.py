@@ -66,7 +66,6 @@ setup(
         "Intended Audience :: Science/Research",
         "Intended Audience :: Education",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
-        "Topic :: Scientific/Engineering :: Robotics",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
