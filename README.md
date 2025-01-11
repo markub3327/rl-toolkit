@@ -143,7 +143,7 @@
 
    * SAC + gSDE + Huber loss<br> &emsp; is stored here, [branch r2.0](https://github.com/markub3327/rl-toolkit/tree/r2.0)
    * SAC + TQC + gSDE + LogCosh + Reverb<br> &emsp; is stored here, [branch r4.0](https://github.com/markub3327/rl-toolkit/tree/r4.1)
-   * DQN + SAC agents [branch r5.0](https://github.com/markub3327/rl-toolkit/r5.0)
+   * DQN + SAC agents [branch r5.0](https://github.com/markub3327/rl-toolkit/tree/r5.0)
 
 ----------------------------------
 
