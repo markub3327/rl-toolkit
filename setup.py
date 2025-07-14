@@ -11,7 +11,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 extras = {
     "all": ["dm-reverb", "flappy-bird-gymnasium"],
     "reverb": ["dm-reverb"],
-    "tf": ["tensorflow==2.14.0"],
+    "tf": ["tensorflow==2.19.0"],
 }
 
 setup(
