@@ -51,7 +51,7 @@ setup(
         "pygame",
         "swig",
         "dm_control",
-        "tensorflow_probability==0.22.1",
+        "tensorflow_probability==0.25.0",
         "wandb",
         "pyyaml",
         "lxml",
